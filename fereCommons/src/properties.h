@@ -8,6 +8,8 @@
 #ifndef PROPERTIES_H_
 #define PROPERTIES_H_
 
-void* getProperty(const char*);
+#include "typeDef.h"
+
+void* getProperty(const String);
 
 #endif /* PROPERTIES_H_ */

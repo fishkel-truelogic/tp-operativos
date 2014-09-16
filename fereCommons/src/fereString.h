@@ -2,13 +2,15 @@
  * fereString.h
  *
  *  Created on: 16/09/2014
- *      Author: utnso
+ *      Author: lfishkel
  */
 
 #ifndef FERESTRING_H_
 #define FERESTRING_H_
 
-char** str_split(char* a_str, const char a_delim);
-int strToInt(char*);
+#include "typeDef.h"
+
+String newString(int size);
+int strToInt(String);
 
 #endif /* FERESTRING_H_ */
