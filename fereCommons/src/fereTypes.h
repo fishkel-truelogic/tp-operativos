@@ -12,8 +12,8 @@
 //=====================================================================================
 
 //CONSTANTES BOOLEANAS
-static int const FALSE = 0;
-static int const TRUE = 1;
+static unsigned char const FALSE = 0;
+static unsigned char const TRUE = 1;
 
 //=====================================================================================
 
@@ -52,10 +52,10 @@ typedef unsigned int Int32U;
 typedef signed int Int32S;
 
 //VALOR FLOTANTE 32-BITS
-typedef float fP32;
+typedef float Float32;
 
 //VALOR FLOTANTE 64-BITS
-typedef double fP64;
+typedef double Float64;
 //=====================================================================================
 
 
