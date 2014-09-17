@@ -8,7 +8,7 @@
 #ifndef PROPERTIES_H_
 #define PROPERTIES_H_
 
-#include "typeDef.h"
+#include "fereTypes.h"
 
 void* getProperty(const String);
 

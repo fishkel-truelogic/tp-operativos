@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fereString.h"
-#include "typeDef.h"
+#include "fereTypes.h"
 
 #define BUFFER_LENGTH 16
 #define PROPERTIES_LENGTH 5
