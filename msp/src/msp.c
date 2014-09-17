@@ -5,10 +5,17 @@
  *      Author: lfishkel
  */
 
-#include <stdio.h>
+#include <stdlib.h>
+#include<src/fereTypes.h>
+
 
 int main() {
-	printf("msp\n===");
+
+	Int8S variable;
+
+	variable=1;
+
+	printf("La variable es: %d \n===", variable);
 	return 0;
 
 }
