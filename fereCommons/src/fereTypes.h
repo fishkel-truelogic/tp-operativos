@@ -75,6 +75,28 @@ typedef float Float32;
 typedef double Float64;
 //=====================================================================================
 
+/**
+ *  Typedef comunes propios del sistema
+ */
+
+// Thread Control Block
+typedef struct tcb {
+	Int32U pid;
+	Int32U tid;
+	Boolean kernelMode;
+	Int32U M;
+	Int8U csLenght;
+	Int32U P;
+	Int32U X;
+	Int32U S;
+	Int32S A, B, C, D, E, F;
+} Tcb;
+
+// Estructura de comunicacion entre el kernel y la cpu
+typedef struct streamKernelCpu {
+	Tcb tcb;
+	Int8U quantum;
+} StreamKernelCpu;
 
 
 #endif /* TYPEDEF_H_ */
