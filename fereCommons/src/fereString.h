@@ -8,9 +8,9 @@
 #ifndef FERESTRING_H_
 #define FERESTRING_H_
 
-#include "typeDef.h"
+#include "fereTypes.h"
 
-String newString(int size);
-int strToInt(String);
+String newString(Int8U size);
+Int32S strToInt(String);
 
 #endif /* FERESTRING_H_ */

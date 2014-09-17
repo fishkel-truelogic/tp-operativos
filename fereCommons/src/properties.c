@@ -48,32 +48,32 @@ String getProperty(const String propertyName) {
 }
 
 int readConfigFile() {
-	int c;
-	int count = 0;
+	Int32U fileCharacter;
+	Int8U count = 0;
 	String name;
 	String value;
 	FILE *file;
-	int isName = TRUE;
+	Boolean isName = TRUE;
 
 	file = fopen(CONFIG_FILE_NAME, "r");
 	if (file) {
 		name = newString(BUFFER_LENGTH);
 		value = newString(BUFFER_LENGTH);
-		while ((c = getc(file)) != EOF) {
-			if (strcmp((String) &c, "\n") == 0) {
+		while ((fileCharacter = getc(file)) != EOF) {
+			if (strcmp((String) &fileCharacter, "\n") == 0) {
 				isName = TRUE;
 				properties[count] = newProperty(name, value);
 				count += 1;
 				name = newString(BUFFER_LENGTH);
 				value = newString(BUFFER_LENGTH);
 			} else {
-				if (strcmp((String) &c, "=") == 0) {
+				if (strcmp((String) &fileCharacter, "=") == 0) {
 					isName = FALSE;
 				} else {
 					if (isName) {
-						strcat(name, (String) &c);
+						strcat(name, (String) &fileCharacter);
 					} else{
-						strcat(value, (String) &c);
+						strcat(value, (String) &fileCharacter);
 					}
 				}
 			}

@@ -6,16 +6,16 @@
  */
 #include <string.h>
 #include <stdlib.h>
-#include "typeDef.h"
+#include "fereTypes.h"
 
 
-char* newString(int size) {
-	return (char*) malloc(sizeof(char) * size);
+String newString(Int8U size) {
+	return (String) malloc(sizeof(Char) * size);
 }
 
-int strToInt(String str) {
+Int32S strToInt(String str) {
 	if (str != NULL) {
-		return (int) strtol(str, (char **) NULL, 10);
+		return (Int32S) strtol(str, (Char**) NULL, 10);
 	} else {
 		return 0;
 	}
