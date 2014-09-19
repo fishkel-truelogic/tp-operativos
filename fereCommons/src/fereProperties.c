@@ -10,6 +10,7 @@
 #include <string.h>
 #include "fereString.h"
 #include "fereTypes.h"
+#include "commons/collections/list.h"
 
 #define BUFFER_LENGTH 16
 #define PROPERTIES_LENGTH 5
@@ -27,14 +28,15 @@ Property* newProperty(String, String);
 int readConfigFile();
 
 
-Property* properties[PROPERTIES_LENGTH] = { NULL };
+t_list* properties;
 
 String getProperty(const String propertyName) {
 	int i;
-	if (properties[0] != NULL) {
-		for (i = 0; i < PROPERTIES_LENGTH; i++) {
-			if (strcmp(properties[i]->name, propertyName) == 0) {
-				return properties[i]->value;
+	if (properties != NULL && !list_is_empty(properties)) {
+		for (i = 0; i < list_size(properties); i++) {
+			Property* property = (Property*) list_get(properties, i);
+			if (property != NULL && strcmp(property->name, propertyName) == 0) {
+				return property->value;
 			}
 		}
 	} else {
@@ -49,12 +51,12 @@ String getProperty(const String propertyName) {
 
 int readConfigFile() {
 	Int32U fileCharacter;
-	Int8U count = 0;
 	String name;
 	String value;
 	FILE *file;
 	Boolean isName = TRUE;
 
+	properties = list_create();
 	file = fopen(CONFIG_FILE_NAME, "r");
 	if (file) {
 		name = newString(BUFFER_LENGTH);
@@ -62,8 +64,8 @@ int readConfigFile() {
 		while ((fileCharacter = getc(file)) != EOF) {
 			if (strcmp((String) &fileCharacter, "\n") == 0) {
 				isName = TRUE;
-				properties[count] = newProperty(name, value);
-				count += 1;
+				Property* property = newProperty(name, value);
+				list_add(properties, property);
 				name = newString(BUFFER_LENGTH);
 				value = newString(BUFFER_LENGTH);
 			} else {
