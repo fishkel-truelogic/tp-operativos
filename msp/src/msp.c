@@ -5,59 +5,91 @@
  *      Author: sampower06 - Leandro Sampayo
  */
 
-//LIBRERIAS INCLUIDAS
-#include <stdlib.h>
-#include <stdio.h>
-#include <src/fereTypes.h>
-#include <src/fereString.h>
-#include <src/fereProperties.h>
-#include <src/commons/temporal.h>
-
-//DEFINICIONES
-#define MSP_PORT "PUERTO"				//PUERTO DE ESCUCHA DE LA MSP
-#define MEM_LENGTH "CANTIDAD_MEMORIA"	//Tamaño en kilobytes de la memoria principal sin contar el espacio de intercambio (swapping).
-#define SWAP_LENGTH "CANTIDAD_SWAP"		//Tamaño máximo en megabytes que pueden ocupar los archivos de swapping.
-#define SWAP_ALGORITHM "SUST_PAGS"		//Algoritmo de sustitucion de paginas
-
-//PROTOTYPES
-void init(void);
+#include "msp.h"
 
 //GLOBAL VARIABLES
-Int8U mspPort = 0;
-Int8U memLengthKB = 0;
-Int8U swapLengthMB = 0;
+Int16U mspPort = 0;
+Int16U memLengthKB = 0;
+Int16U swapLengthMB = 0;
 String swapAlgorithm = "\0";
 
 
 int main() {
 
 	//local variables
-	Char * ptrTime = temporal_get_string_time();
+
 
 
 
 	//Imprimo hora al arrancar
+	Char * ptrTime = temporal_get_string_time();
 	printf("Server time is %s\n\n", ptrTime);
-
-	init();
-	//libero memoria
 	free (ptrTime);
+
+	//INICIALIZO, LEO ARCHIVO DE CONFIGURACION
+	if (!loadConfig()){
+		return FALSE;
+	}
+
 
 	return 0;
 
 }
 
 
-void init() {
+Boolean loadConfig() {
 
-	printf("Archivo de config MSP leído\n===========\n");
-	//Obtengo todas las propiedades del config.txt y las paso a su formato en caso de ser necesario
-	//mspPort = strToInt(getProperty(MSP_PORT));
-	mspPort = strToInt(getProperty("PUERTO"));
-	memLengthKB = strToInt(getProperty(MEM_LENGTH));
-	swapLengthMB = strToInt(getProperty(SWAP_LENGTH));
-	swapAlgorithm = getProperty(SWAP_ALGORITHM);
-	printf(
-			"MSP Port: %u\nMemory Length: %ukB\nSwap Memory Length: %uMB\nSwap Algorithm: %s\n",
-			mspPort, memLengthKB, swapLengthMB, swapAlgorithm);
+	//Gennero tabla de configuracion
+	t_config * tConfig = config_create(CONFIG_FILE);
+	if (tConfig == NULL){
+		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
+		return FALSE;
+	}
+	//Verifico consistencia, tiene que haber 4 campos
+	if (config_keys_amount(tConfig) == PARAM_LENGTH){
+
+		//Verifico que los parametros tengan sus valores OK-> PORT=12456 | NOK->PORT=
+		if (config_has_property(tConfig, MSP_PORT)){
+			mspPort = config_get_int_value(tConfig, MSP_PORT);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, MEM_LENGTH)){
+			memLengthKB = config_get_int_value(tConfig, MEM_LENGTH);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, SWAP_LENGTH)){
+			swapLengthMB = config_get_int_value(tConfig, SWAP_LENGTH);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, SWAP_ALGORITHM)){
+			swapAlgorithm = config_get_string_value(tConfig, SWAP_ALGORITHM);
+			//strcat(swapAlgorithm, "\0");
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		//Libero tabla config
+		config_destroy(tConfig);
+		if (DEBUG == 1){
+			printf("Archivo de config MSP leído\n===========\n");
+			printf("MSP Port: %u\nMemory Length: %ukB\nSwap Memory Length: %uMB\nSwap Algorithm: %s\n",
+					mspPort, memLengthKB, swapLengthMB, swapAlgorithm);
+		}
+
+		return TRUE;
+	}
+	else{
+		printf("El archivo config.txt no tiene todos los campos.\n");
+		return TRUE;
+	}
 }
