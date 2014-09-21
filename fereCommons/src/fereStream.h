@@ -5,6 +5,7 @@
  *      Author: utnso
  */
 
+
 #ifndef FERESTREAM_H_
 #define FERESTREAM_H_
 
@@ -12,14 +13,6 @@
 #include "commons/bitarray.h"
 
 typedef Byte* Stream;
-
-typedef struct strConKer {
-
-} StrConKer;
-
-typedef struct strKerCon {
-
-} StrKerCon;
 
 typedef struct strKerCpu { //size 51
 	Tcb tcb;
@@ -34,21 +27,18 @@ typedef struct strCpuKer { //size 192
 	String log;
 } StrCpuKer;
 
-typedef struct strKerMsp {
-
-} StrKerMsp;
-
 typedef struct strMspKer {
-
+	Char id;
+	Int32U address;
+	Char status;
+	Int16U size;
 } StrMspKer;
 
 typedef struct strMspCpu {
-
+	Int32U size;
+	Byte * data;
+	Char status;
 } StrMspCpu;
-
-typedef struct strCpuMsp {
-
-} StrCpuMsp;
 
 t_bitarray* serializeCpuMsp(StrCpuMsp*);
 t_bitarray* serializeMspCpu(StrMspCpu*);
@@ -71,5 +61,6 @@ StrMspKer* unserializeMspKer(Stream);
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte[]);
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
-
+StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
+StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
 #endif /* FERESTREAM_H_ */
