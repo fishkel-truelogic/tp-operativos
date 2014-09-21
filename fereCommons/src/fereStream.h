@@ -13,13 +13,12 @@
 
 typedef Byte* Stream;
 
-typedef struct strConKer {
-
+typedef struct strConKer { //size 1+4096+20+1
+	Char id;
+	Byte* fileContent;
+	String bufferWriter;
+	Char action;
 } StrConKer;
-
-typedef struct strKerCon {
-
-} StrKerCon;
 
 typedef struct strKerCpu { //size 51
 	Tcb tcb;
@@ -34,42 +33,20 @@ typedef struct strCpuKer { //size 192
 	String log;
 } StrCpuKer;
 
-typedef struct strKerMsp {
 
-} StrKerMsp;
-
-typedef struct strMspKer {
-
-} StrMspKer;
-
-typedef struct strMspCpu {
-
-} StrMspCpu;
-
-typedef struct strCpuMsp {
-
-} StrCpuMsp;
-
-t_bitarray* serializeCpuMsp(StrCpuMsp*);
-t_bitarray* serializeMspCpu(StrMspCpu*);
 t_bitarray* serializeCpuKer(StrCpuKer*);
 t_bitarray* serializeKerCpu(StrKerCpu*);
 t_bitarray* serializeConKer(StrConKer*);
-t_bitarray* serializeKerCon(StrKerCon*);
-t_bitarray* serializeKerMsp(StrKerMsp*);
-t_bitarray* serializeMspKer(StrMspKer*);
 
-StrCpuMsp* unserializeCpuMsp(Stream);
-StrMspCpu* unserializeMspCpu(Stream);
+
+
 StrCpuKer* unserializeCpuKer(Stream);
 StrKerCpu* unserializeKerCpu(Stream);
 StrConKer* unserializeConKer(Stream);
-StrKerCon* unserializeKerCon(Stream);
-StrKerMsp* unserializeKerMsp(Stream);
-StrMspKer* unserializeMspKer(Stream);
 
-StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte[]);
+
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
+StrConKer* newStrConKer(Char, Byte*, String, Char);
 
 #endif /* FERESTREAM_H_ */

@@ -8,15 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//t_bitarray* serializeCpuMsp(StrCpuMsp*) {
-//
-//}
-//t_bitarray* serializeMspCpu(StrMspCpu*) {
-//
-//}
-//t_bitarray* serializeCpuKer(StrCpuKer*) {
-//
-//}
+
 t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	Int8U size = sizeof(Byte) * sizeof(StrKerCpu);
 	Stream data = malloc(size);
@@ -69,28 +61,27 @@ t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	t_bitarray* barray = bitarray_create((char*)data, size);
 	return barray;
 }
-//t_bitarray* serializeConKer(StrConKer*) {
-//
-//}
-//t_bitarray* serializeKerCon(StrKerCon*) {
-//
-//}
-//t_bitarray* serializeKerMsp(StrKerMsp*) {
-//
-//}
-//t_bitarray* serializeMspKer(StrMspKer*) {
-//
-//}
-//
-//StrCpuMsp* unserializeCpuMsp(Stream) {
-//
-//}
-//StrMspCpu* unserializeMspCpu(Stream) {
-//
-//}
-//StrCpuKer* unserializeCpuKer(Stream) {
-//
-//}
+
+t_bitarray* serializeConKer(StrConKer* sconk) {
+	Int8U size = sizeof(Byte) * sizeof(StrConKer);
+	Stream data = malloc(size);
+	Stream ptrData = data;
+	Byte* ptrByte = (Byte*) &sconk->id;
+	memcpy(ptrData, ptrByte, sizeof(sconk->id));
+	ptrData += sizeof(sconk->id);
+	ptrByte = (Byte*) sconk->fileContent;
+	memcpy(ptrData, ptrByte, sizeof(sconk->fileContent));
+	ptrData += sizeof(sconk->fileContent);
+	ptrByte = (Byte*) sconk->bufferWriter;
+	memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriter));
+	ptrData += sizeof(sconk->bufferWriter);
+	ptrByte = (Byte*) &sconk->action;
+	memcpy(ptrData, ptrByte, sizeof(sconk->action));
+	ptrData += sizeof(sconk->action);
+	t_bitarray* barray = bitarray_create((char*)data, size);
+	return barray;
+}
+
 StrKerCpu* unserializeKerCpu(Stream data) {
 	Stream ptrByte = data;
 	Tcb tcb;
@@ -125,25 +116,27 @@ StrKerCpu* unserializeKerCpu(Stream data) {
 	ptrByte += sizeof(tcb.csLenght);
 	memcpy(&quantum, ptrByte, sizeof(quantum));
 	ptrByte += sizeof(quantum);
-
+	free(data);
 	return newStrKerCpu(tcb, quantum);
 }
-//StrConKer* unserializeConKer(Stream) {
-//
-//}
-//StrKerCon* unserializeKerCon(Stream) {
-//
-//}
-//StrKerMsp* unserializeKerMsp(Stream) {
-//
-//}
-//StrMspKer* unserializeMspKer(Stream) {
-//
-//}
-//
-//StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte[]) {
-//
-//}
+
+StrConKer* unserializeConKer(Stream data) {
+	Stream ptrByte = data;
+	Char id;
+	Byte* fileContent;
+	String bufferWriter;
+	Char action;
+	memcpy(&id, ptrByte, sizeof(id));
+	ptrByte += sizeof(id);
+	memcpy(&fileContent, ptrByte, sizeof(fileContent));
+	ptrByte += sizeof(fileContent);
+	memcpy(&bufferWriter, ptrByte, sizeof(bufferWriter));
+	ptrByte += sizeof(bufferWriter);
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
+	free(data);
+	return newStrConKer(id, fileContent, bufferWriter, action);
+}
 StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	StrKerCpu* skc = malloc(sizeof(StrKerCpu));
 	skc->tcb = tcb;
@@ -160,3 +153,13 @@ StrCpuKer* newStrCpuKer(Char id, String log, Tcb tcb, Char status, Char action) 
 	sck->action = action;
 	return sck;
 }
+
+StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char action) {
+	StrConKer* sconk = malloc(sizeof(StrConKer));
+	sconk->id = id;
+	sconk->fileContent = fileContent;
+	sconk->bufferWriter = bufferWriter;
+	sconk->action = action;
+	return sconk;
+}
+
