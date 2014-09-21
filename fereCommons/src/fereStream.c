@@ -99,7 +99,7 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 	memcpy(ptrData, ptrByte, sizeof(skm->dataLength));
 	ptrData += sizeof(skm->dataLength);
 
-	ptrByte = (Byte*) &skm->data;
+	ptrByte = (Byte*) skm->data;
 	memcpy(ptrData, ptrByte, skm->dataLength);
 	ptrData += skm->dataLength;
 
