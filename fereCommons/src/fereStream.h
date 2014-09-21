@@ -18,7 +18,9 @@ typedef Byte* Stream;
 typedef struct strConKer { //size 1+4096+20+1
 	Char id;
 	Byte* fileContent;
+	Int16U fileContentLen;
 	String bufferWriter;
+	Int16U bufferWriterLen;
 	Char action;
 } StrConKer;
 
@@ -33,12 +35,19 @@ typedef struct strCpuKer { //size 192
 	Tcb tcb;
 	Char status;
 	Char action;
+	Int16U logLen;
 	String log;
 } StrCpuKer;
 
+typedef struct strCpuMsp {
+	Char id;
+	Int32U address;
+	Char action;
+	Int16U dataLen;
+	Byte* data;
+} StrCpuMsp;
 
 typedef struct strKerMsp { //size 98 + data (4096 MAX)
-
 	Char id;
 	Int16U dataLength;
 	Byte *data;
@@ -46,9 +55,7 @@ typedef struct strKerMsp { //size 98 + data (4096 MAX)
 	Int16U size;
 	Int32U pid;
 	Int32U address;
-
 } StrKerMsp;
-
 
 typedef struct strMspKer {
 	Char id;
@@ -59,37 +66,70 @@ typedef struct strMspKer {
 
 typedef struct strMspCpu {
 	Int32U size;
-	Byte * data;
 	Char status;
+	Byte * data;
 } StrMspCpu;
+
 
 typedef struct strKerCon { //size 4 + data
 	Int32U logLen;
 	Byte *log;
 }StrKerCon;
 
-t_bitarray* serializeMspCpu(StrMspCpu*);
-t_bitarray* serializeCpuKer(StrCpuKer*);
-t_bitarray* serializeKerCpu(StrKerCpu*);
+//==============================================//
+
+/**
+ * Constructores
+ */
+
+StrConKer* newStrConKer(Char, Byte*, String, Char, Int16U, Int16U);
+
+StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte*, Int16U);
+StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char, Int16U);
+
+StrKerCpu* newStrKerCpu(Tcb, Int8U);
+StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
+
+StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
+StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
+
+StrKerCon* newStrKerCon(Int32U, Byte*);
+//==============================================//
+
+/**
+ * serialize
+ */
+
 t_bitarray* serializeConKer(StrConKer*);
+
+t_bitarray* serializeCpuMsp(StrCpuMsp*);
+t_bitarray* serializeCpuKer(StrCpuKer*);
+
+t_bitarray* serializeMspCpu(StrMspCpu*);
 t_bitarray* serializeMspKer(StrMspKer*);
+
 t_bitarray* serializeKerMsp(StrKerMsp*);
 t_bitarray* serializeKerCon(StrKerCon*);
 
-StrCpuKer* unserializeCpuKer(Stream);
-StrKerCpu* unserializeKerCpu(Stream);
+t_bitarray* serializeKerCpu(StrKerCpu*);
+
+//==============================================//
+
+/**
+ * Unserialize
+ */
+
 StrConKer* unserializeConKer(Stream);
+
+StrCpuMsp* unserializeCpuMsp(Stream);
+StrCpuKer* unserializeCpuKer(Stream);
+
 StrMspKer* unserializeMspKer(Stream);
 StrMspCpu* unserializeMspCpu(Stream);
+
 StrKerMsp* unserializeKerMsp(Stream);
 StrKerCon* unserializeKerCon(Stream);
 
-StrKerCpu* newStrKerCpu(Tcb, Int8U);
-StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
-StrConKer* newStrConKer(Char, Byte*, String, Char);
-StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
-StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
-StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
-StrKerCon* newStrKerCon(Int32U, Byte*);
+StrKerCpu* unserializeKerCpu(Stream);
 
 #endif /* FERESTREAM_H_ */
