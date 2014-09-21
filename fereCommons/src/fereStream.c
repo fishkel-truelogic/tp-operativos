@@ -79,6 +79,7 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 
 	Int32U size = 0;
 
+
 	size += sizeof(skm->id);
 	size += sizeof(skm->dataLength);
 	size += skm->dataLength;
@@ -100,8 +101,8 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 	ptrData += sizeof(skm->dataLength);
 
 	ptrByte = (Byte*) skm->data;
-	memcpy(ptrData, ptrByte, skm->dataLength);
-	ptrData += skm->dataLength;
+	memcpy(ptrData, ptrByte, sizeof(skm->data));
+	ptrData += sizeof(skm->data);
 
 	ptrByte = (Byte*) &skm->action;
 	memcpy(ptrData, ptrByte, sizeof(skm->action));
@@ -184,7 +185,7 @@ StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
 			Stream ptrByte = dataSerialized;
 			Char id;
 			Int16U dataLength;
-			Byte *data;
+			Byte *data = NULL;
 			Char action;
 			Int16U size;
 			Int32U pid;
@@ -193,16 +194,23 @@ StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
 
 			memcpy(&id, ptrByte, sizeof(id));
 			ptrByte += sizeof(id);
+
 			memcpy(&dataLength, ptrByte, sizeof(dataLength));
 			ptrByte += sizeof(dataLength);
+
+			data = malloc(dataLength);
 			memcpy(&data, ptrByte, dataLength);
 			ptrByte += dataLength;
+
 			memcpy(&action, ptrByte, sizeof(action));
 			ptrByte += sizeof(action);
+
 			memcpy(&size, ptrByte, sizeof(size));
 			ptrByte += sizeof(size);
+
 			memcpy(&pid, ptrByte, sizeof(pid));
 			ptrByte += sizeof(pid);
+
 			memcpy(&address, ptrByte, sizeof(address));
 
 			return newStrKerMsp(id, dataLength, data, action, size, pid, address);
