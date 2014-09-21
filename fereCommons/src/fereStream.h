@@ -27,6 +27,19 @@ typedef struct strCpuKer { //size 192
 	String log;
 } StrCpuKer;
 
+typedef struct strKerMsp { //size 98 + data (4096 MAX)
+
+	Char id;
+	Int16U dataLength;
+	Byte *data;
+	Char action;
+	Int16U size;
+	Int32U pid;
+	Int32U address;
+
+} StrKerMsp;
+
+
 typedef struct strMspKer {
 	Char id;
 	Int32U address;
@@ -63,4 +76,6 @@ StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
 StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
 StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
+StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
+
 #endif /* FERESTREAM_H_ */
