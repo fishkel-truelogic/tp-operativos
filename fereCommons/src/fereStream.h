@@ -34,7 +34,15 @@ typedef struct strCpuKer { //size 192
 	String log;
 } StrCpuKer;
 
-typedef struct strKerMsp {
+typedef struct strKerMsp { //size 98 + data (4096 MAX)
+
+	Char id;
+	Int16U dataLength;
+	Byte *data;
+	Char action;
+	Int16U size;
+	Int32U pid;
+	Int32U address;
 
 } StrKerMsp;
 

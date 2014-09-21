@@ -21,52 +21,52 @@ t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	Int8U size = sizeof(Byte) * sizeof(StrKerCpu);
 	Stream data = malloc(size);
 	Stream ptrData = data;
-	Byte* ptrByte = (Byte*)&skc->tcb.A;
+	Byte* ptrByte = (Byte*) &skc->tcb.A;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.A));
 	ptrData += sizeof(skc->tcb.A);
-	ptrByte = (Byte*)&skc->tcb.B;
+	ptrByte = (Byte*) &skc->tcb.B;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.B));
 	ptrData += sizeof(skc->tcb.B);
-	ptrByte = (Byte*)&skc->tcb.C;
+	ptrByte = (Byte*) &skc->tcb.C;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.C));
 	ptrData += sizeof(skc->tcb.C);
-	ptrByte = (Byte*)&skc->tcb.D;
+	ptrByte = (Byte*) &skc->tcb.D;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.D));
 	ptrData += sizeof(skc->tcb.D);
-	ptrByte = (Byte*)&skc->tcb.E;
+	ptrByte = (Byte*) &skc->tcb.E;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.E));
 	ptrData += sizeof(skc->tcb.E);
-	ptrByte = (Byte*)&skc->tcb.F;
+	ptrByte = (Byte*) &skc->tcb.F;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.F));
 	ptrData += sizeof(skc->tcb.F);
-	ptrByte = (Byte*)&skc->tcb.P;
+	ptrByte = (Byte*) &skc->tcb.P;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.P));
 	ptrData += sizeof(skc->tcb.P);
-	ptrByte = (Byte*)&skc->tcb.M;
+	ptrByte = (Byte*) &skc->tcb.M;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.M));
 	ptrData += sizeof(skc->tcb.M);
-	ptrByte = (Byte*)&skc->tcb.S;
+	ptrByte = (Byte*) &skc->tcb.S;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.S));
 	ptrData += sizeof(skc->tcb.S);
-	ptrByte = (Byte*)&skc->tcb.X;
+	ptrByte = (Byte*) &skc->tcb.X;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.X));
 	ptrData += sizeof(skc->tcb.X);
-	ptrByte = (Byte*)&skc->tcb.pid;
+	ptrByte = (Byte*) &skc->tcb.pid;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.pid));
 	ptrData += sizeof(skc->tcb.pid);
-	ptrByte = (Byte*)&skc->tcb.tid;
+	ptrByte = (Byte*) &skc->tcb.tid;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.tid));
 	ptrData += sizeof(skc->tcb.tid);
-	ptrByte = (Byte*)&skc->tcb.kernelMode;
+	ptrByte = (Byte*) &skc->tcb.kernelMode;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.kernelMode));
 	ptrData += sizeof(skc->tcb.kernelMode);
-	ptrByte = (Byte*)&skc->tcb.csLenght;
+	ptrByte = (Byte*) &skc->tcb.csLenght;
 	memcpy(ptrData, ptrByte, sizeof(skc->tcb.csLenght));
 	ptrData += sizeof(skc->tcb.csLenght);
-	ptrByte = (Byte*)&skc->quantum;
+	ptrByte = (Byte*) &skc->quantum;
 	memcpy(ptrData, ptrByte, sizeof(skc->quantum));
 	ptrData += sizeof(skc->quantum);
-	t_bitarray* barray = bitarray_create((char*)data, size);
+	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
 }
 //t_bitarray* serializeConKer(StrConKer*) {
@@ -75,9 +75,54 @@ t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 //t_bitarray* serializeKerCon(StrKerCon*) {
 //
 //}
-//t_bitarray* serializeKerMsp(StrKerMsp*) {
-//
-//}
+t_bitarray* serializeKerMsp(StrKerMsp *skm) {
+
+	Int32U size = 0;
+
+	size += sizeof(skm->id);
+	size += sizeof(skm->dataLength);
+	size += skm->dataLength;
+	size += sizeof(skm->action);
+	size += sizeof(skm->size);
+	size += sizeof(skm->pid);
+	size += sizeof(skm->address);
+
+	Stream data = malloc(size);
+	Stream ptrData = data;
+
+
+	Byte* ptrByte = (Byte*) &skm->id;
+	memcpy(ptrData, ptrByte, sizeof(skm->id));
+	ptrData += sizeof(skm->id);
+
+	ptrByte = (Byte*) &skm->dataLength;
+	memcpy(ptrData, ptrByte, sizeof(skm->dataLength));
+	ptrData += sizeof(skm->dataLength);
+
+	ptrByte = (Byte*) &skm->data;
+	memcpy(ptrData, ptrByte, skm->dataLength);
+	ptrData += skm->dataLength;
+
+	ptrByte = (Byte*) &skm->action;
+	memcpy(ptrData, ptrByte, sizeof(skm->action));
+	ptrData += sizeof(skm->action);
+
+	ptrByte = (Byte*) &skm->size;
+	memcpy(ptrData, ptrByte, sizeof(skm->size));
+	ptrData += sizeof(skm->size);
+
+	ptrByte = (Byte*) &skm->pid;
+	memcpy(ptrData, ptrByte, sizeof(skm->pid));
+	ptrData += sizeof(skm->pid);
+
+	ptrByte = (Byte*) &skm->address;
+	memcpy(ptrData, ptrByte, sizeof(skm->address));
+	ptrData += sizeof(skm->address);
+
+	t_bitarray* barray = bitarray_create((char*) data, size);
+	return barray;
+
+}
 //t_bitarray* serializeMspKer(StrMspKer*) {
 //
 //}
