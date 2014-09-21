@@ -134,9 +134,35 @@ StrKerCpu* unserializeKerCpu(Stream data) {
 //StrKerCon* unserializeKerCon(Stream) {
 //
 //}
-//StrKerMsp* unserializeKerMsp(Stream) {
-//
-//}
+StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
+
+			Stream ptrByte = dataSerialized;
+			Char id;
+			Int16U dataLength;
+			Byte *data;
+			Char action;
+			Int16U size;
+			Int32U pid;
+			Int32U address;
+
+
+			memcpy(&id, ptrByte, sizeof(id));
+			ptrByte += sizeof(id);
+			memccpy(&dataLength, ptrByte, sizeof(dataLength));
+			ptrByte += sizeof(dataLength);
+			memccpy(&data, ptrByte, dataLength);
+			ptrByte += dataLength;
+			memccpy(&action, ptrByte, sizeof(action));
+			ptrByte += sizeof(action);
+			memccpy(&size, ptrByte, sizeof(size));
+			ptrByte += sizeof(size);
+			memccpy(&pid, ptrByte, sizeof(pid));
+			ptrByte += sizeof(pid);
+			memccpy(&address, ptrByte, sizeof(address));
+
+			return newStrKerMsp(id, dataLength, *data, action, size, pid, address);
+
+}
 //StrMspKer* unserializeMspKer(Stream) {
 //
 //}
@@ -159,4 +185,16 @@ StrCpuKer* newStrCpuKer(Char id, String log, Tcb tcb, Char status, Char action) 
 	sck->status = status;
 	sck->action = action;
 	return sck;
+}
+
+StrCpuKer* newStrKerMsp(Char id, Int16U dataLength,Byte *data,Char action, Int16U size,Int32U pid, Int32U address) {
+	StrKerMsp* skm = malloc(sizeof(StrKerMsp));
+	skm->id = id;
+	skm->dataLength = dataLength;
+	skm->data = data;
+	skm->action = action;
+	skm->size = size;
+	skm->pid = pid;
+	skm->address = address;
+	return skm;
 }

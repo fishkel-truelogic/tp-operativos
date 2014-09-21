@@ -35,7 +35,13 @@ typedef struct strCpuKer { //size 192
 } StrCpuKer;
 
 typedef struct strKerMsp {
-
+				Char id;
+				Int16U dataLength;
+				Byte *data;
+				Char action;
+				Int16U size;
+				Int32U pid;
+				Int32U address;
 } StrKerMsp;
 
 typedef struct strMspKer {
