@@ -11,7 +11,7 @@
 
 t_bitarray* serializeMspCpu(StrMspCpu* smp) {
 	//Calculo cuanta data voy a serealizar
-	Int16U size = sizeof(Boolean) + sizeof(Int32U) + strlen(smp->data) ;
+	Int16U size = sizeof(smp->size) + smp->size * sizeof(Byte) + sizeof(smp->status);
 	//Reservo memoria del tamaño de la estructura que tengo que serializar
 	Stream data = malloc(size);
 	//Guardo la direccion inicial para un pivote
@@ -19,18 +19,18 @@ t_bitarray* serializeMspCpu(StrMspCpu* smp) {
 
 	//este es el que va a apuntar a los datos de la structura
 	Byte* ptrByte = (Byte*)&smp->size;
-	memcpy(ptrData, ptrByte, strlen(smp->size));
-	ptrData += strlen(smp->size);
+	memcpy(ptrData, ptrByte, sizeof(smp->size));
+	ptrData += sizeof(smp->size);
 
 	ptrByte = smp->data;
-	memcpy(ptrData, ptrByte, strlen(smp->data));
-	ptrData += strlen(smp->data);
+	memcpy(ptrData, ptrByte, smp->size);
+	ptrData += smp->size;
 
 	ptrByte = (Byte*)&smp->status;
 	memcpy(ptrData, ptrByte, sizeof(smp->status));
 	ptrData += sizeof(smp->status);
 
-	t_bitarray barray = bitarray_create(data, size);
+	t_bitarray*  barray = bitarray_create((char*) data, size);
 	return barray;
 }
 
@@ -111,9 +111,9 @@ t_bitarray* serializeMspKer(StrMspKer* smk) {
 	ptrByte = (Byte*)&smk->size;
 	memcpy(ptrData, ptrByte, sizeof(smk->size));
 	ptrData += sizeof(smk->size);
+	t_bitarray* barray = bitarray_create((char*) data, size);
+		return barray;
 
-	t_bitarray barray = bitarray_create(data, size);
-	return barray;
 }
 
 StrMspCpu* unserializeMspCpu(Stream dataStream) {
@@ -121,14 +121,14 @@ StrMspCpu* unserializeMspCpu(Stream dataStream) {
 	Stream ptrByte = dataStream;
 	//defino las variables de la estructura
 	Int32U size;
-	Byte * data;
+	Byte * data=NULL;
 	Boolean status;
 
-	memcpy(&size, ptrByte, sizeof(Int32U));
-	ptrByte += sizeof(Int32U);
-
+	memcpy(&size, ptrByte, sizeof(size));
+	ptrByte += sizeof(size);
+	data = malloc (size);
 	//leo los datos por el largo que me pasaron en size
-	memcpy(&data, ptrByte, size);
+	memcpy(data, ptrByte, size);
 	ptrByte += size;
 
 	memcpy(&status, ptrByte, sizeof(Boolean));
@@ -288,7 +288,7 @@ StrMspKer* unserializeMspKer(Stream dataStream) {
 	memcpy(&size, ptrByte, sizeof(Int16U));
 	ptrByte += sizeof(Int16U);
 	free (dataStream);
-	return newStrMspCpu(id, address, status, size);
+	return newStrMspKer(id, address, status, size);
 }
 
 StrKerMsp* unserializeKerMsp(Stream dataSerialized) {

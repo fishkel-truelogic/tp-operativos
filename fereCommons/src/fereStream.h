@@ -68,13 +68,14 @@ t_bitarray* serializeMspCpu(StrMspCpu*);
 t_bitarray* serializeCpuKer(StrCpuKer*);
 t_bitarray* serializeKerCpu(StrKerCpu*);
 t_bitarray* serializeConKer(StrConKer*);
-
+t_bitarray* serializeMspKer(StrMspKer*);
 
 
 StrCpuKer* unserializeCpuKer(Stream);
 StrKerCpu* unserializeKerCpu(Stream);
 StrConKer* unserializeConKer(Stream);
-
+StrMspKer* unserializeMspKer(Stream);
+StrMspCpu* unserializeMspCpu(Stream);
 
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
