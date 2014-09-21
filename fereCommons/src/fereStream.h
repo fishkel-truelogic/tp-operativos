@@ -63,19 +63,26 @@ typedef struct strMspCpu {
 	Char status;
 } StrMspCpu;
 
+typedef struct strKerCon { //size 4 + data
+	Int32U logLen;
+	Byte *log;
+}StrKerCon;
 
 t_bitarray* serializeMspCpu(StrMspCpu*);
 t_bitarray* serializeCpuKer(StrCpuKer*);
 t_bitarray* serializeKerCpu(StrKerCpu*);
 t_bitarray* serializeConKer(StrConKer*);
 t_bitarray* serializeMspKer(StrMspKer*);
-
+t_bitarray* serializeKerMsp(StrKerMsp*);
+t_bitarray* serializeKerCon(StrKerCon*);
 
 StrCpuKer* unserializeCpuKer(Stream);
 StrKerCpu* unserializeKerCpu(Stream);
 StrConKer* unserializeConKer(Stream);
 StrMspKer* unserializeMspKer(Stream);
 StrMspCpu* unserializeMspCpu(Stream);
+StrKerMsp* unserializeKerMsp(Stream);
+StrKerCon* unserializeKerCon(Stream);
 
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
@@ -83,6 +90,6 @@ StrConKer* newStrConKer(Char, Byte*, String, Char);
 StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
 StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
 StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
-
+StrKerCon* newStrKerCon(Int32U, Byte*);
 
 #endif /* FERESTREAM_H_ */

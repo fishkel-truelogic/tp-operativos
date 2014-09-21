@@ -164,9 +164,9 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 	memcpy(ptrData, ptrByte, sizeof(skm->dataLength));
 	ptrData += sizeof(skm->dataLength);
 
-	ptrByte = (Byte*) skm->data;
-	memcpy(ptrData, ptrByte, sizeof(skm->data));
-	ptrData += sizeof(skm->data);
+	ptrByte = skm->data;
+	memcpy(ptrData, ptrByte, skm->dataLength);
+	ptrData += skm->dataLength;
 
 	ptrByte = (Byte*) &skm->action;
 	memcpy(ptrData, ptrByte, sizeof(skm->action));
@@ -208,6 +208,30 @@ t_bitarray* serializeConKer(StrConKer* sconk) {
 	ptrData += sizeof(sconk->action);
 	t_bitarray* barray = bitarray_create((char*)data, size);
 	return barray;
+}
+
+t_bitarray* serializeKerCon(StrKerCon *skc) {
+
+	Int32U size = 0;
+
+	size += sizeof(skc->logLen);
+	size += skc->logLen;
+
+	Stream data = malloc(size);
+	Stream ptrData = data;
+
+
+	Byte* ptrByte = (Byte*) &skc->logLen;
+	memcpy(ptrData, ptrByte, sizeof(skc->logLen));
+	ptrData += sizeof(skc->logLen);
+
+	ptrByte = skc->log;
+	memcpy(ptrData, ptrByte, skc->logLen);
+	ptrData += skc->logLen;
+
+	t_bitarray* barray = bitarray_create((char*) data, size);
+	return barray;
+
 }
 
 
@@ -311,7 +335,7 @@ StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
 			ptrByte += sizeof(dataLength);
 
 			data = malloc(dataLength);
-			memcpy(&data, ptrByte, dataLength);
+			memcpy(data, ptrByte, dataLength);
 			ptrByte += dataLength;
 
 			memcpy(&action, ptrByte, sizeof(action));
@@ -325,10 +349,29 @@ StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
 
 			memcpy(&address, ptrByte, sizeof(address));
 
+			free(dataSerialized);
 			return newStrKerMsp(id, dataLength, data, action, size, pid, address);
 
 }
 
+StrKerCon* unserializeKerCon(Stream dataSerialized) {
+
+			Stream ptrByte = dataSerialized;
+
+			Int32U logLen;
+			Byte *data = NULL;
+
+			memcpy(&logLen, ptrByte, sizeof(logLen));
+			ptrByte += sizeof(logLen);
+
+			data = malloc(logLen);
+			memcpy(data, ptrByte, logLen);
+			ptrByte += logLen;
+
+			free(dataSerialized);
+			return newStrKerCon(logLen,data);
+
+}
 
 StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	StrKerCpu* skc = malloc(sizeof(StrKerCpu));
@@ -389,3 +432,13 @@ StrKerMsp* newStrKerMsp(Char id, Int16U dataLength,Byte *data,Char action, Int16
 	return skm;
 }
 
+
+StrKerCon* newStrKerCon(Int32U logLen, Byte *log) {
+
+	StrKerCon* skc = malloc(sizeof(StrKerCon));
+
+	skc->logLen = logLen;
+	skc->log = log;
+
+	return skc;
+}
