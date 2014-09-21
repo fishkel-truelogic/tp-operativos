@@ -18,7 +18,9 @@ typedef Byte* Stream;
 typedef struct strConKer { //size 1+4096+20+1
 	Char id;
 	Byte* fileContent;
+	Int16U fileContentLen;
 	String bufferWriter;
+	Int16U bufferWriterLen;
 	Char action;
 } StrConKer;
 
@@ -59,8 +61,8 @@ typedef struct strMspKer {
 
 typedef struct strMspCpu {
 	Int32U size;
-	Byte * data;
 	Char status;
+	Byte * data;
 } StrMspCpu;
 
 
@@ -78,8 +80,8 @@ StrConKer* unserializeConKer(Stream);
 
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
-StrConKer* newStrConKer(Char, Byte*, String, Char);
-StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
+StrConKer* newStrConKer(Char, Byte*, String, Char, Int16U, Int16U);
+//StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
 StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
 StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
 
