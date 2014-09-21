@@ -80,5 +80,6 @@ StrMspKer* unserializeMspKer(Stream);
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte[]);
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
+StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
 
 #endif /* FERESTREAM_H_ */
