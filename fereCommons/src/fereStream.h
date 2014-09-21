@@ -5,6 +5,7 @@
  *      Author: utnso
  */
 
+
 #ifndef FERESTREAM_H_
 #define FERESTREAM_H_
 
@@ -12,6 +13,15 @@
 #include "commons/bitarray.h"
 
 typedef Byte* Stream;
+
+
+typedef struct strConKer { //size 1+4096+20+1
+	Char id;
+	Byte* fileContent;
+	String bufferWriter;
+	Char action;
+} StrConKer;
+
 
 typedef struct strKerCpu { //size 51
 	Tcb tcb;
@@ -35,16 +45,86 @@ typedef struct strCpuMsp {
 	Byte* data;
 } StrCpuMsp;
 
-t_bitarray* serializeCpuMsp(StrCpuMsp*);
-t_bitarray* serializeCpuKer(StrCpuKer*);
-t_bitarray* serializeKerCpu(StrKerCpu*);
 
-StrCpuMsp* unserializeCpuMsp(Stream);
-StrCpuKer* unserializeCpuKer(Stream);
-StrKerCpu* unserializeKerCpu(Stream);
+typedef struct strKerMsp { //size 98 + data (4096 MAX)
+
+	Char id;
+	Int16U dataLength;
+	Byte *data;
+	Char action;
+	Int16U size;
+	Int32U pid;
+	Int32U address;
+
+} StrKerMsp;
+
+
+typedef struct strMspKer {
+	Char id;
+	Int32U address;
+	Char status;
+	Int16U size;
+} StrMspKer;
+
+typedef struct strMspCpu {
+	Int32U size;
+	Byte * data;
+	Char status;
+} StrMspCpu;
+
+
+
+//==============================================//
+
+/**
+ * Constructiores
+ */
 
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte*, Int16U);
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
 StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char, Int16U);
+
+
+
+//==============================================//
+
+/**
+ * serialize
+ */
+
+t_bitarray* serializeConKer(StrConKer*);
+
+t_bitarray* serializeCpuMsp(StrCpuMsp*);
+t_bitarray* serializeCpuKer(StrCpuKer*);
+
+t_bitarray* serializeMspCpu(StrMspCpu*);
+t_bitarray* serializeMspKer(StrMspKer*);
+
+t_bitarray* serializeKerCpu(StrKerCpu*);
+
+
+
+//==============================================//
+
+/**
+ * Unserialize
+ */
+
+StrConKer* unserializeConKer(Stream);
+
+StrCpuMsp* unserializeCpuMsp(Stream);
+StrCpuKer* unserializeCpuKer(Stream);
+
+StrMspKer* unserializeMspKer(Stream);
+StrMspCpu* unserializeMspCpu(Stream);
+
+StrKerCpu* unserializeKerCpu(Stream);
+
+StrKerCpu* newStrKerCpu(Tcb, Int8U);
+StrConKer* newStrConKer(Char, Byte*, String, Char);
+StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
+StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
+StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
+
 
 #endif /* FERESTREAM_H_ */

@@ -64,13 +64,40 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 	ptrByte = (Byte*) &sck->logLen;
 	ptrData += sizeof(sck->logLen);
 	memcpy(ptrData, ptrByte, sizeof(sck->logLen));
-	ptrByte = sck->log;
+	ptrByte = (Byte*) sck->log;
 	ptrData += sck->logLen;
 	memcpy(ptrData, ptrByte, sck->logLen);
 	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
 
 }
+
+
+t_bitarray* serializeMspCpu(StrMspCpu* smp) {
+	//Calculo cuanta data voy a serealizar
+	Int16U size = sizeof(smp->size) + smp->size * sizeof(Byte) + sizeof(smp->status);
+	//Reservo memoria del tamaño de la estructura que tengo que serializar
+	Stream data = malloc(size);
+	//Guardo la direccion inicial para un pivote
+	Stream ptrData = data;
+
+	//este es el que va a apuntar a los datos de la structura
+	Byte* ptrByte = (Byte*)&smp->size;
+	memcpy(ptrData, ptrByte, sizeof(smp->size));
+	ptrData += sizeof(smp->size);
+
+	ptrByte = smp->data;
+	memcpy(ptrData, ptrByte, smp->size);
+	ptrData += smp->size;
+
+	ptrByte = (Byte*)&smp->status;
+	memcpy(ptrData, ptrByte, sizeof(smp->status));
+	ptrData += sizeof(smp->status);
+
+	t_bitarray*  barray = bitarray_create((char*) data, size);
+	return barray;
+}
+
 
 t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	Int8U size = sizeof(Byte) * sizeof(StrKerCpu);
@@ -144,6 +171,128 @@ t_bitarray* serializeCpuMsp(StrCpuMsp* scm) {
 	ptrByte = (Byte*) scm->data;
 	memcpy(ptrData, ptrByte, scm->dataLen);
 	t_bitarray* barray = bitarray_create((char*) data, size);
+	return barray;
+
+}
+
+t_bitarray* serializeMspKer(StrMspKer* smk) {
+	//Calculo cuanta data voy a serealizar
+	Int16U size = sizeof(StrMspKer);
+	//Reservo memoria del tamaño de la estructura que tengo que serializar
+	Stream data = malloc(size);
+	//Guardo la direccion inicial para un pivote
+	Stream ptrData = data;
+	//este es el que va a apuntar a los datos de la structura
+	Byte* ptrByte = (Byte*)&smk->id;
+	memcpy(ptrData, ptrByte, sizeof(smk->id));
+	ptrData += sizeof(smk->id);
+
+	ptrByte = (Byte*)&smk->address;
+	memcpy(ptrData, ptrByte, sizeof(smk->address));
+	ptrData += sizeof(smk->address);
+
+	ptrByte = (Byte*)&smk->status;
+	memcpy(ptrData, ptrByte, sizeof(smk->status));
+	ptrData += sizeof(smk->status);
+
+	ptrByte = (Byte*)&smk->size;
+	memcpy(ptrData, ptrByte, sizeof(smk->size));
+	ptrData += sizeof(smk->size);
+	t_bitarray* barray = bitarray_create((char*) data, size);
+		return barray;
+
+}
+
+StrMspCpu* unserializeMspCpu(Stream dataStream) {
+	//Guardo la direccion de memoria inicial del stream
+	Stream ptrByte = dataStream;
+	//defino las variables de la estructura
+	Int32U size;
+	Byte * data=NULL;
+	Boolean status;
+
+	memcpy(&size, ptrByte, sizeof(size));
+	ptrByte += sizeof(size);
+	data = malloc (size);
+	//leo los datos por el largo que me pasaron en size
+	memcpy(data, ptrByte, size);
+	ptrByte += size;
+
+	memcpy(&status, ptrByte, sizeof(Boolean));
+	ptrByte += sizeof(Boolean);
+
+	free(dataStream);
+
+	return newStrMspCpu(size, data, status);
+}
+
+t_bitarray* serializeKerMsp(StrKerMsp *skm) {
+
+	Int32U size = 0;
+
+	size += sizeof(skm->id);
+	size += sizeof(skm->dataLength);
+	size += skm->dataLength;
+	size += sizeof(skm->action);
+	size += sizeof(skm->size);
+	size += sizeof(skm->pid);
+	size += sizeof(skm->address);
+
+	Stream data = malloc(size);
+	Stream ptrData = data;
+
+
+	Byte* ptrByte = (Byte*) &skm->id;
+	memcpy(ptrData, ptrByte, sizeof(skm->id));
+	ptrData += sizeof(skm->id);
+
+	ptrByte = (Byte*) &skm->dataLength;
+	memcpy(ptrData, ptrByte, sizeof(skm->dataLength));
+	ptrData += sizeof(skm->dataLength);
+
+	ptrByte = (Byte*) skm->data;
+	memcpy(ptrData, ptrByte, skm->dataLength);
+	ptrData += skm->dataLength;
+
+	ptrByte = (Byte*) &skm->action;
+	memcpy(ptrData, ptrByte, sizeof(skm->action));
+	ptrData += sizeof(skm->action);
+
+	ptrByte = (Byte*) &skm->size;
+	memcpy(ptrData, ptrByte, sizeof(skm->size));
+	ptrData += sizeof(skm->size);
+
+	ptrByte = (Byte*) &skm->pid;
+	memcpy(ptrData, ptrByte, sizeof(skm->pid));
+	ptrData += sizeof(skm->pid);
+
+	ptrByte = (Byte*) &skm->address;
+	memcpy(ptrData, ptrByte, sizeof(skm->address));
+	ptrData += sizeof(skm->address);
+
+	t_bitarray* barray = bitarray_create((char*) data, size);
+	return barray;
+
+}
+
+
+t_bitarray* serializeConKer(StrConKer* sconk) {
+	Int8U size = sizeof(Byte) * sizeof(StrConKer);
+	Stream data = malloc(size);
+	Stream ptrData = data;
+	Byte* ptrByte = (Byte*) &sconk->id;
+	memcpy(ptrData, ptrByte, sizeof(sconk->id));
+	ptrData += sizeof(sconk->id);
+	ptrByte = (Byte*) sconk->fileContent;
+	memcpy(ptrData, ptrByte, sizeof(sconk->fileContent));
+	ptrData += sizeof(sconk->fileContent);
+	ptrByte = (Byte*) sconk->bufferWriter;
+	memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriter));
+	ptrData += sizeof(sconk->bufferWriter);
+	ptrByte = (Byte*) &sconk->action;
+	memcpy(ptrData, ptrByte, sizeof(sconk->action));
+	ptrData += sizeof(sconk->action);
+	t_bitarray* barray = bitarray_create((char*)data, size);
 	return barray;
 
 }
@@ -273,6 +422,80 @@ StrCpuMsp* newStrCpuMsp(Char id, Int32U address, Char action, Byte* data,
 	return scm;
 }
 
+
+StrConKer* unserializeConKer(Stream data) {
+	Stream ptrByte = data;
+	Char id;
+	Byte* fileContent;
+	String bufferWriter;
+	Char action;
+	memcpy(&id, ptrByte, sizeof(id));
+	ptrByte += sizeof(id);
+	memcpy(&fileContent, ptrByte, sizeof(fileContent));
+	ptrByte += sizeof(fileContent);
+	memcpy(&bufferWriter, ptrByte, sizeof(bufferWriter));
+	ptrByte += sizeof(bufferWriter);
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
+	free(data);
+	return newStrConKer(id, fileContent, bufferWriter, action);
+}
+
+StrMspKer* unserializeMspKer(Stream dataStream) {
+	//Guardo la direccion de memoria inicial del stream
+	Stream ptrByte = dataStream;
+	//defino las variables de la estructura
+	Char id;
+	Int32U address;
+	Char status;
+	Int16U size;
+
+	memcpy(&id, ptrByte, sizeof(Char));
+	ptrByte += sizeof(Char);
+
+	memcpy(&address, ptrByte, sizeof(Int32U));
+	ptrByte += sizeof(Int32U);
+
+	memcpy(&status, ptrByte, sizeof(Char));
+	ptrByte += sizeof(Char);
+
+	memcpy(&size, ptrByte, sizeof(Int16U));
+	ptrByte += sizeof(Int16U);
+	free (dataStream);
+	return newStrMspKer(id, address, status, size);
+}
+
+StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
+
+			Stream ptrByte = dataSerialized;
+			Char id;
+			Int16U dataLength;
+			Byte *data;
+			Char action;
+			Int16U size;
+			Int32U pid;
+			Int32U address;
+
+
+			memcpy(&id, ptrByte, sizeof(id));
+			ptrByte += sizeof(id);
+			memcpy(&dataLength, ptrByte, sizeof(dataLength));
+			ptrByte += sizeof(dataLength);
+			memcpy(&data, ptrByte, dataLength);
+			ptrByte += dataLength;
+			memcpy(&action, ptrByte, sizeof(action));
+			ptrByte += sizeof(action);
+			memcpy(&size, ptrByte, sizeof(size));
+			ptrByte += sizeof(size);
+			memcpy(&pid, ptrByte, sizeof(pid));
+			ptrByte += sizeof(pid);
+			memcpy(&address, ptrByte, sizeof(address));
+
+			return newStrKerMsp(id, dataLength, data, action, size, pid, address);
+
+}
+
+
 StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	StrKerCpu* skc = malloc(sizeof(StrKerCpu));
 	skc->tcb = tcb;
@@ -291,3 +514,46 @@ StrCpuKer* newStrCpuKer(Char id, String log, Tcb tcb, Char status, Char action,
 	sck->logLen = logLen;
 	return sck;
 }
+
+
+StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char action) {
+	StrConKer* sconk = malloc(sizeof(StrConKer));
+	sconk->id = id;
+	sconk->fileContent = fileContent;
+	sconk->bufferWriter = bufferWriter;
+	sconk->action = action;
+	return sconk;
+}
+
+
+StrMspCpu* newStrMspCpu(Int32U size, Byte* data, Boolean status) {
+	StrMspCpu* smc = malloc(sizeof(StrMspCpu));
+	smc->size = size;
+	smc->data = data;
+	smc->status = status;
+	return smc;
+}
+
+StrMspKer* newStrMspKer(Char id, Int32U address, Char status, Int16U size) {
+	StrMspKer* smk = malloc(sizeof(StrMspKer));
+	smk->id = id;
+	smk->address = address;
+	smk->status = status;
+	smk->size = size;
+	return smk;
+}
+
+StrKerMsp* newStrKerMsp(Char id, Int16U dataLength,Byte *data,Char action, Int16U size,Int32U pid, Int32U address) {
+
+	StrKerMsp* skm = malloc(sizeof(StrKerMsp));
+
+	skm->id = id;
+	skm->dataLength = dataLength;
+	skm->data = data;
+	skm->action = action;
+	skm->size = size;
+	skm->pid = pid;
+	skm->address = address;
+	return skm;
+}
+
