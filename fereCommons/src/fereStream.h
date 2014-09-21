@@ -26,8 +26,12 @@ typedef struct strKerCpu { //size 51
 	Int8U quantum;
 } StrKerCpu;
 
-typedef struct strCpuKer {
-
+typedef struct strCpuKer { //size 192
+	Char id;
+	Tcb tcb;
+	Char status;
+	Char action;
+	String log;
 } StrCpuKer;
 
 typedef struct strKerMsp {
@@ -66,5 +70,6 @@ StrMspKer* unserializeMspKer(Stream);
 
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte[]);
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
+StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char);
 
 #endif /* FERESTREAM_H_ */
