@@ -9,11 +9,36 @@
 #ifndef FERESTREAM_H_
 #define FERESTREAM_H_
 
+//============================================================
+ /**
+  * Dependencies
+  */
 #include "fereTypes.h"
 #include "commons/bitarray.h"
 
-typedef Byte* Stream;
+ //============================================================
+ /**
+  * Actions
+  */
+ #define NEXT_TCB 0
+ #define FIRST_TCB 1
 
+ //============================================================
+ /**
+  * IDs (Dueño del stream)
+  */
+#define CONSOLA_ID = 0
+#define KERNEL_ID = 1
+#define CPU_ID = 2
+#define MSP_ID = 3
+
+
+//============================================================
+ /**
+  * Estructuras de Streaming
+  */
+
+typedef Byte* Stream;
 
 typedef struct strConKer { //size 1+4096+20+1
 	Char id;
@@ -23,7 +48,6 @@ typedef struct strConKer { //size 1+4096+20+1
 	Int16U bufferWriterLen;
 	Char action;
 } StrConKer;
-
 
 typedef struct strKerCpu { //size 51
 	Tcb tcb;
@@ -77,7 +101,6 @@ typedef struct strKerCon { //size 4 + data
 }StrKerCon;
 
 //==============================================//
-
 /**
  * Constructores
  */
@@ -94,8 +117,8 @@ StrMspCpu* newStrMspCpu(Int32U, Byte *, Boolean);
 StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
 
 StrKerCon* newStrKerCon(Int32U, Byte*);
-//==============================================//
 
+//==============================================//
 /**
  * serialize
  */
@@ -114,7 +137,6 @@ t_bitarray* serializeKerCon(StrKerCon*);
 t_bitarray* serializeKerCpu(StrKerCpu*);
 
 //==============================================//
-
 /**
  * Unserialize
  */
@@ -131,5 +153,11 @@ StrKerMsp* unserializeKerMsp(Stream);
 StrKerCon* unserializeKerCon(Stream);
 
 StrKerCpu* unserializeKerCpu(Stream);
+
+//==============================================//
+/**
+ * Handshake
+ */
+Char getStreamId(Stream);
 
 #endif /* FERESTREAM_H_ */

@@ -5,8 +5,8 @@
  *      Author: cesarcappetto
  */
 
-#ifndef SOCKETS_H_
-#define SOCKETS_H_
+#ifndef FERESOCKETS_H_
+#define FERESOCKETS_H_
 
 	#include "fereTypes.h"
 
@@ -69,4 +69,4 @@
 
 	//=================================================================
 
-#endif /* SOCKETS_H_ */
+#endif /* FERESOCKETS_H_ */
