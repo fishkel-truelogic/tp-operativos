@@ -20,70 +20,247 @@
  */
 
 t_bitarray* serializeCpuKer(StrCpuKer* sck) {
-	Int8U size = sizeof(sck->tcb) 
-		+ sizeof(sck->id) 
-		+ sizeof(sck->action) 
-		+ sizeof(sck->logLen) 
-		+ sizeof(sck->status) 
-		+ sck->logLen;
+	Int8U size = getSizeStrCpuKer(sck);
+	
 	Stream data = malloc(size);
 	Stream ptrData = data;
-	Byte* ptrByte = (Byte*) &sck->id;
+	Byte* ptrByte;
+
+	ptrByte = (Byte*) &sck->id
 	memcpy(ptrData, ptrByte, sizeof(sck->id));
-	ptrByte = (Byte*) &sck->tcb.A;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
-	ptrData += sizeof(sck->tcb.A);
-	ptrByte = (Byte*) &sck->tcb.B;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
-	ptrData += sizeof(sck->tcb.B);
-	ptrByte = (Byte*) &sck->tcb.C;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
-	ptrData += sizeof(sck->tcb.C);
-	ptrByte = (Byte*) &sck->tcb.D;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
-	ptrData += sizeof(sck->tcb.D);
-	ptrByte = (Byte*) &sck->tcb.E;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
-	ptrData += sizeof(sck->tcb.E);
-	ptrByte = (Byte*) &sck->tcb.F;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
-	ptrData += sizeof(sck->tcb.F);
-	ptrByte = (Byte*) &sck->tcb.P;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
-	ptrData += sizeof(sck->tcb.P);
-	ptrByte = (Byte*) &sck->tcb.M;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
-	ptrData += sizeof(sck->tcb.M);
-	ptrByte = (Byte*) &sck->tcb.S;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
-	ptrData += sizeof(sck->tcb.S);
-	ptrByte = (Byte*) &sck->tcb.X;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
-	ptrData += sizeof(sck->tcb.X);
-	ptrByte = (Byte*) &sck->tcb.pid;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
-	ptrData += sizeof(sck->tcb.pid);
-	ptrByte = (Byte*) &sck->tcb.tid;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
-	ptrData += sizeof(sck->tcb.tid);
-	ptrByte = (Byte*) &sck->tcb.kernelMode;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
-	ptrData += sizeof(sck->tcb.kernelMode);
-	ptrByte = (Byte*) &sck->tcb.csLenght;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
-	ptrData += sizeof(sck->tcb.csLenght);
-	ptrByte = (Byte*) &sck->status;
-	memcpy(ptrData, ptrByte, sizeof(sck->status));
+	ptrData += sizeof(sck->id);
+
 	ptrByte = (Byte*) &sck->action;
-	ptrData += sizeof(sck->action);
 	memcpy(ptrData, ptrByte, sizeof(sck->action));
-	ptrByte = (Byte*) &sck->logLen;
-	ptrData += sizeof(sck->logLen);
-	memcpy(ptrData, ptrByte, sizeof(sck->logLen));
-	ptrByte = (Byte*) sck->log;
-	ptrData += sck->logLen;
-	memcpy(ptrData, ptrByte, sck->logLen);
+	ptrData += sizeof(sck->action);
+
+	switch(sck->action) {
+		case ine NEXT_TCB:
+			ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+			break;		
+		case FIRST_TCB: break;
+		case INTE:
+		ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+
+			ptrByte = (Byte*) &sck->address;
+			memcpy(ptrData, ptrByte, sizeof(sck->address));
+			ptrData += sizeof(sck->address);
+			break;
+		case STD_INPUT:
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+
+			ptrByte = (Byte*) &sck->inputType;
+			memcpy(ptrData, ptrByte, sizeof(sck->inputType));
+			ptrData += sizeof(sck->inputType);
+			break;
+		case STD_OUTPUT:
+			ptrByte = (Byte*) &sck->logLen;
+			memcpy(ptrData, ptrByte, sizeof(sck->logLen));
+			ptrData += sizeof(sck->logLen);
+
+			ptrByte = (Byte*) sck->log;
+			memcpy(ptrData, ptrByte, sck->logLen);
+			ptrData += sck->logLen;
+
+			ptrByte = (Byte*) &sck->tcb->pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb->pid));
+			ptrData += sizeof(sck->tcb->pid);
+			break;
+		case NEW_THREAD:
+			ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+			break;		
+		case JOIN_THREADS:
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+
+			ptrByte = (Byte*) &sck->tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tid));
+			ptrData += sizeof(sck->tid);
+			break;
+		case BLOCK_THREAD:
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+
+			ptrByte = (Byte*) &sck->resource;
+			memcpy(ptrData, ptrByte, sizeof(sck->resource));
+			ptrData += sizeof(sck->resource);
+			break;
+		case WAKE_THREAD:
+			ptrByte = (Byte*) &sck->resource;
+			memcpy(ptrData, ptrByte, sizeof(sck->resource));
+			ptrData += sizeof(sck->resource);
+			break;
+		case default: break;
+	}
+	
 	t_bitarray* barray = bitarray_create((char*) data, size);
+	
 	return barray;
 
 }
@@ -329,53 +506,154 @@ StrCpuMsp* unserializeCpuMsp(Stream data) {
 
 StrCpuKer* unserializeCpuKer(Stream data) {
 	Stream ptrByte = data;
-	Char id;
-	Tcb tcb;
-	Char status;
-	Char action;
+	Char id, inputType, resource, action;
+	Int32U address, tid; 
 	Int16U logLen;
+	Tcb tcb;
 	String log;
+
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
-	memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
-	ptrByte += sizeof(tcb.A);
-	memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
-	ptrByte += sizeof(tcb.B);
-	memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
-	ptrByte += sizeof(tcb.C);
-	memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
-	ptrByte += sizeof(tcb.D);
-	memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
-	ptrByte += sizeof(tcb.E);
-	memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
-	ptrByte += sizeof(tcb.F);
-	memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
-	ptrByte += sizeof(tcb.P);
-	memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
-	ptrByte += sizeof(tcb.M);
-	memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
-	ptrByte += sizeof(tcb.S);
-	memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
-	ptrByte += sizeof(tcb.X);
-	memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
-	ptrByte += sizeof(tcb.pid);
-	memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
-	ptrByte += sizeof(tcb.tid);
-	memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
-	ptrByte += sizeof(tcb.kernelMode);
-	memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
-	ptrByte += sizeof(tcb.csLenght);
+	
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
-	memcpy(&status, ptrByte, sizeof(status));
-	ptrByte += sizeof(status);
-	memcpy(&logLen, ptrByte, sizeof(logLen));
-	ptrByte += sizeof(logLen);
-	log = malloc(logLen);
-	memcpy(log, ptrByte, logLen);
-	ptrByte += logLen;
+
+	switch(sck->action) {
+		case ine NEXT_TCB:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			break;		
+		case FIRST_TCB: break;
+		case INTE:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
+			break;
+		case STD_INPUT:
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+
+			memcpy(&inputType, ptrByte, sizeof(inputType));
+			ptrByte += sizeof(inputType);
+			break;
+		case STD_OUTPUT:
+			memcpy(&logLen, ptrByte, sizeof(logLen));
+			ptrByte += sizeof(logLen);
+			
+			log = malloc(logLen);
+			memcpy(log, ptrByte, logLen);
+			ptrByte += logLen;
+
+			memcpy(tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			break;
+		case NEW_THREAD:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			break;		
+		case JOIN_THREADS:
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+
+			memcpy(&tid, ptrByte, sizeof(tid));
+			ptrByte += sizeof(tid);
+			break;
+		case BLOCK_THREAD:
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+
+			memcpy(&resource, ptrByte, sizeof(sck->resource));
+			ptrByte += sizeof(sck->resource);
+			break;
+		case WAKE_THREAD:
+			memcpy(&resource, ptrByte, sizeof(sck->resource));
+			break;
+		case default: break;
+	}
+	
 	free(data);
-	StrCpuKer* sck = newStrCpuKer(id, log, tcb, status, action, logLen);
+	StrCpuKer* sck = newStrCpuKer(id, tcb, action, 
+								  logLen, log, address,
+								  tid, inputType, resource);
 	return sck;
 }
 
@@ -523,14 +801,25 @@ StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	return skc;
 }
 
-StrCpuKer* newStrCpuKer(Char id, String log, Tcb tcb, Char status, Char action, Int16U logLen) {
+StrCpuKer* newStrCpuKer(Char id,
+						Tcb tcb,
+						Char action,
+						Int16U logLen,
+						String log,
+						Int32U address, //interruption
+						Int32U tid, // join
+						Char inputType,
+						Char resource) {
+
 	StrCpuKer* sck = malloc(sizeof(StrCpuKer));
 	sck->id = id;
 	sck->log = log;
 	sck->tcb = tcb;
-	sck->status = status;
 	sck->action = action;
 	sck->logLen = logLen;
+	sck->inputType = inputType;
+	sck->resource = resource;
+	sck->tid = tid;
 	return sck;
 }
 
@@ -580,6 +869,94 @@ StrKerCon* newStrKerCon(Int32U logLen, Byte *log) {
 	skc->log = log;
 	return skc;
 }
+
+
+//==============================================//
+/**
+ * Sizes
+ */
+
+ Int16u getSizeStrCpuKer(StreamCpuKernel* sck) {
+ 	Int16u size = 0;
+	size += sizeof(sck->id); 
+	size += sizeof(sck->action);
+ 	switch(sck->action) {
+		case NEXT_TCB:
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid); 
+			break;
+		case FIRST_TCB: 
+		break;
+		case INTE:
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid);
+			size += sizeof(sck->address); 
+			break;
+		case STD_INPUT: 
+			size += sizeof(sck->inputType);
+			size += sizeof(sck->tcb.pid);
+			break;
+		case STD_OUTPUT: 
+			size += sizeof(sck->logLen);
+			size += sck->logLen;
+			size += sizeof(sck->tcb.pid);
+			break;
+		case NEW_THREAD: 
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid);
+			break;
+		case JOIN_THREADS:
+			size += sizeof(sck->tcb.tid);
+			size += sizeof(sck->tid);
+			break;
+		case BLOCK_THREAD: 
+			size += sizeof(sck->tcb.tid);
+			sizee += sizeof(sck->resource);
+			break;
+		case WAKE_THREAD:
+			sizee += sizeof(sck->resource); 
+			break;
+		default: break;
+
+		return size;
+	}
+ }
 
 //==============================================//
 /**

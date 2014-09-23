@@ -22,6 +22,13 @@
   */
  #define NEXT_TCB 0
  #define FIRST_TCB 1
+ #define INTE 2
+ #define STD_INPUT 3
+ #define STD_OUTPUT 4
+ #define NEW_THREAD 5
+ #define JOIN_THREADS 6
+ #define BLOCK_THREAD 7
+ #define WAKE_THREAD 8
 
  //============================================================
  /**
@@ -57,10 +64,13 @@ typedef struct strKerCpu { //size 51
 typedef struct strCpuKer { //size 192
 	Char id;
 	Tcb tcb;
-	Char status;
 	Char action;
 	Int16U logLen;
 	String log;
+	Int32U address; //interruption
+	Int32U tid; // join
+	Char inputType;
+	Char resource;
 } StrCpuKer;
 
 typedef struct strCpuMsp {
