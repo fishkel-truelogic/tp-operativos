@@ -91,7 +91,7 @@ void funcDECR(Int32S*);
  * Compara si el primer registro es igual al segundo. De ser verdadero, se almacena el valor 1. De lo
  * contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCOMP(Int32S*, Int32S*); [Registro], [Registro]
+void funcCOMP(Int32S*, Int32S*); // [Registro], [Registro]
 
 /**
  * Compara si el primer registro es mayor o igual al segundo. De ser verdadero, se almacena el
