@@ -5,11 +5,13 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <src/fereTcb.h>
 #include <src/fereTypes.h>
 #include <src/fereSockets.h>
 #include <src/fereStream.h>
 #include <src/commons/bitarray.h>
+#include "instructions.h"
 
 //==========================================//
 /**
@@ -49,6 +51,9 @@ Int16U sleepInMillis = 0;
 // Current Tcb
 Tcb* currentTcb = NULL;
 
+//instruction dictionary
+t_dictionary* instructionOperators = NULL;
+
 //=========================================//
 
 /**
@@ -58,10 +63,13 @@ Boolean socketConnection();
 Boolean getNextTcb();
 Boolean processTcb();
 Boolean loadConfig();
+Boolean mspRequest();
+Instruction* getInstruction();
+Int32S setRegisterOperator(Byte*)
 
 int main() {
 	// Cargo las variables de configuracion y me conecto al kernel y msp
-	if (loadConfig() && socketConnection()) {
+	if (loadInstructionDictionary() && loadConfig() && socketConnection()) {
 		while(TRUE) {
 			// devuelvo el tcb procesado y obtengo uno nuevo del kernel
 			if(!getNextTcb()) {
@@ -173,7 +181,7 @@ Boolean processTcb() {
 }
 
 /**
- *
+ * Carga las variables de configuracion externa
  */
 Boolean loadConfig() {
 
@@ -236,4 +244,116 @@ Boolean loadConfig() {
 		printf("El archivo config.txt no tiene todos los campos.\n");
 		return FALSE;
 	}
+}
+
+/**
+ *	Le pide la siguente instruccion BESO a la MSP segun el registro P del TCB
+ *  Parsea los primeros 4 bytes del stream para saber que instruccion es y determina que parametros recibe
+ * 	Completa la instruccion
+ */
+Instruction* getInstruction() {
+	Int8U i, operatorsTotal;
+	String instructionName = malloc(sizeof(Char) * 4);
+	Instruction instruction = malloc(sizeof(instruction));
+	if (mspRequest()) {
+		Byte* ptrData = smc->data;
+		for (i = 0; i < 4; i++) {
+			memcpy(instructionName, ptrData, sizeof(Char));
+			ptrData++;
+		}
+
+		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
+		if(operatorsTotal > 0) {
+			if (operatorIsRegister(instructionName, 0)) {
+				&instruction->op1 = setRegisterOperator(ptrData);
+			} else { //si no es un registro entonces es un numero o una direccion
+				memcpy(&instruction->op1, ptrData, sizeof(instruction->op1));
+				data += 4;
+			}
+		}
+		if(operatorsTotal > 1) {
+			if (operatorIsRegister(instructionName, 1)) {
+				&instruction->op2 = setRegisterOperator(ptrData);
+			} else { //si no es un registro entonces es un numero o una direccion
+				memcpy(&instruction->op2, ptrData, sizeof(instruction->op2));
+				data += 4;
+			}
+		}
+		if(operatorsTotal > 2) {
+			if (operatorIsRegister(instructionName, 2)) {
+				&instruction->op3 = setRegisterOperator(ptrData);
+			} else { //si no es un registro entonces es un numero o una direccion
+				memcpy(&instruction->op3, ptrData, sizeof(instruction->op3));
+			}
+		}
+		free(data);
+		return instruction;
+	}
+	return NULL;
+}
+/**
+ *  Obtiene una nuevo instruccion para ejecutar de la MSP
+ * 
+ *	Funciones de sockets.h utilizadas:
+ *	=================================
+ *	SocketBuffer *socketReceive(Socket *emisor);
+ *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
+ **/
+Boolean mspRequest() {
+int i;
+	if (scm != NULL) {
+		free(scm);
+	}
+	Char id = CPU_ID; 
+	Int32U address = currentTcb->P;
+	Char action = NEXT_INSTRUCTION;
+	Int16U dataLen = 0;
+	Byte* data = NULL;
+	Char, Int32U, Char, Byte*, Int16U
+	scm = newStrCpuMsp(id, address, action, data, dataLen);
+
+	//Serializo y armo el socketBuffer
+	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
+	t_bitarray* barray = serializeCpuKer(scm);
+	Byte* ptrByte = (Byte*) barray->bitarray;
+	for (i = 0; i < barray->size, i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+
+	//Envio el socketBuffer
+	if(socketSend(mspClient->ptrSocketServer, sb)) {
+		printf("No se pudo enviar el Stream a la MSP. \n");
+		return FALSE;
+	}
+	free(sb);
+
+	// Recibo la respuesta de la msp y deserializo
+	if (sb = socketReceive(mspClient->ptrSocket) == NULL) {
+		printf("No se pudo recibir el Stream de la MSP. \n");
+		return FALSE;
+	}
+
+	smc = unserializeKerCpu((Stream) sb->data);
+
+	return TRUE;
+}
+
+Int32S setRegisterOperator(Byte* data) {
+	if ((Char) *ptrData == 'A') {
+		return currentTcb->A;
+	} else if ((Char) *ptrData == 'B') {
+		return currentTcb->B;
+	} else if ((Char) *ptrData == 'C') {
+		return currentTcb->C;
+	} else if ((Char) *ptrData == 'D') {
+		return currentTcb->D;
+	} else if ((Char) *ptrData == 'E') {
+		return currentTcb->E;
+	} else if ((Char) *ptrData == 'F') {
+		return currentTcb->F;
+	}
+	data++;
+
 }

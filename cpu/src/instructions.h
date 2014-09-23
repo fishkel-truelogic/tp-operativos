@@ -10,16 +10,25 @@
 //=================================================================	
 // DEPENDENCIES
 //=================================================================
-#include "fereTypes.h"
+#include <src/commons/collections/dictionary.h>	
+#include <src/fereTypes.h>
 //=================================================================
 
 //=================================================================
 //TIPOS DE DATOS
 //=================================================================
 typedef struct instruction {
-	Int32U instruction;
+	String instructionName;
 	Int32S op1, op2, op3;
 } Instruction;
+
+typedef struct intructionOperators {
+	Char[3] op;
+} InstructionOperators;
+
+Boolean loadInstructionDictionary(t_dictionary*);
+Int8U getInstructionOperatorsTotal(t_dictionary*, String);
+Boolean operatorIsRegister(t_dictionary*, String name, index);
 
 //=================================================================
 //FUNCIONES DE LAS INSTRUCCIONES BESO

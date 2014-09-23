@@ -29,6 +29,7 @@
  #define JOIN_THREADS 6
  #define BLOCK_THREAD 7
  #define WAKE_THREAD 8
+ #define NEXT_INSTRUCTION 9
 
  //============================================================
  /**
