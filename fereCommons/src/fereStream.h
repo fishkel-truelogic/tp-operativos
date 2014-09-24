@@ -54,7 +54,7 @@
 
 typedef Byte* Stream;
 
-typedef struct strConKer { //done
+typedef struct strConKer { 
 	Char id;
 	Char action;
 	Byte* fileContent;
@@ -63,12 +63,12 @@ typedef struct strConKer { //done
 	Int16U bufferWriterLen;
 } StrConKer;
 
-typedef struct strKerCpu { //done
+typedef struct strKerCpu { 
 	Tcb tcb;
 	Int8U quantum;
 } StrKerCpu;
 
-typedef struct strCpuKer { //done
+typedef struct strCpuKer { 
 	Char id;
 	Tcb tcb;
 	Char action;
@@ -80,7 +80,7 @@ typedef struct strCpuKer { //done
 	Char resource;
 } StrCpuKer;
 
-typedef struct strCpuMsp { //done
+typedef struct strCpuMsp { 
 	Char id;
 	Int32U address;
 	Char action;
@@ -89,31 +89,31 @@ typedef struct strCpuMsp { //done
 	Int32U pid;
 } StrCpuMsp;
 
-typedef struct strKerMsp {
+typedef struct strKerMsp { 
 	Char id;
 	Char action;
-	Int16U dataLength;
 	Byte *data;
 	Int16U size;
 	Int32U pid;
 	Int32U address;
 } StrKerMsp;
 
-typedef struct strMspKer {
+typedef struct strMspKer { 
 	Char id;
 	Char action;
 	Int32U address;
-	Int16U size;
 } StrMspKer;
 
-typedef struct strMspCpu { //done
+typedef struct strMspCpu {
 	Char action;
 	Int16U dataLen;
 	Byte * data;
 } StrMspCpu;
 
 
-typedef struct strKerCon { 
+typedef struct strKerCon {
+	Char action;
+	Char inputType; 
 	Int32U logLen;
 	Byte *log;
 } StrKerCon;
@@ -126,15 +126,15 @@ typedef struct strKerCon {
 StrConKer* newStrConKer(Char, Byte*, String, Char, Int16U, Int16U);
 
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte*, Int16U, Int32U);
-StrCpuKer* newStrCpuKer(Char, String, Tcb, Char, Char, Int16U);
+StrCpuKer* newStrCpuKer(Char, Tcb, Char, Int16U, String, Int32U, Int32U, Char, Char);
 
 StrKerCpu* newStrKerCpu(Tcb, Int8U);
-StrKerMsp* newStrKerMsp(Char, Int16U, Byte*,Char , Int16U ,Int32U , Int32U );
+StrKerMsp* newStrKerMsp(Char, Byte*, Char, Int16U, Int32U, Int32U);
+StrKerCon* newStrKerCon(Int32U, Byte*, Char, Char);
 
-StrMspCpu* newStrMspCpu(Int16U, Byte *, Char);
-StrMspKer* newStrMspKer(Char, Int32U, Char, Int16U);
+StrMspCpu* newStrMspCpu(Int16U, Byte*, Char);
+StrMspKer* newStrMspKer(Char, Int32U, Char);
 
-StrKerCon* newStrKerCon(Int32U, Byte*);
 
 //==============================================//
 /**
@@ -177,7 +177,14 @@ StrKerCpu* unserializeKerCpu(Stream);
  * Sizes
  */
 Int16U getSizeStrCpuKer(StrCpuKer* sck);
+Int16U getSizeStrCpuMsp(StrCpuMsp* scm);
+
 Int16U getSizeStrConKer(StrConKer* sck);
+
+Int16U getSizeStrMspCpu(StrMspCpu* smp);
+
+Int16U getSizeStrKerMsp(StrKerMsp* skm);
+Int16U getSizeStrKerCon(StrKerCon* skc);
 
 //==============================================//
 /**
