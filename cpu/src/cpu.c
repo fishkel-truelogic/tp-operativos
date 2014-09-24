@@ -126,10 +126,9 @@ Boolean getNextTcb() {
 		Char id = CPU_ID; 
 		String log "\0"; 
 		Tcb tcb = newEmptyTcb(); 
-		Char status = FIRST_TCB, 
 		Char action = FIRST_TCB,
 		Int16U logLen = 0;
-		sck = newStrCpuKer(id, log, tcb, status, action, logLen);
+		sck = newStrCpuKer(id, log, tcb, action, logLen);
 	}
 	//Serializo y armo el socketBuffer
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
@@ -142,7 +141,7 @@ Boolean getNextTcb() {
 	sb->size = barray->size;
 
 	//Envio el socketBuffer
-	if(socketSend(kernelClient->ptrSocketServer, sb)) {
+	if(!socketSend(kernelClient->ptrSocketServer, sb)) {
 		printf("No se pudo enviar el Stream a kernel. \n");
 		return FALSE;
 	}
@@ -327,7 +326,7 @@ int i;
 	sb->size = barray->size;
 
 	//Envio el socketBuffer
-	if(socketSend(mspClient->ptrSocketServer, sb)) {
+	if(!socketSend(mspClient->ptrSocketServer, sb)) {
 		printf("No se pudo enviar el Stream a la MSP. \n");
 		return FALSE;
 	}
@@ -339,7 +338,7 @@ int i;
 		return FALSE;
 	}
 
-	smc = unserializeKerCpu((Stream) sb->data);
+	smc = unserializeMspCpu((Stream) sb->data);
 
 	return TRUE;
 }

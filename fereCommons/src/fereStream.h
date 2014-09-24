@@ -20,16 +20,17 @@
  /**
   * Actions
   */
- #define NEXT_TCB 0
- #define FIRST_TCB 1
- #define INTE 2
- #define STD_INPUT 3
- #define STD_OUTPUT 4
- #define NEW_THREAD 5
- #define JOIN_THREADS 6
- #define BLOCK_THREAD 7
- #define WAKE_THREAD 8
- #define NEXT_INSTRUCTION 9
+ #define NEXT_TCB 0          // cpu a kernel para siguiente TCB ready
+ #define FIRST_TCB 1         // cpu a kernel para que le de el primer TCB
+ #define INTE 2              // llamada a una interrupcion
+ #define STD_INPUT 3         // cpu a kernel, kernel a consola y consola a kernel para ingreso por teclado
+ #define STD_OUTPUT 4        // cpu a kernel y kernel a consola para logueo
+ #define NEW_THREAD 5        // syscall para crear nuevo thread
+ #define JOIN_THREADS 6      // syscall para bloquear proceso hasta que termine su fork
+ #define BLOCK_THREAD 7      // syscall para bloquear thread
+ #define WAKE_THREAD 8       // syscall para despertar thread bloqueado
+ #define NEXT_INSTRUCTION 9  // cpu le pide instruccion a la msp
+ #define BESO_FILE 10        // cuando la consola le manda el contenido del archivo BESO
 
  //============================================================
  /**
@@ -50,11 +51,11 @@ typedef Byte* Stream;
 
 typedef struct strConKer { //size 1+4096+20+1
 	Char id;
+	Char action;
 	Byte* fileContent;
 	Int16U fileContentLen;
 	String bufferWriter;
 	Int16U bufferWriterLen;
-	Char action;
 } StrConKer;
 
 typedef struct strKerCpu { //size 51

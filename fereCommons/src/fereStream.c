@@ -20,7 +20,7 @@
  */
 
 t_bitarray* serializeCpuKer(StrCpuKer* sck) {
-	Int8U size = getSizeStrCpuKer(sck);
+	Int16U size = getSizeStrCpuKer(sck);
 	
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -34,8 +34,8 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 	memcpy(ptrData, ptrByte, sizeof(sck->action));
 	ptrData += sizeof(sck->action);
 
-	switch(sck->action) {
-		case ine NEXT_TCB:
+	switch (sck->action) {
+		case NEXT_TCB:
 			ptrByte = (Byte*) &sck->tcb.A;
 			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
 			ptrData += sizeof(sck->tcb.A);
@@ -266,7 +266,8 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 }
 
 t_bitarray* serializeMspCpu(StrMspCpu* smp) {
-	Int16U size = sizeof(smp->size) + smp->size * sizeof(Byte) + sizeof(smp->status);
+	Int16U size = getSizeStrCpuKer(sck);
+	sizeof(smp->size) + smp->size * sizeof(Byte) + sizeof(smp->status);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 	Byte* ptrByte = (Byte*)&smp->size;
@@ -415,32 +416,43 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 
 
 t_bitarray* serializeConKer(StrConKer* sconk) {
-	Int8U size = sconk->bufferWriterLen
-			+ sconk->fileContentLen
-			+ sizeof(sconk->action)
-			+ sizeof(sconk->id)
-			+ sizeof(sconk->fileContentLen)
-			+ sizeof(sconk->bufferWriterLen);
+	Int8U size = getSizeStrConKer(sconk);
 	Stream data = malloc(size);
 	Stream ptrData = data;
+
 	Byte* ptrByte = (Byte*) &sconk->id;
 	memcpy(ptrData, ptrByte, sizeof(sconk->id));
 	ptrData += sizeof(sconk->id);
-	ptrByte = (Byte*) &sconk->fileContentLen;
-	memcpy(ptrData, ptrByte, sizeof(sconk->fileContentLen));
-	ptrData += sizeof(sconk->fileContentLen);
-	ptrByte = (Byte*) sconk->fileContent;
-	memcpy(ptrData, ptrByte, sconk->fileContentLen);
-	ptrData += sconk->fileContentLen;
-	ptrByte = (Byte*) &sconk->bufferWriterLen;
-	memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriterLen));
-	ptrData += sizeof(sconk->bufferWriterLen);
-	ptrByte = (Byte*) sconk->bufferWriter;
-	memcpy(ptrData, ptrByte, sconk->bufferWriterLen);
-	ptrData += sconk->bufferWriterLen;
+	
 	ptrByte = (Byte*) &sconk->action;
 	memcpy(ptrData, ptrByte, sizeof(sconk->action));
 	ptrData += sizeof(sconk->action);
+	
+	switch (sconk->action) {
+		case STD_INPUT: 
+
+			ptrByte = (Byte*) &sconk->fileContentLen;
+			memcpy(ptrData, ptrByte, sizeof(sconk->fileContentLen));
+			ptrData += sizeof(sconk->fileContentLen);
+
+			ptrByte = (Byte*) sconk->fileContent;
+			memcpy(ptrData, ptrByte, sconk->fileContentLen);
+			ptrData += sconk->fileContentLen;
+
+			break;
+		case BESO_FILE: 
+			
+			ptrByte = (Byte*) &sconk->bufferWriterLen;
+			memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriterLen));
+			ptrData += sizeof(sconk->bufferWriterLen);
+			
+			ptrByte = (Byte*) sconk->bufferWriter;
+			memcpy(ptrData, ptrByte, sconk->bufferWriterLen);
+			ptrData += sconk->bufferWriterLen;
+
+			break;
+		default: break;
+	}
 	t_bitarray* barray = bitarray_create((char*)data, size);
 	return barray;
 }
@@ -518,7 +530,7 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch(sck->action) {
+	switch (sck->action) {
 		case ine NEXT_TCB:
 			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
 			ptrByte += sizeof(tcb.A);
@@ -698,24 +710,39 @@ StrKerCpu* unserializeKerCpu(Stream data) {
 StrConKer* unserializeConKer(Stream data) {
 	Stream ptrByte = data;
 	Char id;
-	Byte* fileContent=NULL;
-	Int16U fileContentLen, bufferWriterLen;
-	String bufferWriter=NULL;
 	Char action;
+	Byte* fileContent = NULL;
+	Int16U fileContentLen, bufferWriterLen;
+	String bufferWriter = NULL;
+
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
-	memcpy(&fileContentLen, ptrByte, sizeof(fileContentLen));
-	ptrByte += sizeof(fileContentLen);
-	fileContent = malloc(fileContentLen);
-	memcpy(fileContent, ptrByte, fileContentLen);
-	ptrByte += fileContentLen;
-	memcpy(&bufferWriterLen, ptrByte, sizeof(bufferWriterLen));
-	ptrByte += sizeof(bufferWriterLen);
-	bufferWriter = malloc(bufferWriterLen);
-	memcpy(bufferWriter, ptrByte, bufferWriterLen);
-	ptrByte += bufferWriterLen;
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
+	
+	switch (action) {
+		case STD_INPUT:
+			
+			memcpy(&fileContentLen, ptrByte, sizeof(fileContentLen));
+			ptrByte += sizeof(fileContentLen);
+
+			fileContent = malloc(fileContentLen);
+			memcpy(fileContent, ptrByte, fileContentLen);
+			ptrByte += fileContentLen;
+			
+			break;
+		case BESO_FILE:
+		
+			memcpy(&bufferWriterLen, ptrByte, sizeof(bufferWriterLen));
+			ptrByte += sizeof(bufferWriterLen);
+
+			bufferWriter = malloc(bufferWriterLen);
+			memcpy(bufferWriter, ptrByte, bufferWriterLen);
+			ptrByte += bufferWriterLen;
+
+			break;
+		default: break; 
+	}
 	free(data);
 	return newStrConKer(id, fileContent, bufferWriter, action, bufferWriterLen, fileContentLen);
 }
@@ -876,11 +903,11 @@ StrKerCon* newStrKerCon(Int32U logLen, Byte *log) {
  * Sizes
  */
 
- Int16u getSizeStrCpuKer(StreamCpuKernel* sck) {
- 	Int16u size = 0;
+ Int16U getSizeStrCpuKer(StreamCpuKernel* sck) {
+ 	Int16U size = 0;
 	size += sizeof(sck->id); 
 	size += sizeof(sck->action);
- 	switch(sck->action) {
+ 	switch (sck->action) {
 		case NEXT_TCB:
 			size += sizeof(sck->tcb.A);
 			size += sizeof(sck->tcb.B);
@@ -956,6 +983,25 @@ StrKerCon* newStrKerCon(Int32U logLen, Byte *log) {
 
 		return size;
 	}
+ }
+
+ Int16U getSizeStrConKer(StrConKer* sck) {
+ 	Int16U size = 0;
+ 	Int16U size = 0;
+	size += sizeof(sck->id); 
+	size += sizeof(sck->action);
+ 	switch (sck->action) {
+ 		case STD_INPUT: 
+ 			size += sizeof(sck->bufferWriterLen);
+ 			size += sck->bufferWriterLen;
+ 			break;
+ 		case BESO_FILE: 
+ 			size += sizeof(sck->fileContentLen);
+ 			size += sck->fileContentLen;
+ 			break;
+ 		default: break;
+ 	}
+ 	return size;
  }
 
 //==============================================//
