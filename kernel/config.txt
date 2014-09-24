@@ -1,0 +1,6 @@
+PUERTO=8870
+IP_MSP=192.168.1.104
+PUERTO_MSP=54321
+QUANTUM=4
+SYSCALLS=/home/utnso/repos/tp-2014-2c-fere-rules/kernel/syscalls.bc
+STACK=1024
