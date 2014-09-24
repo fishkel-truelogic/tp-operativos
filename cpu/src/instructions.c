@@ -23,12 +23,12 @@
 //=================================================================
 
 Boolean loadInstructionDictionary(t_dictionary* instructionsOperators) {
-	InstructionOperators* iop = malloc(sizeof(InstructionOperators));
-	iop->op[0] = REGISTER;
-	iop->op[1] = REGISTER;
-	iop->op[2] = NONE;
-	iop->func = funcMOVR;
-	dictionary_put(instructionsOperators, "MOVR", iop);
+	InstructionOperators* iopMOVR = malloc(sizeof(InstructionOperators));
+	iopMOVR->op[0] = REGISTER;
+	iopMOVR->op[1] = REGISTER;
+	iopMOVR->op[2] = NONE;
+	iopMOVR->func = funcMOVR;
+	dictionary_put(instructionsOperators, "MOVR", iopMOVR);
 	//TODO repetir para cada una de las instrucciones
 	return TRUE;
 }
