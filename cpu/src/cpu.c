@@ -63,9 +63,10 @@ Boolean socketConnection();
 Boolean getNextTcb();
 Boolean processTcb();
 Boolean loadConfig();
+void execute(Int8U*, Instruction*);
 Boolean mspRequest();
 Instruction* getInstruction();
-Int32S setRegisterOperator(Byte*)
+void* setRegisterOperator(Byte*)
 
 int main() {
 	// Cargo las variables de configuracion y me conecto al kernel y msp
@@ -163,12 +164,14 @@ Boolean getNextTcb() {
  */
 Boolean processTcb() {
 	Instruction* instruction;
+	Int8U action;
 	Int8U quantum = skc->quantum;
 	while (tcb->kernelMode || quantum > 0) {
 		if (instruction = getInstruction() == NULL) {
 			return FALSE;
 		}
-		switch (execute(instruction)) {
+		execute(&action, instruction);
+		switch (action) {
 			case FATAL_ERROR: return FALSE;
 			case SYS_CALL: break;//TODO syscall impl;
 			case SEG_FAULT: break; // TODO impl segmentation fault case;
@@ -261,6 +264,7 @@ Instruction* getInstruction() {
 			memcpy(instructionName, ptrData, sizeof(Char));
 			ptrData++;
 		}
+		instruction->name = instructionName;
 
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
 		if(operatorsTotal > 0) {
@@ -339,21 +343,33 @@ int i;
 
 	return TRUE;
 }
-
-Int32S setRegisterOperator(Byte* data) {
+ 
+ /**
+  * Se fija cual es el registro que vino como parametro en la instruccion y lo devuelve
+  * luego incrementa el valor del puntero a la instruccion BESO 
+  */
+void* setRegisterOperator(Byte* data) {
 	if ((Char) *ptrData == 'A') {
-		return currentTcb->A;
+		return &currentTcb->A;
 	} else if ((Char) *ptrData == 'B') {
-		return currentTcb->B;
+		return &currentTcb->B;
 	} else if ((Char) *ptrData == 'C') {
-		return currentTcb->C;
+		return &currentTcb->C;
 	} else if ((Char) *ptrData == 'D') {
-		return currentTcb->D;
+		return &currentTcb->D;
 	} else if ((Char) *ptrData == 'E') {
-		return currentTcb->E;
+		return &currentTcb->E;
 	} else if ((Char) *ptrData == 'F') {
-		return currentTcb->F;
+		return &currentTcb->F;
 	}
 	data++;
 
+}
+
+/**
+ * Ejecuta la funcion correspondiente segun el nombre de la instruccion
+ **/
+void execute(Int8U* action, Instruction* instruction) {
+	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
+	iop->func(action, instruction->op1, instruction->op2, instruction->op3);
 }

@@ -27,6 +27,7 @@ Boolean loadInstructionDictionary(t_dictionary* instructionsOperators) {
 	iop->op[0] = REGISTER;
 	iop->op[1] = REGISTER;
 	iop->op[2] = NONE;
+	iop->func = funcMOVR;
 	dictionary_put(instructionsOperators, "MOVR", iop);
 	//TODO repetir para cada una de las instrucciones
 	return TRUE;
