@@ -101,8 +101,8 @@ typedef struct strKerMsp {
 
 typedef struct strMspKer {
 	Char id;
+	Char action;
 	Int32U address;
-	Char status;
 	Int16U size;
 } StrMspKer;
 
