@@ -28,6 +28,7 @@
 #define KERNEL_PORT "KERNEL_PORT"
 #define KERNEL_IP "KERNEL_IP"
 #define PARAM_LENGTH 2
+#define ESO_CONFIG "ESO_CONFIG"
 
 //==========================================//
 //******************************************//
@@ -119,7 +120,12 @@ Boolean socketConnection() {
  * Carga las variables de configuracion externa
  */
 Boolean loadConfig() {
-	String configFilePath; //TODO obtener path de la bariable de entorno ESO_CONFIG
+	String configFilePath = getenv(ESO_CONFIG);
+
+	if (configFilePath == NULL) {
+		printf("ERROR: no se pudo leer la variable de entorno '%s'.\n", ESO_CONFIG);
+		return FALSE;
+	}
 	
 	//Gennero tabla de configuracion
 	t_config* tConfig = config_create(configFilePath);
