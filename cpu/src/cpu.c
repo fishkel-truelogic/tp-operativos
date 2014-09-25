@@ -11,6 +11,7 @@
 #include <src/fereSockets.h>
 #include <src/fereStream.h>
 #include <src/commons/bitarray.h>
+#include <src/commons/config.h>
 #include "instructions.h"
 
 //==========================================//
@@ -66,11 +67,11 @@ Boolean loadConfig();
 void execute(Int8U*, Instruction*);
 Boolean mspRequest();
 Instruction* getInstruction();
-void* setRegisterOperator(Byte*)
+void* setRegisterOperator(Byte*);
 
 int main() {
 	// Cargo las variables de configuracion y me conecto al kernel y msp
-	if (loadInstructionDictionary() && loadConfig() && socketConnection()) {
+	if (loadInstructionDictionary(instructionOperators) && loadConfig() && socketConnection()) {
 		while(TRUE) {
 			// devuelvo el tcb procesado y obtengo uno nuevo del kernel
 			if(!getNextTcb()) {
@@ -98,14 +99,14 @@ Boolean socketConnection() {
 
 	//Creo socket cliente para kernel y me conecto con la ip y el puerto
 	kernelClient = socketCreateClient();
-	if (!scoketConnect(kernelClient->ptrSocket, kernelIp, kernelPort)) {
+	if (!socketConnect(kernelClient, kernelIp, kernelPort)) {
 		printf("No se pudo conectar al kernel en la direccion %s puerto %d \n", kernelIp, kernelPort);
 		return FALSE;
 	}
 
 	//Creo socket cliente para msp y me conecto con la ip y el puerto
 	mspClient = socketCreateClient();
-	if (!scoketConnect(mspClient->ptrSocket, mspIp, mspPort)) {
+	if (!socketConnect(mspClient, mspIp, mspPort)) {
 		printf("No se pudo conectar a la msp en la direccion %s puerto %d \n", mspIp, mspPort);
 		return FALSE;
 	}
@@ -123,18 +124,14 @@ Boolean socketConnection() {
 Boolean getNextTcb() {
 	int i;
 	if (sck == NULL) {
-		Char id = CPU_ID; 
-		String log "\0"; 
-		Tcb tcb = newEmptyTcb(); 
-		Char action = FIRST_TCB,
-		Int16U logLen = 0;
-		sck = newStrCpuKer(id, log, tcb, action, logLen);
+		currentTcb = newEmptyTcb();
+		sck = newStrCpuKer(CPU_ID, *currentTcb, FIRST_TCB, 0, NULL, 0, 0, 0, 0);
 	}
 	//Serializo y armo el socketBuffer
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
 	t_bitarray* barray = serializeCpuKer(sck);
 	Byte* ptrByte = (Byte*) barray->bitarray;
-	for (i = 0; i < barray->size, i++) {
+	for (i = 0; i < barray->size; i++) {
 		sb->data[i] = *ptrByte;
 		ptrByte++;
 	}
@@ -148,7 +145,7 @@ Boolean getNextTcb() {
 	free(sb);
 
 	// Recibo la respuesta del kernel y deserializo
-	if (sb = socketReceive(kernelClient->ptrSocket) == NULL) {
+	if ((sb = socketReceive(kernelClient->ptrSocket)) == NULL) {
 		printf("No se pudo recibir el Stream del kernel. \n");
 		return FALSE;
 	}
@@ -165,16 +162,13 @@ Boolean processTcb() {
 	Instruction* instruction;
 	Int8U action;
 	Int8U quantum = skc->quantum;
-	while (tcb->kernelMode || quantum > 0) {
-		if (instruction = getInstruction() == NULL) {
+	while (currentTcb->kernelMode || quantum > 0) {
+		if ((instruction = getInstruction()) == NULL) {
 			return FALSE;
 		}
 		execute(&action, instruction);
 		switch (action) {
-			case FATAL_ERROR: return FALSE;
-			case SYS_CALL: break;//TODO syscall impl;
-			case SEG_FAULT: break; // TODO impl segmentation fault case;
-			case OK: quantum--; break;
+			// TODO action cases
 			default: break;
 		}
 	}
@@ -188,7 +182,7 @@ Boolean processTcb() {
 Boolean loadConfig() {
 
 	//Gennero tabla de configuracion
-	t_config * tConfig = config_create(CONFIG_FILE);
+	t_config* tConfig = config_create(CONFIG_FILE);
 	if (tConfig == NULL){
 		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
 		return FALSE;
@@ -256,7 +250,7 @@ Boolean loadConfig() {
 Instruction* getInstruction() {
 	Int8U i, operatorsTotal;
 	String instructionName = malloc(sizeof(Char) * 4);
-	Instruction instruction = malloc(sizeof(instruction));
+	Instruction* instruction = malloc(sizeof(instruction));
 	if (mspRequest()) {
 		Byte* ptrData = smc->data;
 		for (i = 0; i < 4; i++) {
@@ -267,29 +261,29 @@ Instruction* getInstruction() {
 
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
 		if(operatorsTotal > 0) {
-			if (operatorIsRegister(instructionName, 0)) {
-				&instruction->op1 = setRegisterOperator(ptrData);
+			if (operatorIsRegister(instructionOperators, instructionName, 0)) {
+				instruction->op1 = setRegisterOperator(ptrData);
 			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(&instruction->op1, ptrData, sizeof(instruction->op1));
-				data += 4;
+				memcpy(instruction->op1, ptrData, sizeof(instruction->op1));
+				ptrData += 4;
 			}
 		}
 		if(operatorsTotal > 1) {
-			if (operatorIsRegister(instructionName, 1)) {
-				&instruction->op2 = setRegisterOperator(ptrData);
+			if (operatorIsRegister(instructionOperators, instructionName, 1)) {
+				instruction->op2 = setRegisterOperator(ptrData);
 			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(&instruction->op2, ptrData, sizeof(instruction->op2));
-				data += 4;
+				memcpy(instruction->op2, ptrData, sizeof(instruction->op2));
+				ptrData += 4;
 			}
 		}
 		if(operatorsTotal > 2) {
-			if (operatorIsRegister(instructionName, 2)) {
-				&instruction->op3 = setRegisterOperator(ptrData);
+			if (operatorIsRegister(instructionOperators, instructionName, 2)) {
+				instruction->op3 = setRegisterOperator(ptrData);
 			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(&instruction->op3, ptrData, sizeof(instruction->op3));
+				memcpy(instruction->op3, ptrData, sizeof(instruction->op3));
 			}
 		}
-		free(data);
+		free(ptrData);
 		return instruction;
 	}
 	return NULL;
@@ -307,19 +301,13 @@ int i;
 	if (scm != NULL) {
 		free(scm);
 	}
-	Char id = CPU_ID; 
-	Int32U address = currentTcb->P;
-	Char action = NEXT_INSTRUCTION;
-	Int16U dataLen = 0;
-	Byte* data = NULL;
-	Char, Int32U, Char, Byte*, Int16U
-	scm = newStrCpuMsp(id, address, action, data, dataLen);
+	scm = newStrCpuMsp(CPU_ID, currentTcb->P, NEXT_INSTRUCTION, NULL, 0, currentTcb->pid);
 
 	//Serializo y armo el socketBuffer
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
-	t_bitarray* barray = serializeCpuKer(scm);
+	t_bitarray* barray = serializeCpuMsp(scm);
 	Byte* ptrByte = (Byte*) barray->bitarray;
-	for (i = 0; i < barray->size, i++) {
+	for (i = 0; i < barray->size; i++) {
 		sb->data[i] = *ptrByte;
 		ptrByte++;
 	}
@@ -333,7 +321,7 @@ int i;
 	free(sb);
 
 	// Recibo la respuesta de la msp y deserializo
-	if (sb = socketReceive(mspClient->ptrSocket) == NULL) {
+	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
 		printf("No se pudo recibir el Stream de la MSP. \n");
 		return FALSE;
 	}
@@ -347,21 +335,23 @@ int i;
   * Se fija cual es el registro que vino como parametro en la instruccion y lo devuelve
   * luego incrementa el valor del puntero a la instruccion BESO 
   */
-void* setRegisterOperator(Byte* data) {
+void* setRegisterOperator(Byte* ptrData) {
+	void* ptr = NULL;
 	if ((Char) *ptrData == 'A') {
-		return &currentTcb->A;
+		ptr = &currentTcb->A;
 	} else if ((Char) *ptrData == 'B') {
-		return &currentTcb->B;
+		ptr = &currentTcb->B;
 	} else if ((Char) *ptrData == 'C') {
-		return &currentTcb->C;
+		ptr = &currentTcb->C;
 	} else if ((Char) *ptrData == 'D') {
-		return &currentTcb->D;
+		ptr = &currentTcb->D;
 	} else if ((Char) *ptrData == 'E') {
-		return &currentTcb->E;
+		ptr = &currentTcb->E;
 	} else if ((Char) *ptrData == 'F') {
-		return &currentTcb->F;
+		ptr = &currentTcb->F;
 	}
-	data++;
+	ptrData++;
+	return ptr;
 
 }
 

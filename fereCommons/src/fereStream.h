@@ -13,6 +13,7 @@
  /**
   * Dependencies
   */
+#include "fereTcb.h"
 #include "fereTypes.h"
 #include "commons/bitarray.h"
 

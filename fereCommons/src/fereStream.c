@@ -26,7 +26,7 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 	Stream ptrData = data;
 	Byte* ptrByte;
 
-	ptrByte = (Byte*) &sck->id
+	ptrByte = (Byte*) &sck->id;
 	memcpy(ptrData, ptrByte, sizeof(sck->id));
 	ptrData += sizeof(sck->id);
 
@@ -172,9 +172,9 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 			memcpy(ptrData, ptrByte, sck->logLen);
 			ptrData += sck->logLen;
 
-			ptrByte = (Byte*) &sck->tcb->pid;
-			memcpy(ptrData, ptrByte, sizeof(sck->tcb->pid));
-			ptrData += sizeof(sck->tcb->pid);
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
 			break;
 		case NEW_THREAD:
 			ptrByte = (Byte*) &sck->tcb.A;
@@ -256,7 +256,7 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 			memcpy(ptrData, ptrByte, sizeof(sck->resource));
 			ptrData += sizeof(sck->resource);
 			break;
-		case default: break;
+		default: break;
 	}
 	
 	t_bitarray* barray = bitarray_create((char*) data, size);
@@ -386,6 +386,7 @@ t_bitarray* serializeCpuMsp(StrCpuMsp* scm) {
 			ptrByte = (Byte*) &scm->dataLen;
 			memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
 			ptrData += sizeof(scm->dataLen);	
+			break;
 		default: break;
 	}
 
@@ -532,11 +533,11 @@ t_bitarray* serializeKerCon(StrKerCon* skc) {
 
 	switch (skc->action) {
 		case STD_INPUT:
-			Byte* ptrByte = (Byte*) &skc->inputType;
+			ptrByte = (Byte*) &skc->inputType;
 			memcpy(ptrData, ptrByte, sizeof(skc->inputType));
 			break;
 		case STD_OUTPUT:
-			Byte* ptrByte = (Byte*) &skc->logLen;
+			ptrByte = (Byte*) &skc->logLen;
 			memcpy(ptrData, ptrByte, sizeof(skc->logLen));
 			ptrData += sizeof(skc->logLen);
 			ptrByte = skc->log;
@@ -558,7 +559,7 @@ t_bitarray* serializeKerCon(StrKerCon* skc) {
 StrMspCpu* unserializeMspCpu(Stream dataStream) {
 	Stream ptrByte = dataStream;
 	
-	Int32U dataLen;
+	Int16U dataLen;
 	Byte * data = NULL;
 	Char action;
 
@@ -579,7 +580,7 @@ StrMspCpu* unserializeMspCpu(Stream dataStream) {
 	}
 
 	free(dataStream);
-	return newStrMspCpu(size, data, action);
+	return newStrMspCpu(dataLen, data, action);
 }
 
 StrCpuMsp* unserializeCpuMsp(Stream data) {
@@ -640,8 +641,8 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch (sck->action) {
-		case ine NEXT_TCB:
+	switch (action) {
+		case NEXT_TCB:
 			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
 			ptrByte += sizeof(tcb.A);
 			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
@@ -719,7 +720,7 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 			memcpy(log, ptrByte, logLen);
 			ptrByte += logLen;
 
-			memcpy(tcb.pid, ptrByte, sizeof(tcb.pid));
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
 			ptrByte += sizeof(tcb.pid);
 			break;
 		case NEW_THREAD:
@@ -763,13 +764,13 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
 			ptrByte += sizeof(tcb.tid);
 
-			memcpy(&resource, ptrByte, sizeof(sck->resource));
-			ptrByte += sizeof(sck->resource);
+			memcpy(&resource, ptrByte, sizeof(resource));
+			ptrByte += sizeof(resource);
 			break;
 		case WAKE_THREAD:
-			memcpy(&resource, ptrByte, sizeof(sck->resource));
+			memcpy(&resource, ptrByte, sizeof(resource));
 			break;
-		case default: break;
+		default: break;
 	}
 	
 	free(data);
@@ -898,7 +899,7 @@ StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch (skm->action) {
+	switch (action) {
 		case CREATE_SEG: 
 			memcpy(&pid, ptrByte, sizeof(pid));
 			ptrByte += sizeof(pid);
@@ -944,7 +945,7 @@ StrKerCon* unserializeKerCon(Stream dataSerialized) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch (skc->action) {
+	switch (action) {
 		case STD_INPUT:
 			memcpy(&inputType, ptrByte, sizeof(inputType));
 			ptrByte += sizeof(inputType);		
@@ -969,13 +970,14 @@ StrKerCon* unserializeKerCon(Stream dataSerialized) {
  * Constructors
  */
 
-StrCpuMsp* newStrCpuMsp(Char id, Int32U address, Char action, Byte* data, Int16U dataLen) {
+StrCpuMsp* newStrCpuMsp(Char id, Int32U address, Char action, Byte* data, Int16U dataLen, Int32U pid) {
 	StrCpuMsp* scm = malloc(sizeof(StrCpuMsp));
 	scm->id = id;
 	scm->address = address;
 	scm->data = data;
 	scm->dataLen = dataLen;
 	scm->action = action;
+	scm->pid = pid;
 	return scm;
 }
 
@@ -1019,7 +1021,7 @@ StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char ac
 	return sconk;
 }
 
-StrMspCpu* newStrMspCpu(Int16U dataLen, Int16U dataLen, Byte* data, Char action) {
+StrMspCpu* newStrMspCpu(Int16U dataLen, Byte* data, Char action) {
 	StrMspCpu* smc = malloc(sizeof(StrMspCpu));
 	smc->dataLen = dataLen;
 	smc->data = data;
@@ -1132,13 +1134,14 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 			break;
 		case BLOCK_THREAD: 
 			size += sizeof(sck->tcb.tid);
-			sizee += sizeof(sck->resource);
+			size += sizeof(sck->resource);
 			break;
 		case WAKE_THREAD:
-			sizee += sizeof(sck->resource); 
+			size += sizeof(sck->resource);
 			break;
 		default: break;
 	}
+ 	return size;
  }
 
 Int16U getSizeStrConKer(StrConKer* sck) {
@@ -1214,10 +1217,11 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 		case MEM_ALLOC:
 			size += sizeof(scm->pid);
 			size += sizeof(scm->address);
-			size += sizeof(scm->dataLen);	
+			size += sizeof(scm->dataLen);
+			break;
 		default: break;
 	}
-
+ 	return size;
 }
 
 Int16U getSizeStrKerCon(StrKerCon* skc) {
@@ -1233,6 +1237,7 @@ Int16U getSizeStrKerCon(StrKerCon* skc) {
 			break;
 		default: break;
 	}
+	return size;
 }
 
 //==============================================//
@@ -1240,7 +1245,7 @@ Int16U getSizeStrKerCon(StrKerCon* skc) {
  * Handshake
  */
  
-Char getStreamId(Stream) {
+Char getStreamId(Stream dataSerialized) {
 	Char id;
 	Stream ptrByte = dataSerialized;
 	memcpy(&id, ptrByte, sizeof(id));

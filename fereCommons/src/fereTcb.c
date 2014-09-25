@@ -18,7 +18,7 @@
 /**
  * Devuelve una nueva instancia de Tcb con los valores ingresados por parametro
  */
-Tcb* newTcb(Int32U pid, Int32U tid, Int32U M, Int32U P, Int32U X, Int32U S, Boolean kernelMode, Int8U csLenght, Int32S A, Int32S B, Int32S C, Int32S D, Int32S E, Int32S F,) {
+Tcb* newTcb(Int32U pid, Int32U tid, Int32U M, Int32U P, Int32U X, Int32U S, Boolean kernelMode, Int8U csLenght, Int32S A, Int32S B, Int32S C, Int32S D, Int32S E, Int32S F) {
 	Tcb* tcb = malloc(sizeof(Tcb));
 	tcb->pid = pid;
 	tcb->tid = tid;
