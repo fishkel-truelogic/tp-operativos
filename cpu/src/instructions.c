@@ -283,3 +283,202 @@ Boolean operatorIsRegister(t_dictionary* iopDic, String name, Int8U index) {
 	InstructionOperators* iop = dictionary_get(iopDic, name);
 	return iop->op[index] == REGISTER; 
 }
+
+//=================================================================
+//FUNCIONES DE LAS INSTRUCCIONES BESO
+//=================================================================
+
+/**
+ * Carga en el registro, el número dado.
+ */
+void funcLOAD(Int8U* action, void* op1, void* op2, void* op3){
+	*(*op1) = *op2;
+	//*action = ;
+}
+
+/**
+ * Obtiene el valor de memoria apuntado por el segundo registro. El valor obtenido lo asigna en el
+ * primer registro.
+ */
+void funcGETM(Int8U* action, void* op1, void* op2, void* op3){
+	*(*op1) = op2;
+	//*action = ;
+}
+/**
+ * Pone tantos bytes desde el segundo registro, hacia la memoria apuntada por el primer registro
+ */
+void funcSETM(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Copia el valor del segundo registro hacia el primero
+ */
+void funcMOVR(Int8U* action, void* op1, void* op2, void* op3){
+	*(*op1) = *op2;
+	//*action = ;
+}
+
+/**
+ * Suma el primer registro con el segundo registro. El resultado de la operación se almacena en el
+ * registro A.
+ */
+void funcADDR(Int8U* action, void* op1, void* op2, void* op3){
+	//INT32S aux = *(*op1) + *(*op2);
+	//*action = ;
+}
+
+/**
+ * Resta el primer registro con el segundo registro. El resultado de la operación se almacena en el
+ * registro A.
+ */
+void funcSUBR(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Multiplica el primer registro con el segundo registro. El resultado de la operación se almacena
+ * en el registro A.
+ */
+void funcMULR(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Obtiene el resto de la división del primer registro con el segundo registro. El resultado de la
+ * operación se almacena en el registro A.
+ */
+void funcMODR(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Divide el primer registro con el segundo registro. El resultado de la operación se almacena en el
+ * registro A; a menos que el segundo operando sea 0, en cuyo caso se asigna el flag de ZERO_DIV
+ * y no se hace la operación.
+ **/
+void funcDIVR(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ *Incrementar una unidad al registro.
+ **/
+void funcINCR(Int8U* action, void* op1, void* op2, void* op3){
+	*(*op1) = *(*op1) + 1;
+	//*action = ;
+}
+
+/**
+ *Decrementa una unidad al registro.
+ **/
+void funcDECR(Int8U* action, void* op1, void* op2, void* op3){
+	*(*op1) = *(*op1) - 1;
+	//*action = ;
+}
+
+/**
+ * Compara si el primer registro es igual al segundo. De ser verdadero, se almacena el valor 1. De lo
+ * contrario el valor 0. El resultado de la operación se almacena en el registro A.
+ **/
+void funcCOMP(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Compara si el primer registro es mayor o igual al segundo. De ser verdadero, se almacena el
+ * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
+ **/
+void funcCGEQ(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Compara si el primer registro es menor o igual al segundo. De ser verdadero, se almacena el
+ * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
+ **/
+void funcCLEQ(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Altera el flujo de ejecución para ejecutar la instrucción apuntada por el registro. El valor es el
+ * desplazamiento desde el inicio del programa.
+ **/
+void funcGOTO(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
+ * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
+ **/
+void funcJMPZ(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
+ * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
+ **/
+void funcJPNZ(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Interrumpe la ejecución del programa para ejecutar la rutina del kernel que se encuentra en la
+ * posición apuntada por la direccion. El ensamblador admite ingresar una cadena indicando el
+ * nombre, que luego transformará en el número correspondiente. Los posibles valores son
+ * “MALC”, “FREE”, “INNN”, “INNC”, “OUTN”, “OUTC”, “BLOK”, “WAKE”, “CREA” y “JOIN”. Invoca al
+ * servicio correspondiente en el proceso Kernel. Notar que el hilo en cuestión debe bloquearse
+ * tras una interrupción.
+ **/
+void funcINTE(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Limpia el registro de flags.
+ **/
+void funcFLCL(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Desplaza 12 los bits del registro, tantas veces como se indique en el Número. De ser
+ * desplazamiento positivo, se considera hacia la derecha. De lo contrario hacia la izquierda.
+ **/
+void funcSHIF(Int8U* action, void* op1, void* op2, void* op3){
+	
+	//*action = ;
+}
+
+/**
+ * Consume un ciclo del CPU sin hacer nada
+ **/
+void funcNOPP(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Apila los primeros bytes, indicado por el número, del registro hacia el stack. Modifica el valor del
+ * registro cursor de stack de forma acorde.
+ **/
+void funcPUSH(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Desapila los primeros bytes, indicado por el número, del stack hacia el registro. Modifica el valor
+ * del registro de stack de forma acorde.
+ **/
+void funcTAKE(Int8U* action, void* op1, void* op2, void* op3){
+	//*action = ;
+}
+
+/**
+ * Finaliza la ejecución.
+ **/
+ void funcXXXX(Int8U* action, void* op1, void* op2, void* op3)){
+	//*action = ;
+}
