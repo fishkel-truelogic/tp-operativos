@@ -292,7 +292,8 @@ Boolean operatorIsRegister(t_dictionary* iopDic, String name, Int8U index) {
  * Carga en el registro, el número dado.
  */
 void funcLOAD(Int8U* action, void* op1, void* op2, void* op3){
-	*(*op1) = *op2;
+	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
+	*(*op1) = *op2; //para mi esto es *op1 = *op2;   lean!
 	//*action = ;
 }
 
@@ -301,13 +302,16 @@ void funcLOAD(Int8U* action, void* op1, void* op2, void* op3){
  * primer registro.
  */
 void funcGETM(Int8U* action, void* op1, void* op2, void* op3){
-	*(*op1) = *op2;
+	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
+	*(*op1) = *op2; // esto es *op1 = op2; lean!
 	//*action = ;
 }
 /**
  * Pone tantos bytes desde el segundo registro, hacia la memoria apuntada por el primer registro
  */
 void funcSETM(Int8U* action, void* op1, void* op2, void* op3){
+	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
+	memcpy(op1, op2,(int)op1); //memcpy(dest, source, len)
 	//*action = ;
 }
 
@@ -352,7 +356,7 @@ void funcMULR(Int8U* action, void* op1, void* op2, void* op3){
 }
 
 /**
- * Obtiene el resto de la división del primer registro con el segundo registro. El resultado de la
+ * 	Obtiene el resto de la división del primer registro con el segundo registro. El resultado de la
  * operación se almacena en el registro A.
  */
 void funcMODR(Int8U* action, void* op1, void* op2, void* op3){
