@@ -301,7 +301,7 @@ void funcLOAD(Int8U* action, void* op1, void* op2, void* op3){
  * primer registro.
  */
 void funcGETM(Int8U* action, void* op1, void* op2, void* op3){
-	*(*op1) = op2;
+	*(*op1) = *op2;
 	//*action = ;
 }
 /**
@@ -315,7 +315,7 @@ void funcSETM(Int8U* action, void* op1, void* op2, void* op3){
  * Copia el valor del segundo registro hacia el primero
  */
 void funcMOVR(Int8U* action, void* op1, void* op2, void* op3){
-	*(*op1) = *op2;
+	*(*op1) = *(*op2);
 	//*action = ;
 }
 
@@ -324,7 +324,10 @@ void funcMOVR(Int8U* action, void* op1, void* op2, void* op3){
  * registro A.
  */
 void funcADDR(Int8U* action, void* op1, void* op2, void* op3){
-	//INT32S aux = *(*op1) + *(*op2);
+	//la solucion para acceder al registro A, es hacer un #include cpu.c, y hacer un getCurrentTcb()
+	//que devuelva el tcb actual de la cpu y ahi le seteas el valor
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = *(*op1) + *(*op2);
 	//*action = ;
 }
 
@@ -333,6 +336,8 @@ void funcADDR(Int8U* action, void* op1, void* op2, void* op3){
  * registro A.
  */
 void funcSUBR(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = *(*op1) - *(*op2);
 	//*action = ;
 }
 
@@ -341,6 +346,8 @@ void funcSUBR(Int8U* action, void* op1, void* op2, void* op3){
  * en el registro A.
  */
 void funcMULR(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (*(*op1)) * (*(*op2)); //creo que no hacen falta los (), pero por las dudas los puse
 	//*action = ;
 }
 
@@ -349,6 +356,8 @@ void funcMULR(Int8U* action, void* op1, void* op2, void* op3){
  * operación se almacena en el registro A.
  */
 void funcMODR(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (*(*op1)) % (*(*op2));
 	//*action = ;
 }
 
@@ -358,6 +367,8 @@ void funcMODR(Int8U* action, void* op1, void* op2, void* op3){
  * y no se hace la operación.
  **/
 void funcDIVR(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (op2 == 0) ? ZERO_DIV : (*(*op1)) / (*(*op2));
 	//*action = ;
 }
 
@@ -382,6 +393,8 @@ void funcDECR(Int8U* action, void* op1, void* op2, void* op3){
  * contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
 void funcCOMP(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (*(*op1) = *(*op2)) ? TRUE : FALSE;	
 	//*action = ;
 }
 
@@ -390,6 +403,8 @@ void funcCOMP(Int8U* action, void* op1, void* op2, void* op3){
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
 void funcCGEQ(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (*(*op1) >= *(*op2)) ? TRUE : FALSE;
 	//*action = ;
 }
 
@@ -398,6 +413,8 @@ void funcCGEQ(Int8U* action, void* op1, void* op2, void* op3){
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
 void funcCLEQ(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->A = (*(*op1) <= *(*op2)) ? TRUE : FALSE;	
 	//*action = ;
 }
 
@@ -441,6 +458,8 @@ void funcINTE(Int8U* action, void* op1, void* op2, void* op3){
  * Limpia el registro de flags.
  **/
 void funcFLCL(Int8U* action, void* op1, void* op2, void* op3){
+	Tcb* currentTcb = getCurrentTcb();
+	*currentTcb->F = NULL;
 	//*action = ;
 }
 
