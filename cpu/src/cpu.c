@@ -13,6 +13,7 @@
 #include <src/commons/bitarray.h>
 #include <src/commons/config.h>
 #include "instructions.h"
+#include "cpu.h"
 
 //==========================================//
 /**
@@ -68,6 +69,7 @@ void execute(Int8U*, Instruction*);
 Boolean mspRequest();
 Instruction* getInstruction();
 void* setRegisterOperator(Byte*);
+
 
 int main() {
 	// Cargo las variables de configuracion y me conecto al kernel y msp
@@ -346,4 +348,8 @@ void* setRegisterOperator(Byte* ptrData) {
 void execute(Int8U* action, Instruction* instruction) {
 	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
 	iop->func(action, instruction->op[0], instruction->op[1], instruction->op3[2]);
+}
+
+Tcb* getCurrentTcb() {
+	return currentTcb;
 }
