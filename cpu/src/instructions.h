@@ -19,9 +19,7 @@
 //=================================================================
 typedef struct instruction {
 	String name;
-	void* op1;
-	void* op2;
-	void* op3;
+	void* op[3];
 } Instruction;
 
 typedef struct intructionOperators {

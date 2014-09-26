@@ -23,6 +23,7 @@
 //=================================================================
 
 Boolean loadInstructionDictionary(t_dictionary* instructionsOperators) {
+	instructionsOperators = dictionary_create();
 	InstructionOperators* iopMOVR = malloc(sizeof(InstructionOperators));
 	iopMOVR->op[0] = REGISTER;
 	iopMOVR->op[1] = REGISTER;

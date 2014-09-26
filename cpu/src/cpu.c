@@ -260,27 +260,12 @@ Instruction* getInstruction() {
 		instruction->name = instructionName;
 
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
-		if(operatorsTotal > 0) {
-			if (operatorIsRegister(instructionOperators, instructionName, 0)) {
+		for (i = 0; i < operatorsTotal; i++) {
+			if (operatorIsRegister(instructionOperators, instructionName, i)) {
 				instruction->op1 = setRegisterOperator(ptrData);
-			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(instruction->op1, ptrData, sizeof(instruction->op1));
+			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
+				memcpy(instruction->op[i], ptrData, 4));
 				ptrData += 4;
-			}
-		}
-		if(operatorsTotal > 1) {
-			if (operatorIsRegister(instructionOperators, instructionName, 1)) {
-				instruction->op2 = setRegisterOperator(ptrData);
-			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(instruction->op2, ptrData, sizeof(instruction->op2));
-				ptrData += 4;
-			}
-		}
-		if(operatorsTotal > 2) {
-			if (operatorIsRegister(instructionOperators, instructionName, 2)) {
-				instruction->op3 = setRegisterOperator(ptrData);
-			} else { //si no es un registro entonces es un numero o una direccion
-				memcpy(instruction->op3, ptrData, sizeof(instruction->op3));
 			}
 		}
 		free(ptrData);
@@ -360,5 +345,5 @@ void* setRegisterOperator(Byte* ptrData) {
  **/
 void execute(Int8U* action, Instruction* instruction) {
 	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
-	iop->func(action, instruction->op1, instruction->op2, instruction->op3);
+	iop->func(action, instruction->op[0], instruction->op[1], instruction->op3[2]);
 }
