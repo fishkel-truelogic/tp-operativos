@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <src/fereTypes.h>
-#include <src/fereString.h>
 #include <src/commons/config.h>
 #include <src/commons/temporal.h>
+#include "mspconsole.h"
 
 //DEFINICIONES
 #define DEBUG 1							//Habilitar o deshabilitar el debug por screen

@@ -31,7 +31,11 @@ int main() {
 		return FALSE;
 	}
 
+	while(TRUE){
+		mspConsole();
 
+
+	}
 	return 0;
 
 }
