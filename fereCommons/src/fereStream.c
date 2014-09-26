@@ -824,7 +824,7 @@ StrConKer* unserializeConKer(Stream data) {
 	Char action;
 	Byte* fileContent = NULL;
 	Int16U fileContentLen, bufferWriterLen;
-	String bufferWriter = NULL;
+	Byte* bufferWriter = NULL;
 
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);

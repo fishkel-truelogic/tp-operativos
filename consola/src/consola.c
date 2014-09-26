@@ -29,7 +29,7 @@
 #define KERNEL_IP "KERNEL_IP"
 #define PARAM_LENGTH 2
 #define ESO_CONFIG "ESO_CONFIG"
-
+#define MAX_INPUT_STR_LEN 256
 //==========================================//
 //******************************************//
 // Global Variables							//	
@@ -51,10 +51,11 @@ Int16U kernelPort = 0;
 Boolean socketConnection(); 
 Boolean loadConfig();
 Boolean parameterValidation(int);
-Boolean getBESO(String); //TODO
-Boolean sendBESO(); //TODO
-Boolean instructionsFromKernel(); //TODO
-
+Boolean getAndSendBESO(String); //TODO
+Boolean sendStream();
+Boolean instructionsFromKernel(); 
+Boolean handleStdInput(); 
+Boolean handleStdOutput(); 
 //==========================================//
 //******************************************//
 // Main Function							//	
@@ -65,12 +66,8 @@ int main(int argc, char *argv[]) {
 	//Inicializo la consola verificando el parametro cargando la configuracion externa
 	// y conectandome por socket al kernel si algo de esto falla se termina la consola
 	if (parameterValidation(argc) && loadConfig() && socketConnection()) {
-		// obtengo el codigo BESO del archivo cuyo path llega por parametro
-		if (!getBESO(argv[0])) {
-			return FALSE;
-		}
-		// Envio el codigo BESO al kernel
-		if (!sendBESO()) {
+		// obtengo el codigo BESO del archivo cuyo path llega por parametro y lo envio al kernel
+		if (!getAndSendBESO(argv[0])) {
 			return FALSE;
 		}
 		// quedo a la espera de instrucciones del kernel eternamente hasta que se termine el programa
@@ -130,7 +127,7 @@ Boolean loadConfig() {
 	//Gennero tabla de configuracion
 	t_config* tConfig = config_create(configFilePath);
 	if (tConfig == NULL){
-		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
+		printf("ERROR: No se encuentra o falta el archivo de configuracion en la direccion '%s'.\n", configFilePath);
 		return FALSE;
 	}
 	//Verifico consistencia, tiene que haber 2 campos
@@ -165,4 +162,128 @@ Boolean loadConfig() {
 		printf("El archivo config.txt no tiene todos los campos.\n");
 		return FALSE;
 	}
+}
+
+/**
+ * Lee el archivo de la direccion path
+ * Si no lo encuentra devuelve FALSE
+ * Instancia sck y le setea el fileContent
+ * Se lo manda al kernel
+ */
+Boolean getBESO(String path) {
+	
+	if (sck != NULL) {
+		free(sck);
+	}
+
+	//TODO Seba te lo dejo a vos por favor guarda el contenido del archivo BESO en sck->fileContent
+
+	return sendStream();
+}
+
+/**
+ *  Envia por socket el sck 
+ *	Funciones de sockets.h utilizadas:
+ *	=================================
+ *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
+ */
+Boolean sendStream() {
+
+	if(sck == NULL) {
+		printf("Error al tratar de enviar stream sin inicializar ---- Terminando \n");
+		return FALSE;
+	}
+
+	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
+	t_bitarray* barray = serializeCorKer(sck);
+	Byte* ptrByte = (Byte*) barray->bitarray;
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+
+	//Envio el socketBuffer
+	if(!socketSend(kernelClient->ptrSocketServer, sb)) {
+		printf("No se pudo enviar el Stream a kernel. ---- Terminando \n");
+		return FALSE;
+	}
+	free(sb);
+}
+
+/**
+ *  Recibe instrucciones del kernel ya sea para STD_INPUT o STD_OUTPUT
+ *	y las manda a ejecutar
+ *
+ *	Funciones de sockets.h utilizadas:
+ *	=================================
+ *	SocketBuffer *socketReceive(Socket *emisor);
+ */
+Boolean instructionsFromKernel() {
+	
+	SocketBuffer* sb;
+
+	if (skc != NULL) {
+		free(skc);
+	}
+
+	// Recibo la orden del kernel y deserializo
+	if ((sb = socketReceive(kernelClient->ptrSocket)) == NULL) {
+		printf("No se pudo recibir el Stream del kernel. \n");
+		return FALSE;
+	}
+
+	skc = unserializeKerCpu((Stream) sb->data);
+
+	switch (skc->action) {
+		case STD_INPUT:
+			return handleStdInput();
+		case STD_OUTPUT:
+			return handleStdOutput();
+		default: return FALSE;
+	}
+
+}
+
+Boolean handleStdInput() {
+	void* input;
+	Int16U size;
+	if (skc->inputType == NUMBER_INPUT) {
+		size = sizeof(Int32S);
+		input = malloc(size);
+		if (!scanf("%d", (int*) input)) {
+			printf("error al ingresar numero. ---- Terminando\n");
+			return FALSE;	
+		}
+	} else if (skc->inputType == TEXT_INPUT) {
+		size = MAX_INPUT_STR_LEN;
+		input = malloc(size);
+		if (!scanf("%s", input)) {
+			printf("error al ingresar texto. ---- Terminando\n");
+			return FALSE;
+		}
+	} else {
+		printf("input type %d desconocido. ---- Terminando\n", skc->inpuType);
+		return FALSE;
+	}
+	
+	free(skc);
+
+	if (sck != NULL) {
+		free(sck);
+	}
+
+	sck = newStrConKer(CONSOLA_ID, NULL, (Byte*) input, STD_INPUT, 0, size);
+
+	if(!sendStream()) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+Boolean handleStdOutput() {
+	printf("%s\n", skc->log);	
+	free(skc);
+	return TRUE;
 }
