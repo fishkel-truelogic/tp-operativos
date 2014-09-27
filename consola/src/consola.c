@@ -170,14 +170,42 @@ Boolean loadConfig() {
  * Instancia sck y le setea el fileContent
  * Se lo manda al kernel
  */
-Boolean getBESO(String path) {
-	
+Boolean getAndSendBESO(String path) {
+
+	//si no hay path, devuelvo FALSE
+	if (!path) return FALSE;
+	//declaro una variable file donde abro el archivo referenciado por path para rb = leerlo binario 
+	FILE* file = fopen(path, "rb");
+	//si no se pudo abrir el archivo indicado, devuelvo FALSE
+	if (!file) return FALSE;
+	//creo que este era el tamaño que habiamos dicho para leer por consola
+	Char read[4096];
+	String buffer = NULL;
+	Int32U totalAmount = 0;
+	Int32U readed;
+	//estructura para leer el archivo
+	while(TRUE){
+		readed = fread(read, 1, sizeof(buffer), file);
+		//si no llegue al final lo voy copiando en el buffer
+		if(readed){
+			buffer = realloc(buffer, totalAmount + readed);
+			memcpy(buffer + totalAmount, read, readed);
+			totalAmount += readed;
+		}
+		else{
+			//cuando llegue al final cierro el archivo
+			fclose(file);
+		}
+	} 
+
+
 	if (sck != NULL) {
 		free(sck);
 	}
 
 	//TODO Seba te lo dejo a vos por favor guarda el contenido del archivo BESO en sck->fileContent
-
+	sck->fileContent = buffer;
+	
 	return sendStream();
 }
 
@@ -195,7 +223,7 @@ Boolean sendStream() {
 	}
 
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
-	t_bitarray* barray = serializeCorKer(sck);
+	t_bitarray* barray = serializeConKer(sck);
 	Byte* ptrByte = (Byte*) barray->bitarray;
 	for (i = 0; i < barray->size; i++) {
 		sb->data[i] = *ptrByte;
