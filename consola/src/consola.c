@@ -19,6 +19,7 @@
 #include <src/fereSockets.h>
 #include <src/fereStream.h>
 #include <src/commons/config.h>
+#include <src/commons/string.h>
 
 //==========================================//
 //******************************************//
@@ -51,7 +52,7 @@ Int16U kernelPort = 0;
 Boolean socketConnection(); 
 Boolean loadConfig();
 Boolean parameterValidation(int);
-Boolean getAndSendBESO(String); //TODO
+Boolean getAndSendBESO(String);
 Boolean sendStream();
 Boolean instructionsFromKernel(); 
 Boolean handleStdInput(); 
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
 Boolean parameterValidation(int argc) {
 	return argc == 1;
 }
+
 /**
  *	Se intenta conectar a la msp y kernel 
  *	En caso de no poder conectarse devuelve FALSE
@@ -173,38 +175,43 @@ Boolean loadConfig() {
 Boolean getAndSendBESO(String path) {
 
 	//si no hay path, devuelvo FALSE
-	if (!path) return FALSE;
-	//declaro una variable file donde abro el archivo referenciado por path para rb = leerlo binario 
+	if (path == NULL || string_is_empty(path)) {
+		printf("La direccion del archivo BESO es vacia. ---- Terminando \n");
+		return FALSE;
+	} 
+
+	// Abro el archivo referenciado por path para rb = leerlo binario 
 	FILE* file = fopen(path, "rb");
-	//si no se pudo abrir el archivo indicado, devuelvo FALSE
-	if (!file) return FALSE;
-	//creo que este era el tamaño que habiamos dicho para leer por consola
-	Char read[4096];
-	String buffer = NULL;
-	Int32U totalAmount = 0;
+	// si no se pudo abrir el archivo indicado, devuelvo FALSE
+	if (!file) {
+		printf("No se encontro el archivo %s. ---- Terminando \n", path);
+		return FALSE;
+	}
+
+	Byte* read;
+	Byte* ptrBuffer;
+	Stream buffer = NULL;
+	Int32U size = 0;
 	Int32U readed;
-	//estructura para leer el archivo
-	while(TRUE){
-		readed = fread(read, 1, sizeof(buffer), file);
-		//si no llegue al final lo voy copiando en el buffer
+
+	while(!feof(file)){
+		readed = fread(read, sizeof(Byte), sizeof(Byte), file);
+		// voy copiando y resizeando el buffer
 		if(readed){
-			buffer = realloc(buffer, totalAmount + readed);
-			memcpy(buffer + totalAmount, read, readed);
-			totalAmount += readed;
-		}
-		else{
-			//cuando llegue al final cierro el archivo
-			fclose(file);
+			buffer = realloc(buffer, size + readed);
+			ptrBuffer = buffer + readed;
+			memcpy(ptrBuffer, read, readed);
+			size += readed;
 		}
 	} 
 
+	fclose(file);
 
 	if (sck != NULL) {
 		free(sck);
 	}
 
-	//TODO Seba te lo dejo a vos por favor guarda el contenido del archivo BESO en sck->fileContent
-	sck->fileContent = buffer;
+	sck = newStrConKer(CONSOLA_ID, buffer, NULL, BESO_FILE, size, 0);
 	
 	return sendStream();
 }
@@ -257,7 +264,7 @@ Boolean instructionsFromKernel() {
 
 	// Recibo la orden del kernel y deserializo
 	if ((sb = socketReceive(kernelClient->ptrSocket)) == NULL) {
-		printf("No se pudo recibir el Stream del kernel. \n");
+		printf("No se pudo recibir el Stream del kernel. ---- Terminando \n");
 		return FALSE;
 	}
 
@@ -273,10 +280,15 @@ Boolean instructionsFromKernel() {
 
 }
 
+/**
+ * 
+ */
 Boolean handleStdInput() {
 	void* input;
 	Int16U size;
+	
 	if (skc->inputType == NUMBER_INPUT) {
+		printf("Ingresar numero\n");
 		size = sizeof(Int32S);
 		input = malloc(size);
 		if (!scanf("%d", (int*) input)) {
@@ -284,6 +296,7 @@ Boolean handleStdInput() {
 			return FALSE;	
 		}
 	} else if (skc->inputType == TEXT_INPUT) {
+		printf("Ingresar texto\n");
 		size = MAX_INPUT_STR_LEN;
 		input = malloc(size);
 		if (!scanf("%s", input)) {
@@ -310,6 +323,9 @@ Boolean handleStdInput() {
 	return TRUE;
 }
 
+/**
+ * Imprime por pantalla el log del kernel
+ */
 Boolean handleStdOutput() {
 	printf("%s\n", skc->log);	
 	free(skc);
