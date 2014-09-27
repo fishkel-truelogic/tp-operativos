@@ -21,6 +21,7 @@
 #include <src/fereStream.h>
 #include <src/commons/config.h>
 #include <src/commons/string.h>
+#include <src/commons/bitarray.h>
 
 //==========================================//
 //******************************************//
@@ -93,7 +94,11 @@ int main(int argc, char *argv[]) {
  * En este caso solo se necesita un parametro (el path al archivo con el codigo BESO) 
  */
 Boolean parameterValidation(int argc) {
-	return argc == 1;
+	if (argc == 1) {
+		return TRUE;
+	}
+	printf("La cantidad de parametros es incorrecta: %d\n", argc);
+	return FALSE;
 }
 
 /**
