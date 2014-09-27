@@ -42,10 +42,13 @@
  /**
   * IDs (Dueño del stream)
   */
-#define CONSOLA_ID = 0
-#define KERNEL_ID = 1
-#define CPU_ID = 2
-#define MSP_ID = 3
+#define CONSOLA_ID 0
+#define KERNEL_ID 1
+#define CPU_ID 2
+#define MSP_ID 3
+
+#define NUMBER_INPUT 0
+#define TEXT_INPUT 1
 
 
 //============================================================
@@ -60,7 +63,7 @@ typedef struct strConKer {
 	Char action;
 	Byte* fileContent;
 	Int16U fileContentLen;
-	String bufferWriter;
+	Byte* bufferWriter;
 	Int16U bufferWriterLen;
 } StrConKer;
 
@@ -124,7 +127,7 @@ typedef struct strKerCon {
  * Constructores
  */
 
-StrConKer* newStrConKer(Char, Byte*, String, Char, Int16U, Int16U);
+StrConKer* newStrConKer(Char, Byte*, Byte*, Char, Int16U, Int16U);
 
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte*, Int16U, Int32U);
 StrCpuKer* newStrCpuKer(Char, Tcb, Char, Int16U, String, Int32U, Int32U, Char, Char);

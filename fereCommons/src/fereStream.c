@@ -824,7 +824,7 @@ StrConKer* unserializeConKer(Stream data) {
 	Char action;
 	Byte* fileContent = NULL;
 	Int16U fileContentLen, bufferWriterLen;
-	String bufferWriter = NULL;
+	Byte* bufferWriter = NULL;
 
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
@@ -1010,7 +1010,7 @@ StrCpuKer* newStrCpuKer(Char id,
 	return sck;
 }
 
-StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
+StrConKer* newStrConKer(Char id, Byte* fileContent, Byte* bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
 	StrConKer* sconk = malloc(sizeof(StrConKer));
 	sconk->id = id;
 	sconk->fileContent = fileContent;
