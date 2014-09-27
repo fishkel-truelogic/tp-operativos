@@ -1010,7 +1010,7 @@ StrCpuKer* newStrCpuKer(Char id,
 	return sck;
 }
 
-StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
+StrConKer* newStrConKer(Char id, Byte* fileContent, Byte* bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
 	StrConKer* sconk = malloc(sizeof(StrConKer));
 	sconk->id = id;
 	sconk->fileContent = fileContent;

@@ -42,10 +42,10 @@
  /**
   * IDs (Dueño del stream)
   */
-#define CONSOLA_ID = 0
-#define KERNEL_ID = 1
-#define CPU_ID = 2
-#define MSP_ID = 3
+#define CONSOLA_ID 0
+#define KERNEL_ID 1
+#define CPU_ID 2
+#define MSP_ID 3
 
 #define NUMBER_INPUT 0
 #define TEXT_INPUT 1

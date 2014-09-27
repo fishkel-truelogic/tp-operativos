@@ -15,6 +15,7 @@
 //==========================================//
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <src/fereTypes.h>
 #include <src/fereSockets.h>
 #include <src/fereStream.h>
@@ -152,11 +153,8 @@ Boolean loadConfig() {
 
 		//Libero tabla config
 		config_destroy(tConfig);
-		if (DEBUG == 1){
-			printf("Archivo de config MSP leído\n===========\n");
-			printf("MSP Port: %d\nKernel Port: %d\nMsp IP: %s\nKernel IP: %s\n",
-					mspPort, kernelPort, mspIp, kernelIp);
-		}
+		printf("Archivo de config MSP leído\n===========\n");
+		printf("Kernel Port: %d\nKernel IP: %s\n", kernelPort, kernelIp);
 
 		return TRUE;
 
@@ -188,7 +186,7 @@ Boolean getAndSendBESO(String path) {
 		return FALSE;
 	}
 
-	Byte* read;
+	Byte* read = malloc(sizeof(Byte));
 	Byte* ptrBuffer;
 	Stream buffer = NULL;
 	Int32U size = 0;
@@ -211,7 +209,7 @@ Boolean getAndSendBESO(String path) {
 		free(sck);
 	}
 
-	sck = newStrConKer(CONSOLA_ID, buffer, NULL, BESO_FILE, size, 0);
+	sck = newStrConKer((Char) CONSOLA_ID, buffer, NULL, (Char) BESO_FILE, size, 0);
 	
 	return sendStream();
 }
@@ -223,7 +221,7 @@ Boolean getAndSendBESO(String path) {
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  */
 Boolean sendStream() {
-
+	Int16U i;
 	if(sck == NULL) {
 		printf("Error al tratar de enviar stream sin inicializar ---- Terminando \n");
 		return FALSE;
@@ -244,6 +242,7 @@ Boolean sendStream() {
 		return FALSE;
 	}
 	free(sb);
+	return TRUE;
 }
 
 /**
@@ -268,7 +267,7 @@ Boolean instructionsFromKernel() {
 		return FALSE;
 	}
 
-	skc = unserializeKerCpu((Stream) sb->data);
+	skc = unserializeKerCon((Stream) sb->data);
 
 	switch (skc->action) {
 		case STD_INPUT:
@@ -299,12 +298,12 @@ Boolean handleStdInput() {
 		printf("Ingresar texto\n");
 		size = MAX_INPUT_STR_LEN;
 		input = malloc(size);
-		if (!scanf("%s", input)) {
+		if (!scanf("%s", (Byte*) input)) {
 			printf("error al ingresar texto. ---- Terminando\n");
 			return FALSE;
 		}
 	} else {
-		printf("input type %d desconocido. ---- Terminando\n", skc->inpuType);
+		printf("input type %d desconocido. ---- Terminando\n", skc->inputType);
 		return FALSE;
 	}
 	
@@ -314,7 +313,7 @@ Boolean handleStdInput() {
 		free(sck);
 	}
 
-	sck = newStrConKer(CONSOLA_ID, NULL, (Byte*) input, STD_INPUT, 0, size);
+	sck = newStrConKer((Char) CONSOLA_ID, NULL, (Byte*) input, (Char) STD_INPUT, 0, size);
 
 	if(!sendStream()) {
 		return FALSE;
