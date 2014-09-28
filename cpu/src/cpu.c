@@ -264,7 +264,7 @@ Instruction* getInstruction() {
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
 		for (i = 0; i < operatorsTotal; i++) {
 			if (operatorIsRegister(instructionOperators, instructionName, i)) {
-				instruction->op1 = setRegisterOperator(ptrData);
+				instruction->op[i] = setRegisterOperator(ptrData);
 			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
 				memcpy(instruction->op[i], ptrData, 4));
 				ptrData += 4;
