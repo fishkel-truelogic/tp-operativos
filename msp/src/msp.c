@@ -30,7 +30,7 @@ int main() {
 	}
 
 	//INICIALIZO ESTRUTURAS ADMINISTRATIVAS
-	//initMemory();
+	initMemory();
 
 
 
@@ -162,6 +162,7 @@ Boolean createSegment(Int32U pid, Int32U size){
 	//agrego la lista de Paginas a la tabla de Segmentos de PID
 	dictionary_put(ptrSegments, intToStr(segmentId), ptrPages);
 
+	return TRUE;
 }
 
 
