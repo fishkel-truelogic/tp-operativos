@@ -19,10 +19,6 @@ t_dictionary* frames = NULL;
 
 int main() {
 
-
-
-
-
 	//Imprimo hora al arrancar
 	Char * ptrTime = temporal_get_string_time();
 	printf("Server time is %s\n\n", ptrTime);
@@ -32,6 +28,11 @@ int main() {
 	if (!loadConfig()){
 		return FALSE;
 	}
+
+	//INICIALIZO ESTRUTURAS ADMINISTRATIVAS
+	//initMemory();
+
+
 
 	while(TRUE){
 		mspConsole();
@@ -98,4 +99,95 @@ Boolean loadConfig() {
 		printf("El archivo config.txt no tiene todos los campos.\n");
 		return TRUE;
 	}
+}
+
+//Hago el malloc inicial, divido en marcos y creo la tabla de segmentos
+Boolean initMemory(void){
+	
+	//malloc reserva en bytes, reservo el gran bloque inicial
+	memory = malloc( memLengthKB * 1000);
+	
+	//creo el diccionario de frames
+	frames = dictionary_create();
+
+	//top es la cantidad de marcos que puede llegar a haber
+	Int32U top = sizeof(memory) / FRAME_SIZE;
+
+	Frame* ptrFrame=NULL;
+	Int32U offset=0;
+	
+	//DIVIDO EL GRAN BLOQUE DE MEMORIA EN MARCOS
+	for(Int32U index = 0; index < top; index++){
+		//Creo un marco
+		ptrFrame = malloc(sizeof(Frame));
+		//esta libre => True
+		ptrFrame->used=FALSE;
+		//La dir de Mem Principal va a ser + el offset de los que ya cree
+		prtFrame->address= memory+offset;
+		offset += FRAME_SIZE;
+		//agrego al dicc
+		dictionary_put(frames, intToStr(index), ptrFrame);
+	}
+
+	segmentTable = dictionary_create();
+
+	return TRUE;
+}
+
+
+//Creo un segmento en mi estrucutras administrativas
+Boolean createSegment(Int32U pid, Int32U size){
+	Segments* ptrSegments;
+	String pidStr = intToStr(pid);
+	
+	//me fijo si en la segmentTable tengo una entrada por ese PID
+	if (!dictionary_has_key(segmentTable, pidStr)){
+		ptrSegments = malloc(sizeof(Segments));
+		ptrSegments->segments = dictionary_create();
+
+		dictionary_put(segmentTable, pidStr, ptrSegments);
+	}
+
+	//ptrSegments apunta a la tabla de segmentos de ese PID
+	ptrSegments = dictionary_get(segmentTable, pidStr);
+
+	//el ID del nuevo segmento va a ser 1 más del ultimo que ya exista
+	Int8U segmentId = dictionary_size(ptrSegments);
+
+	//creo las paginas
+	Page* ptrPages = reservePages(size);
+
+	//agrego la lista de Paginas a la tabla de Segmentos de PID
+	dictionary_put(ptrSegments, intToStr(segmentId), ptrPages);
+
+}
+
+
+//Recibo un size en BYTES y creo la lista con las paginas para ese size
+Pages* reservePages(Int32U size){
+	//creo la estructura que 
+	Pages* ptrPages= malloc(sizeof(Pages));
+
+	//creo la lista
+	ptrPages->pagesList = listCreate();
+	
+	//top es la cantidad paginas a crear
+	Int32U top = size / FRAME_SIZE;
+	Int32U offset=0;
+	
+	Page* ptrPage = NULL;
+	//CREO LAS PAGINAS EN LA LISTA
+	for(Int32U index = 0; index < top; index++){
+		//Creo un marco
+		ptrPage = malloc(sizeof(Page));
+		
+		//inicializo
+		ptrPage->frame = NULL;
+		ptrPage->timestamp = time();
+		ptrPage->clock = TRUE;
+
+		list_add(ptrPages, ptrPage);
+	}
+
+	return ptrPages
 }

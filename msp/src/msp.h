@@ -26,9 +26,13 @@
 #define MEM_LENGTH "CANTIDAD_MEMORIA"	//Tamaño en kilobytes de la memoria principal sin contar el espacio de intercambio (swapping).
 #define SWAP_LENGTH "CANTIDAD_SWAP"		//Tamaño máximo en megabytes que pueden ocupar los archivos de swapping.
 #define SWAP_ALGORITHM "SUST_PAGS"		//Algoritmo de sustitucion de paginas
+#define FRAME_SIZE 256					//TAMAÑO DE LOS MARCOS DE PAGINA
 
-//PROTOTYPES
+
 Boolean loadConfig(void);
+Boolean initMemory(void);
+Boolean createSegment(Int32U, Int32U);
+Pages* reservePages(Int32U)
 
 //STRUCTURES
 typedef struct segments {
@@ -38,12 +42,12 @@ typedef struct segments {
 } Segments;
 
 typedef struct pages {
-	t_list* pages; //esto es una lista de Page
+	t_list* pagesList; //esto es una lista de Page
 } Pages;
 
 typedef struct frame {
 	Byte* address;
-	Boolean free;
+	Boolean used;
 } Frame;
 
 typedef struct page {
