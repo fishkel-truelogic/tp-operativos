@@ -11,7 +11,7 @@
 	#include "fereTypes.h"
 
 	#define MAX_CONEXIONES 10
-	#define BUFF_SIZE 1024
+	#define BUFF_SIZE 4096
 
 	//TIPOS DE DATOS
 	//=================================================================
@@ -64,8 +64,9 @@
 
 	Socket* socketAcceptClient(Socket *ptrListenSocket);
 
-	SocketBuffer *socketReceive(Socket *emisor);
+	SocketBuffer *socketReceive(Socket *ptrSender);
 	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
+	Boolean socketDestroy(Socket *ptrSocket);
 
 	//=================================================================
 

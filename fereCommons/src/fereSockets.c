@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 //#include "fereTypes.h"
 #include "fereSockets.h"
 
@@ -230,5 +231,19 @@ Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer) {
 
 	return FALSE;
 }
+/**
+ * @NAME: socketDestroy
+ * @DESC: Realiza el cierre de un determinado descriptor.
+ * Retorna TRUE en caso de exito, FALSE caso contrario
+ * @PARAMS:
+ *		ptrSocket	: El descriptor a cerrar
+ */
+Boolean socketDestroy(Socket *ptrSocket){
 
+	if(close(ptrSocket->descriptor) == 0)
+	{
+		return TRUE;
+	}
 
+	return FALSE;
+}
