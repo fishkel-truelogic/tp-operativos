@@ -5,13 +5,13 @@
  *      Author: cesarcappetto
  */
 
-#ifndef SOCKETS_H_
-#define SOCKETS_H_
+#ifndef FERESOCKETS_H_
+#define FERESOCKETS_H_
 
 	#include "fereTypes.h"
 
 	#define MAX_CONEXIONES 10
-	#define BUFF_SIZE 1024
+	#define BUFF_SIZE 4096
 
 	//TIPOS DE DATOS
 	//=================================================================
@@ -64,9 +64,10 @@
 
 	Socket* socketAcceptClient(Socket *ptrListenSocket);
 
-	SocketBuffer *socketReceive(Socket *emisor);
+	SocketBuffer *socketReceive(Socket *ptrSender);
 	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
+	Boolean socketDestroy(Socket *ptrSocket);
 
 	//=================================================================
 
-#endif /* SOCKETS_H_ */
+#endif /* FERESOCKETS_H_ */
