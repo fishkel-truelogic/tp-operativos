@@ -36,7 +36,7 @@ void mspConsole(void){
 				case 4: consoleReadMemory(); break;
 				case 5: consoleShowSegmentTable(); break;
 				case 6: consoleShowPagesTable(); break;
-				case 7: consoleShowFreePages(); break;
+				case 7: consoleShowFrames(); break;
 				case 8: consoleHelpMsp(); break;
 				case 9: break;
 				default: puts("Error, por favor intente de nuevo."); break;
@@ -59,7 +59,10 @@ void consoleCreateSegment(){
 	printf("SIZE:");
 	scanf("%d", &size);
 
+
+
 	if (pid >= 0 && pid <= 65535)
+		createSegment(pid, size);
 		printf("Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes.\n\n", pid, size);
 	else
 		printf("Error\n\n");
@@ -187,9 +190,33 @@ void consoleShowPagesTable(){
 existentes en el sistema, indicando: Número de Marco, si está
 ocupado o no y por qué programa, y toda la información
 relacionada con los algoritmos de reemplazo de páginas
-implementados9.*/
-void consoleShowFreePages(void){
+implementados.*/
+void consoleShowFrames(void){
+	
+	//IMPRIMO LA CABECERA
 	puts("MUESTRO LOS MARCOS DE MEMORIA (PAGINAS LIBRES).");
+	puts("#\tNro de marco de memoria");
+	puts("PID\tID del Proceso");
+	puts("O\t* si esta ocupado");
+	puts("S\tLo que sea de swapeo ");
+	puts("#\t\tPID\t\tO\t\tS");
+
+	Int32U size = dictionary_size(frames);
+	Frame* ptrFrame = NULL;
+	Char used = ' '
+	for (Int32U i = 0; i < size; i++)
+	{
+		//obtengo el frame correspondiente al i
+		ptrFrame = dictionary_get(frames, intToChar(i));
+		//si esta en uso le clavo un asterisco para mostrar piola
+		if (ptrFrame->usde==TRUE)
+			used = '*'
+		else
+			used = ' '
+		//muestro
+		printf("%d\t\t%d\t\t%c\t\tS", i, ptrFrame->pid, used)
+	}
+//TODO SWAPPING --> Aca hay que implementar ir a leer los marcos de memoria que esten swapeados
 }
 
 

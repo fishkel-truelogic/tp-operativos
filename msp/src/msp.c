@@ -121,6 +121,8 @@ Boolean initMemory(void){
 		//Creo un marco
 		ptrFrame = malloc(sizeof(Frame));
 		//esta libre => True
+		ptrFrame->pid=0;
+		//esta libre => True
 		ptrFrame->used=FALSE;
 		//La dir de Mem Principal va a ser + el offset de los que ya cree
 		prtFrame->address= memory+offset;

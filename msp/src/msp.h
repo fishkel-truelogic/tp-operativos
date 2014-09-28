@@ -48,6 +48,7 @@ typedef struct pages {
 } Pages;
 
 typedef struct frame {
+	Int32U pid;
 	Byte* address;
 	Boolean used;
 } Frame;
