@@ -30,14 +30,14 @@ void mspConsole(void){
 	scanf("%d",&option);
 			while (getchar() != '\n');
 			switch (option) {
-				case 1: createSegment(); break;
-				case 2: destroySegment(); break;
-				case 3: writeMemory(); break;
-				case 4: readMemory(); break;
-				case 5: showSegmentTable(); break;
-				case 6: showPagesTable(); break;
-				case 7: showFreePages(); break;
-				case 8: helpMspConsole(); break;
+				case 1: consoleCreateSegment(); break;
+				case 2: consoleDestroySegment(); break;
+				case 3: consoleWriteMemory(); break;
+				case 4: consoleReadMemory(); break;
+				case 5: consoleShowSegmentTable(); break;
+				case 6: consoleShowPagesTable(); break;
+				case 7: consoleShowFreePages(); break;
+				case 8: consoleHelpMsp(); break;
 				case 9: break;
 				default: puts("Error, por favor intente de nuevo."); break;
 			}
@@ -49,7 +49,7 @@ void mspConsole(void){
 en el espacio de direcciones del Proceso <PID> de
 tamaño <Tamaño>. Imprime la dirección base del segmento
 creado.*/
-void createSegment(){
+void consoleCreateSegment(){
 	Int32U pid=0;
 	Int32U size=0;
 
@@ -68,7 +68,7 @@ void createSegment(){
 /*Destruir Segmento [PID], [Dirección Base] Destruye el
 segmento identificado por <Dirección Base> en el
 espacio de direcciones del Proceso <PID>.*/
-void destroySegment(){
+void consleDestroySegment(){
 	Int32U pid;
 	Int32U base;
 
@@ -89,7 +89,7 @@ void destroySegment(){
 ingresado en la dirección <Dirección Virtual> del espacio
 de direcciones del Proceso <PID>.
 En caso de error por violación de segmento debe ser informado.*/
-void writeMemory(){
+void consoleWriteMemory(){
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
@@ -124,7 +124,7 @@ void writeMemory(){
 [Tamaño] Imprime hasta <Tamaño> del contenido de la memoria
 comenzando en <Dirección Virtual>, del espacio de direcciones
 del Proceso <PID>.*/
-void readMemory(){
+void consoleReadMemory(){
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
@@ -154,7 +154,7 @@ void readMemory(){
 segmentos de todos los procesos ESO. Por cada segmento se
 debe imprimir al menos: PID, número de segmento, tamaño,
 dirección virtual base del segmento.*/
-void showSegmentTable(){
+void consoleShowSegmentTable(){
 	puts("MUESTRO LA TABLA DE SEGMENTOS.");
 }
 
@@ -162,7 +162,7 @@ void showSegmentTable(){
 de páginas del Proceso ESO <PID>. Por cada segmento se debe
 imprimir al menos: Número de segmento al que pertenece, si
 se encuentra en memoria principal o esta swappeada.*/
-void showPagesTable(){
+void consoleShowPagesTable(){
 	Int32U pid;
 
 	//LEO PID
@@ -188,12 +188,12 @@ existentes en el sistema, indicando: Número de Marco, si está
 ocupado o no y por qué programa, y toda la información
 relacionada con los algoritmos de reemplazo de páginas
 implementados9.*/
-void showFreePages(void){
+void consoleShowFreePages(void){
 	puts("MUESTRO LOS MARCOS DE MEMORIA (PAGINAS LIBRES).");
 }
 
 
-void helpMspConsole(void){
+void consoleHelpMsp(void){
 	puts("CREAR SEGMENTO [PID], [Tamaño] Crea un nuevo segmento");
 	puts("en el espacio de direcciones del Proceso <PID> de");
 	puts("tamaño <Tamaño>. Imprime la dirección base del segmento");

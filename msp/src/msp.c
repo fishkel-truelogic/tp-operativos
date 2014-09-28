@@ -173,7 +173,6 @@ Pages* reservePages(Int32U size){
 	
 	//top es la cantidad paginas a crear
 	Int32U top = size / FRAME_SIZE;
-	Int32U offset=0;
 	
 	Page* ptrPage = NULL;
 	//CREO LAS PAGINAS EN LA LISTA
