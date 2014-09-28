@@ -13,10 +13,12 @@ Int16U memLengthKB = 0;
 Int16U swapLengthMB = 0;
 String swapAlgorithm = "\0";
 
+Byte* memory;
+t_dictionary* segmentTable = NULL;
+t_dictionary* frames = NULL;
 
 int main() {
 
-	//local variables
 
 
 

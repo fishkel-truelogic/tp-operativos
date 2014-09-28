@@ -14,6 +14,8 @@
 #include <src/fereTypes.h>
 #include <src/commons/config.h>
 #include <src/commons/temporal.h>
+#include <src/commons/collections/dictionary.h>
+#include <src/commons/collections/list.h>
 #include "mspconsole.h"
 
 //DEFINICIONES
@@ -28,5 +30,26 @@
 //PROTOTYPES
 Boolean loadConfig(void);
 
+//STRUCTURES
+typedef struct segments {
+	// Este diccionario tiene como key el nro de segmento empezando en 0
+	// y el value va a ser Pages definida aca abajo
+	t_dictionary* segments; 
+} Segments;
+
+typedef struct pages {
+	t_list* pages; //esto es una lista de Page
+} Pages;
+
+typedef struct frame {
+	Byte* address;
+	Boolean free;
+} Frame;
+
+typedef struct page {
+	Frame* frame;
+	Int16U timestamp;
+	Boolean clock; 
+} Page;
 
 #endif /* MSP_H_ */
