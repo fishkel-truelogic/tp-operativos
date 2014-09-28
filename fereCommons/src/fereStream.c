@@ -2,103 +2,295 @@
  * fereStream.c
  *
  *  Created on: 21/09/2014
- *      Author: utnso
+ *      Author: fereRules
  */
-#include "fereStream.h"
+
+ //================================================================
+ /**
+  * Dependencies
+  */
 #include <stdlib.h>
 #include <string.h>
+#include "fereTcb.h"
+#include "fereStream.h"
+
+//==============================================//
+/**
+ * Serialization
+ */
 
 t_bitarray* serializeCpuKer(StrCpuKer* sck) {
-	Int8U size = sizeof(Byte) * sizeof(StrCpuKer);
+	Int16U size = getSizeStrCpuKer(sck);
+	
 	Stream data = malloc(size);
 	Stream ptrData = data;
-	Byte* ptrByte = (Byte*) &sck->id;
+	Byte* ptrByte;
+
+	ptrByte = (Byte*) &sck->id;
 	memcpy(ptrData, ptrByte, sizeof(sck->id));
-	ptrByte = (Byte*) &sck->tcb.A;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
-	ptrData += sizeof(sck->tcb.A);
-	ptrByte = (Byte*) &sck->tcb.B;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
-	ptrData += sizeof(sck->tcb.B);
-	ptrByte = (Byte*) &sck->tcb.C;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
-	ptrData += sizeof(sck->tcb.C);
-	ptrByte = (Byte*) &sck->tcb.D;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
-	ptrData += sizeof(sck->tcb.D);
-	ptrByte = (Byte*) &sck->tcb.E;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
-	ptrData += sizeof(sck->tcb.E);
-	ptrByte = (Byte*) &sck->tcb.F;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
-	ptrData += sizeof(sck->tcb.F);
-	ptrByte = (Byte*) &sck->tcb.P;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
-	ptrData += sizeof(sck->tcb.P);
-	ptrByte = (Byte*) &sck->tcb.M;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
-	ptrData += sizeof(sck->tcb.M);
-	ptrByte = (Byte*) &sck->tcb.S;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
-	ptrData += sizeof(sck->tcb.S);
-	ptrByte = (Byte*) &sck->tcb.X;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
-	ptrData += sizeof(sck->tcb.X);
-	ptrByte = (Byte*) &sck->tcb.pid;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
-	ptrData += sizeof(sck->tcb.pid);
-	ptrByte = (Byte*) &sck->tcb.tid;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
-	ptrData += sizeof(sck->tcb.tid);
-	ptrByte = (Byte*) &sck->tcb.kernelMode;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
-	ptrData += sizeof(sck->tcb.kernelMode);
-	ptrByte = (Byte*) &sck->tcb.csLenght;
-	memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
-	ptrData += sizeof(sck->tcb.csLenght);
-	ptrByte = (Byte*) &sck->status;
-	memcpy(ptrData, ptrByte, sizeof(sck->status));
+	ptrData += sizeof(sck->id);
+
 	ptrByte = (Byte*) &sck->action;
-	ptrData += sizeof(sck->action);
 	memcpy(ptrData, ptrByte, sizeof(sck->action));
-	ptrByte = (Byte*) &sck->logLen;
-	ptrData += sizeof(sck->logLen);
-	memcpy(ptrData, ptrByte, sizeof(sck->logLen));
-	ptrByte = (Byte*) sck->log;
-	ptrData += sck->logLen;
-	memcpy(ptrData, ptrByte, sck->logLen);
+	ptrData += sizeof(sck->action);
+
+	switch (sck->action) {
+		case NEXT_TCB:
+			ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+			break;		
+		case FIRST_TCB: break;
+		case INTE:
+		ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+
+			ptrByte = (Byte*) &sck->address;
+			memcpy(ptrData, ptrByte, sizeof(sck->address));
+			ptrData += sizeof(sck->address);
+			break;
+		case STD_INPUT:
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+
+			ptrByte = (Byte*) &sck->inputType;
+			memcpy(ptrData, ptrByte, sizeof(sck->inputType));
+			ptrData += sizeof(sck->inputType);
+			break;
+		case STD_OUTPUT:
+			ptrByte = (Byte*) &sck->logLen;
+			memcpy(ptrData, ptrByte, sizeof(sck->logLen));
+			ptrData += sizeof(sck->logLen);
+
+			ptrByte = (Byte*) sck->log;
+			memcpy(ptrData, ptrByte, sck->logLen);
+			ptrData += sck->logLen;
+
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			break;
+		case NEW_THREAD:
+			ptrByte = (Byte*) &sck->tcb.A;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
+			ptrData += sizeof(sck->tcb.A);
+			
+			ptrByte = (Byte*) &sck->tcb.B;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+			ptrData += sizeof(sck->tcb.B);
+			
+			ptrByte = (Byte*) &sck->tcb.C;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.C));
+			ptrData += sizeof(sck->tcb.C);
+			
+			ptrByte = (Byte*) &sck->tcb.D;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.D));
+			ptrData += sizeof(sck->tcb.D);
+			
+			ptrByte = (Byte*) &sck->tcb.E;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.E));
+			ptrData += sizeof(sck->tcb.E);
+			
+			ptrByte = (Byte*) &sck->tcb.F;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.F));
+			ptrData += sizeof(sck->tcb.F);
+			
+			ptrByte = (Byte*) &sck->tcb.P;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.P));
+			ptrData += sizeof(sck->tcb.P);
+			
+			ptrByte = (Byte*) &sck->tcb.M;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.M));
+			ptrData += sizeof(sck->tcb.M);
+			
+			ptrByte = (Byte*) &sck->tcb.S;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.S));
+			ptrData += sizeof(sck->tcb.S);
+			
+			ptrByte = (Byte*) &sck->tcb.X;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.X));
+			ptrData += sizeof(sck->tcb.X);
+			
+			ptrByte = (Byte*) &sck->tcb.pid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+			ptrData += sizeof(sck->tcb.pid);
+			
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+			
+			ptrByte = (Byte*) &sck->tcb.kernelMode;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.kernelMode));
+			ptrData += sizeof(sck->tcb.kernelMode);
+			
+			ptrByte = (Byte*) &sck->tcb.csLenght;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.csLenght));
+			ptrData += sizeof(sck->tcb.csLenght);
+			break;		
+		case JOIN_THREADS:
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+
+			ptrByte = (Byte*) &sck->tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tid));
+			ptrData += sizeof(sck->tid);
+			break;
+		case BLOCK_THREAD:
+			ptrByte = (Byte*) &sck->tcb.tid;
+			memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
+			ptrData += sizeof(sck->tcb.tid);
+
+			ptrByte = (Byte*) &sck->resource;
+			memcpy(ptrData, ptrByte, sizeof(sck->resource));
+			ptrData += sizeof(sck->resource);
+			break;
+		case WAKE_THREAD:
+			ptrByte = (Byte*) &sck->resource;
+			memcpy(ptrData, ptrByte, sizeof(sck->resource));
+			ptrData += sizeof(sck->resource);
+			break;
+		default: break;
+	}
+	
 	t_bitarray* barray = bitarray_create((char*) data, size);
+	
 	return barray;
 
 }
 
 t_bitarray* serializeMspCpu(StrMspCpu* smp) {
-	//Calculo cuanta data voy a serealizar
-	Int16U size = sizeof(smp->size) + smp->size * sizeof(Byte) + sizeof(smp->status);
-	//Reservo memoria del tamaño de la estructura que tengo que serializar
+	Int16U size = getSizeStrMspCpu(smp);
 	Stream data = malloc(size);
-	//Guardo la direccion inicial para un pivote
 	Stream ptrData = data;
-
-	//este es el que va a apuntar a los datos de la structura
-	Byte* ptrByte = (Byte*)&smp->size;
-	memcpy(ptrData, ptrByte, sizeof(smp->size));
-	ptrData += sizeof(smp->size);
-
-	ptrByte = smp->data;
-	memcpy(ptrData, ptrByte, smp->size);
-	ptrData += smp->size;
-
-	ptrByte = (Byte*)&smp->status;
-	memcpy(ptrData, ptrByte, sizeof(smp->status));
-	ptrData += sizeof(smp->status);
+	
+	Byte* ptrByte = (Byte*) &smp->action;
+	memcpy(ptrData, ptrByte, sizeof(smp->action));
+	ptrData += sizeof(smp->action);
+	
+	switch (smp->action) {
+		case SEG_FAULT:
+			break;
+		default:
+			memcpy(ptrData, ptrByte, sizeof(smp->dataLen));
+			ptrData += sizeof(smp->dataLen);
+			ptrByte = smp->data;
+			memcpy(ptrData, ptrByte, smp->dataLen);
+			break;
+	}
 
 	t_bitarray*  barray = bitarray_create((char*) data, size);
 	return barray;
 }
 
 t_bitarray* serializeKerCpu(StrKerCpu* skc) {
-	Int8U size = sizeof(Byte) * sizeof(StrKerCpu);
+	Int8U size = sizeof(StrKerCpu);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 	Byte* ptrByte = (Byte*) &skc->tcb.A;
@@ -149,70 +341,90 @@ t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
 }
+
 t_bitarray* serializeCpuMsp(StrCpuMsp* scm) {
-	Int8U size = sizeof(Byte) * sizeof(StrCpuMsp);
+	Int8U size = getSizeStrCpuMsp(scm);
 	Stream data = malloc(size);
 	Stream ptrData = data;
+
 	Byte* ptrByte = (Byte*) &scm->id;
 	memcpy(ptrData, ptrByte, sizeof(scm->id));
 	ptrData += sizeof(scm->id);
-	ptrByte = (Byte*) &scm->address;
-	memcpy(ptrData, ptrByte, sizeof(scm->address));
-	ptrData += sizeof(scm->address);
+	
 	ptrByte = (Byte*) &scm->action;
 	memcpy(ptrData, ptrByte, sizeof(scm->action));
 	ptrData += sizeof(scm->action);
-	ptrByte = (Byte*) &scm->dataLen;
-	memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
-	ptrData += sizeof(scm->dataLen);
-	ptrByte = (Byte*) scm->data;
-	memcpy(ptrData, ptrByte, scm->dataLen);
+	
+	switch (scm->action) {
+		case MEM_READ: 
+			ptrByte = (Byte*) &scm->address;
+			memcpy(ptrData, ptrByte, sizeof(scm->address));
+			break;
+
+		case MEM_WRITE:
+			ptrByte = (Byte*) &scm->address;
+			memcpy(ptrData, ptrByte, sizeof(scm->address));
+			ptrData += sizeof(scm->address);
+
+			ptrByte = (Byte*) &scm->dataLen;
+			memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
+			ptrData += sizeof(scm->dataLen);
+			
+			ptrByte = (Byte*) scm->data;
+			memcpy(ptrData, ptrByte, scm->dataLen);
+			break;
+
+		case MEM_ALLOC:
+			ptrByte = (Byte*) &scm->pid;
+			memcpy(ptrData, ptrByte, sizeof(scm->pid));
+			ptrData += sizeof(scm->pid);
+
+			ptrByte = (Byte*) &scm->address;
+			memcpy(ptrData, ptrByte, sizeof(scm->address));
+			ptrData += sizeof(scm->address);
+
+			ptrByte = (Byte*) &scm->dataLen;
+			memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
+			ptrData += sizeof(scm->dataLen);	
+			break;
+		default: break;
+	}
+
 	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
-
 }
 
 t_bitarray* serializeMspKer(StrMspKer* smk) {
-	//Calculo cuanta data voy a serealizar
 	Int16U size = sizeof(StrMspKer);
-	//Reservo memoria del tamaño de la estructura que tengo que serializar
 	Stream data = malloc(size);
-	//Guardo la direccion inicial para un pivote
 	Stream ptrData = data;
-	//este es el que va a apuntar a los datos de la structura
-	Byte* ptrByte = (Byte*)&smk->id;
+
+	Byte* ptrByte = (Byte*) &smk->id;
 	memcpy(ptrData, ptrByte, sizeof(smk->id));
 	ptrData += sizeof(smk->id);
+	
+	ptrByte = (Byte*) &smk->action;
+	memcpy(ptrData, ptrByte, sizeof(smk->action));
+	ptrData += sizeof(smk->action);
 
-	ptrByte = (Byte*)&smk->address;
-	memcpy(ptrData, ptrByte, sizeof(smk->address));
-	ptrData += sizeof(smk->address);
-
-	ptrByte = (Byte*)&smk->status;
-	memcpy(ptrData, ptrByte, sizeof(smk->status));
-	ptrData += sizeof(smk->status);
-
-	ptrByte = (Byte*)&smk->size;
-	memcpy(ptrData, ptrByte, sizeof(smk->size));
-	ptrData += sizeof(smk->size);
+	switch (smk->action) {
+		case SEG_FAULT: break;
+		case CREATE_SEG:
+			ptrByte = (Byte*) &smk->address;
+			memcpy(ptrData, ptrByte, sizeof(smk->address));
+			ptrData += sizeof(smk->address);
+			break;
+		case DELETE_SEG: break;
+		case MEM_WRITE: break;
+		default: break;
+	}
+	
 	t_bitarray* barray = bitarray_create((char*) data, size);
-		return barray;
-
+	return barray;
 }
 
-t_bitarray* serializeKerMsp(StrKerMsp *skm) {
-
-	Int32U size = 0;
-
-
-	size += sizeof(skm->id);
-	size += sizeof(skm->dataLength);
-	size += skm->dataLength;
-	size += sizeof(skm->action);
-	size += sizeof(skm->size);
-	size += sizeof(skm->pid);
-	size += sizeof(skm->address);
-
+t_bitarray* serializeKerMsp(StrKerMsp* skm) {
+	Int32U size = getSizeStrKerMsp(skm);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 
@@ -221,194 +433,354 @@ t_bitarray* serializeKerMsp(StrKerMsp *skm) {
 	memcpy(ptrData, ptrByte, sizeof(skm->id));
 	ptrData += sizeof(skm->id);
 
-	ptrByte = (Byte*) &skm->dataLength;
-	memcpy(ptrData, ptrByte, sizeof(skm->dataLength));
-	ptrData += sizeof(skm->dataLength);
-
-	ptrByte = skm->data;
-	memcpy(ptrData, ptrByte, skm->dataLength);
-	ptrData += skm->dataLength;
-
 	ptrByte = (Byte*) &skm->action;
 	memcpy(ptrData, ptrByte, sizeof(skm->action));
 	ptrData += sizeof(skm->action);
 
-	ptrByte = (Byte*) &skm->size;
-	memcpy(ptrData, ptrByte, sizeof(skm->size));
-	ptrData += sizeof(skm->size);
+	switch (skm->action) {
+ 		case CREATE_SEG: 
+			ptrByte = (Byte*) &skm->pid;
+			memcpy(ptrData, ptrByte, sizeof(skm->pid));
+			ptrData += sizeof(skm->pid);
+		
+			ptrByte = (Byte*) &skm->size;
+			memcpy(ptrData, ptrByte, sizeof(skm->size));
+			ptrData += sizeof(skm->size);
+ 			break;
+		case DELETE_SEG: 
+			ptrByte = (Byte*) &skm->pid;
+			memcpy(ptrData, ptrByte, sizeof(skm->pid));
+			ptrData += sizeof(skm->pid);
+		
+			ptrByte = (Byte*) &skm->address;
+			memcpy(ptrData, ptrByte, sizeof(skm->address));
+			ptrData += sizeof(skm->address);
+			break;
+		case MEM_WRITE:
+			ptrByte = (Byte*) &skm->pid;
+			memcpy(ptrData, ptrByte, sizeof(skm->pid));
+			ptrData += sizeof(skm->pid);
+		
+			ptrByte = (Byte*) &skm->address;
+			memcpy(ptrData, ptrByte, sizeof(skm->address));
+			ptrData += sizeof(skm->address);
 
-	ptrByte = (Byte*) &skm->pid;
-	memcpy(ptrData, ptrByte, sizeof(skm->pid));
-	ptrData += sizeof(skm->pid);
-
-	ptrByte = (Byte*) &skm->address;
-	memcpy(ptrData, ptrByte, sizeof(skm->address));
-	ptrData += sizeof(skm->address);
+			ptrByte = (Byte*) &skm->size;
+			memcpy(ptrData, ptrByte, sizeof(skm->size));
+			ptrData += sizeof(skm->size);
+	
+			ptrByte = skm->data;
+			memcpy(ptrData, ptrByte, skm->size);
+			break; 
+ 		default: 
+ 			break;
+ 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
-
 }
 
 
 t_bitarray* serializeConKer(StrConKer* sconk) {
-	Int8U size = sizeof(Byte)*sconk->bufferWriterLen
-			+ sizeof(Byte)*sconk->fileContentLen
-			+ sizeof(sconk->action)
-			+ sizeof(sconk->id)
-			+ sizeof(sconk->fileContentLen)
-			+ sizeof(sconk->bufferWriterLen);
+	Int8U size = getSizeStrConKer(sconk);
 	Stream data = malloc(size);
 	Stream ptrData = data;
+
 	Byte* ptrByte = (Byte*) &sconk->id;
 	memcpy(ptrData, ptrByte, sizeof(sconk->id));
 	ptrData += sizeof(sconk->id);
-	ptrByte = (Byte*) &sconk->fileContentLen;
-	memcpy(ptrData, ptrByte, sizeof(sconk->fileContentLen));
-	ptrData += sizeof(sconk->fileContentLen);
-	ptrByte = (Byte*) sconk->fileContent;
-	memcpy(ptrData, ptrByte, sconk->fileContentLen);
-	ptrData += sconk->fileContentLen;
-	ptrByte = (Byte*) &sconk->bufferWriterLen;
-	memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriterLen));
-	ptrData += sizeof(sconk->bufferWriterLen);
-	ptrByte = (Byte*) sconk->bufferWriter;
-	memcpy(ptrData, ptrByte, sconk->bufferWriterLen);
-	ptrData += sconk->bufferWriterLen;
+	
 	ptrByte = (Byte*) &sconk->action;
 	memcpy(ptrData, ptrByte, sizeof(sconk->action));
 	ptrData += sizeof(sconk->action);
-	t_bitarray* barray = bitarray_create((char*)data, size);
-	return barray;
+	
+	switch (sconk->action) {
+		case STD_INPUT: 
 
+			ptrByte = (Byte*) &sconk->fileContentLen;
+			memcpy(ptrData, ptrByte, sizeof(sconk->fileContentLen));
+			ptrData += sizeof(sconk->fileContentLen);
+
+			ptrByte = (Byte*) sconk->fileContent;
+			memcpy(ptrData, ptrByte, sconk->fileContentLen);
+			ptrData += sconk->fileContentLen;
+
+			break;
+		case BESO_FILE: 
+			
+			ptrByte = (Byte*) &sconk->bufferWriterLen;
+			memcpy(ptrData, ptrByte, sizeof(sconk->bufferWriterLen));
+			ptrData += sizeof(sconk->bufferWriterLen);
+			
+			ptrByte = (Byte*) sconk->bufferWriter;
+			memcpy(ptrData, ptrByte, sconk->bufferWriterLen);
+			ptrData += sconk->bufferWriterLen;
+
+			break;
+		default: break;
+	}
+	t_bitarray* barray = bitarray_create((char*) data, size);
+	return barray;
 }
 
-t_bitarray* serializeKerCon(StrKerCon *skc) {
-
-	Int32U size = 0;
-
-	size += sizeof(skc->logLen);
-	size += skc->logLen;
-
+t_bitarray* serializeKerCon(StrKerCon* skc) {
+	Int32U size = getSizeStrKerCon(skc);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 
+	Byte* ptrByte = (Byte*) &skc->action;
+	memcpy(ptrData, ptrByte, sizeof(skc->action));
 
-	Byte* ptrByte = (Byte*) &skc->logLen;
-	memcpy(ptrData, ptrByte, sizeof(skc->logLen));
-	ptrData += sizeof(skc->logLen);
-
-	ptrByte = skc->log;
-	memcpy(ptrData, ptrByte, skc->logLen);
-	ptrData += skc->logLen;
+	switch (skc->action) {
+		case STD_INPUT:
+			ptrByte = (Byte*) &skc->inputType;
+			memcpy(ptrData, ptrByte, sizeof(skc->inputType));
+			break;
+		case STD_OUTPUT:
+			ptrByte = (Byte*) &skc->logLen;
+			memcpy(ptrData, ptrByte, sizeof(skc->logLen));
+			ptrData += sizeof(skc->logLen);
+			ptrByte = skc->log;
+			memcpy(ptrData, ptrByte, skc->logLen);
+			ptrData += skc->logLen;
+			break;
+		default: break;
+	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
 	return barray;
-
 }
+
+//==============================================//
+/**
+ * Un serialization
+ */
 
 StrMspCpu* unserializeMspCpu(Stream dataStream) {
-	//Guardo la direccion de memoria inicial del stream
 	Stream ptrByte = dataStream;
-	//defino las variables de la estructura
-	Int32U size;
-	Byte * data=NULL;
-	Boolean status;
+	
+	Int16U dataLen;
+	Byte * data = NULL;
+	Char action;
 
-	memcpy(&size, ptrByte, sizeof(size));
-	ptrByte += sizeof(size);
-	data = malloc (size);
-	//leo los datos por el largo que me pasaron en size
-	memcpy(data, ptrByte, size);
-	ptrByte += size;
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
 
-	memcpy(&status, ptrByte, sizeof(Boolean));
-	ptrByte += sizeof(Boolean);
+	switch (action) {
+		case SEG_FAULT: 
+			break;
+		default:
+			memcpy(&dataLen, ptrByte, sizeof(dataLen));
+			ptrByte += sizeof(dataLen);
+			
+			data = malloc (dataLen);
+			memcpy(data, ptrByte, dataLen);
+			ptrByte += dataLen;
+			break;
+	}
 
 	free(dataStream);
-
-	return newStrMspCpu(size, data, status);
+	return newStrMspCpu(dataLen, data, action);
 }
-
 
 StrCpuMsp* unserializeCpuMsp(Stream data) {
 	Stream ptrByte = data;
 	Char id;
-	Int32U address;
+	Int32U address, pid;
 	Char action;
 	Int16U dataLen;
-	Byte* dataa = NULL;
+	Byte* writeData = NULL;
 
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
-	memcpy(&address, ptrByte, sizeof(address));
-	ptrByte += sizeof(address);
+	
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
-	memcpy(&dataLen, ptrByte, sizeof(dataLen));
-	ptrByte += sizeof(dataLen);
-	dataa = malloc(dataLen);
-	memcpy(dataa, ptrByte, dataLen);
-	free(data);
-	StrCpuMsp* scm = newStrCpuMsp(id, address, action, dataa, dataLen);
-	return scm;
 
+	switch (action) {
+		case MEM_READ: 
+			memcpy(&address, ptrByte, sizeof(address));
+			break;
+		case MEM_WRITE:
+			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
+
+			memcpy(&dataLen, ptrByte, sizeof(dataLen));
+			ptrByte += sizeof(dataLen);
+			writeData = malloc(dataLen);
+			memcpy(writeData, ptrByte, dataLen);
+			break;
+		case MEM_ALLOC:
+			memcpy(&pid, ptrByte, sizeof(pid));
+			ptrByte += sizeof(pid);
+
+			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
+
+			memcpy(&dataLen, ptrByte, sizeof(dataLen));
+			ptrByte += sizeof(dataLen);	
+			break;
+		default: break;
+	}
+	free(data);
+	StrCpuMsp* scm = newStrCpuMsp(id, address, action, writeData, dataLen, pid);
+	return scm;
 }
 
 StrCpuKer* unserializeCpuKer(Stream data) {
 	Stream ptrByte = data;
-	Char id;
-	Tcb tcb;
-	Char status;
-	Char action;
+	Char id, inputType, resource, action;
+	Int32U address, tid; 
 	Int16U logLen;
+	Tcb tcb;
 	String log;
+
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
-	memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
-	ptrByte += sizeof(tcb.A);
-	memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
-	ptrByte += sizeof(tcb.B);
-	memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
-	ptrByte += sizeof(tcb.C);
-	memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
-	ptrByte += sizeof(tcb.D);
-	memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
-	ptrByte += sizeof(tcb.E);
-	memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
-	ptrByte += sizeof(tcb.F);
-	memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
-	ptrByte += sizeof(tcb.P);
-	memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
-	ptrByte += sizeof(tcb.M);
-	memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
-	ptrByte += sizeof(tcb.S);
-	memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
-	ptrByte += sizeof(tcb.X);
-	memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
-	ptrByte += sizeof(tcb.pid);
-	memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
-	ptrByte += sizeof(tcb.tid);
-	memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
-	ptrByte += sizeof(tcb.kernelMode);
-	memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
-	ptrByte += sizeof(tcb.csLenght);
+	
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
-	memcpy(&status, ptrByte, sizeof(status));
-	ptrByte += sizeof(status);
-	memcpy(&logLen, ptrByte, sizeof(logLen));
-	ptrByte += sizeof(logLen);
-	log = malloc(logLen);
-	memcpy(log, ptrByte, logLen);
-	ptrByte += logLen;
+
+	switch (action) {
+		case NEXT_TCB:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			break;		
+		case FIRST_TCB: break;
+		case INTE:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
+			break;
+		case STD_INPUT:
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+
+			memcpy(&inputType, ptrByte, sizeof(inputType));
+			ptrByte += sizeof(inputType);
+			break;
+		case STD_OUTPUT:
+			memcpy(&logLen, ptrByte, sizeof(logLen));
+			ptrByte += sizeof(logLen);
+			
+			log = malloc(logLen);
+			memcpy(log, ptrByte, logLen);
+			ptrByte += logLen;
+
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			break;
+		case NEW_THREAD:
+			memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
+			ptrByte += sizeof(tcb.A);
+			memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
+			ptrByte += sizeof(tcb.B);
+			memcpy(&tcb.C, ptrByte, sizeof(tcb.C));
+			ptrByte += sizeof(tcb.C);
+			memcpy(&tcb.D, ptrByte, sizeof(tcb.D));
+			ptrByte += sizeof(tcb.D);
+			memcpy(&tcb.E, ptrByte, sizeof(tcb.E));
+			ptrByte += sizeof(tcb.E);
+			memcpy(&tcb.F, ptrByte, sizeof(tcb.F));
+			ptrByte += sizeof(tcb.F);
+			memcpy(&tcb.P, ptrByte, sizeof(tcb.P));
+			ptrByte += sizeof(tcb.P);
+			memcpy(&tcb.M, ptrByte, sizeof(tcb.M));
+			ptrByte += sizeof(tcb.M);
+			memcpy(&tcb.S, ptrByte, sizeof(tcb.S));
+			ptrByte += sizeof(tcb.S);
+			memcpy(&tcb.X, ptrByte, sizeof(tcb.X));
+			ptrByte += sizeof(tcb.X);
+			memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+			ptrByte += sizeof(tcb.pid);
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+			memcpy(&tcb.kernelMode, ptrByte, sizeof(tcb.kernelMode));
+			ptrByte += sizeof(tcb.kernelMode);
+			memcpy(&tcb.csLenght, ptrByte, sizeof(tcb.csLenght));
+			ptrByte += sizeof(tcb.csLenght);
+			break;		
+		case JOIN_THREADS:
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+
+			memcpy(&tid, ptrByte, sizeof(tid));
+			ptrByte += sizeof(tid);
+			break;
+		case BLOCK_THREAD:
+			memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
+			ptrByte += sizeof(tcb.tid);
+
+			memcpy(&resource, ptrByte, sizeof(resource));
+			ptrByte += sizeof(resource);
+			break;
+		case WAKE_THREAD:
+			memcpy(&resource, ptrByte, sizeof(resource));
+			break;
+		default: break;
+	}
+	
 	free(data);
-	StrCpuKer* sck = newStrCpuKer(id, log, tcb, status, action, logLen);
+	StrCpuKer* sck = newStrCpuKer(id, tcb, action, 
+								  logLen, log, address,
+								  tid, inputType, resource);
 	return sck;
 }
 
 StrKerCpu* unserializeKerCpu(Stream data) {
-
 	Stream ptrByte = data;
 	Tcb tcb;
 	Int8U quantum;
@@ -449,122 +821,165 @@ StrKerCpu* unserializeKerCpu(Stream data) {
 StrConKer* unserializeConKer(Stream data) {
 	Stream ptrByte = data;
 	Char id;
-	Byte* fileContent=NULL;
-	Int16U fileContentLen, bufferWriterLen;
-	String bufferWriter=NULL;
 	Char action;
+	Byte* fileContent = NULL;
+	Int16U fileContentLen, bufferWriterLen;
+	Byte* bufferWriter = NULL;
+
 	memcpy(&id, ptrByte, sizeof(id));
 	ptrByte += sizeof(id);
-	memcpy(&fileContentLen, ptrByte, sizeof(fileContentLen));
-	ptrByte += sizeof(fileContentLen);
-	fileContent = malloc(fileContentLen);
-	memcpy(fileContent, ptrByte, fileContentLen);
-	ptrByte += fileContentLen;
-	memcpy(&bufferWriterLen, ptrByte, sizeof(bufferWriterLen));
-	ptrByte += sizeof(bufferWriterLen);
-	bufferWriter = malloc(bufferWriterLen);
-	memcpy(bufferWriter, ptrByte, bufferWriterLen);
-	ptrByte += bufferWriterLen;
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
+	
+	switch (action) {
+		case STD_INPUT:
+			
+			memcpy(&fileContentLen, ptrByte, sizeof(fileContentLen));
+			ptrByte += sizeof(fileContentLen);
+
+			fileContent = malloc(fileContentLen);
+			memcpy(fileContent, ptrByte, fileContentLen);
+			ptrByte += fileContentLen;
+			
+			break;
+		case BESO_FILE:
+		
+			memcpy(&bufferWriterLen, ptrByte, sizeof(bufferWriterLen));
+			ptrByte += sizeof(bufferWriterLen);
+
+			bufferWriter = malloc(bufferWriterLen);
+			memcpy(bufferWriter, ptrByte, bufferWriterLen);
+			ptrByte += bufferWriterLen;
+
+			break;
+		default: break; 
+	}
 	free(data);
 	return newStrConKer(id, fileContent, bufferWriter, action, bufferWriterLen, fileContentLen);
 }
 
 
 StrMspKer* unserializeMspKer(Stream dataStream) {
-	//Guardo la direccion de memoria inicial del stream
 	Stream ptrByte = dataStream;
-	//defino las variables de la estructura
 	Char id;
 	Int32U address;
-	Char status;
-	Int16U size;
+	Char action;
 
 	memcpy(&id, ptrByte, sizeof(Char));
 	ptrByte += sizeof(Char);
+	
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
 
-	memcpy(&address, ptrByte, sizeof(Int32U));
-	ptrByte += sizeof(Int32U);
-
-	memcpy(&status, ptrByte, sizeof(Char));
-	ptrByte += sizeof(Char);
-
-	memcpy(&size, ptrByte, sizeof(Int16U));
-	ptrByte += sizeof(Int16U);
+	switch (action) {
+		case SEG_FAULT: break;
+		case CREATE_SEG:
+			memcpy(&address, ptrByte, sizeof(Int32U));
+			break;
+		case DELETE_SEG: break;
+		case MEM_WRITE: break;
+		default: break;
+	}
 	free (dataStream);
-	return newStrMspKer(id, address, status, size);
+	return newStrMspKer(id, address, action);
 }
 
 StrKerMsp* unserializeKerMsp(Stream dataSerialized) {
+	Stream ptrByte = dataSerialized;
+	Char id;
+	Byte* data = NULL;
+	Char action;
+	Int16U size;
+	Int32U pid;
+	Int32U address;
 
-			Stream ptrByte = dataSerialized;
-			Char id;
-			Int16U dataLength;
-			Byte *data = NULL;
-			Char action;
-			Int16U size;
-			Int32U pid;
-			Int32U address;
+	memcpy(&id, ptrByte, sizeof(id));
+	ptrByte += sizeof(id);
 
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
 
-			memcpy(&id, ptrByte, sizeof(id));
-			ptrByte += sizeof(id);
-
-			memcpy(&dataLength, ptrByte, sizeof(dataLength));
-			ptrByte += sizeof(dataLength);
-
-			data = malloc(dataLength);
-			memcpy(data, ptrByte, dataLength);
-			ptrByte += dataLength;
-
-			memcpy(&action, ptrByte, sizeof(action));
-			ptrByte += sizeof(action);
-
+	switch (action) {
+		case CREATE_SEG: 
+			memcpy(&pid, ptrByte, sizeof(pid));
+			ptrByte += sizeof(pid);
+			
 			memcpy(&size, ptrByte, sizeof(size));
 			ptrByte += sizeof(size);
-
+			break;
+		case DELETE_SEG: 
+			memcpy(&pid, ptrByte, sizeof(pid));
+			ptrByte += sizeof(pid);
+			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
+			break;
+		case MEM_WRITE:
 			memcpy(&pid, ptrByte, sizeof(pid));
 			ptrByte += sizeof(pid);
 
 			memcpy(&address, ptrByte, sizeof(address));
+			ptrByte += sizeof(address);
 
-			free(dataSerialized);
-			return newStrKerMsp(id, dataLength, data, action, size, pid, address);
+			memcpy(&size, ptrByte, sizeof(size));
+			ptrByte += sizeof(size);
+			
+			data = malloc(size);
+			memcpy(data, ptrByte, size);
+			ptrByte += size;
+			break; 
+		default: 
+			break;
+ 	}
 
+	free(dataSerialized);
+	return newStrKerMsp(id, data, action, size, pid, address);
 }
 
-
 StrKerCon* unserializeKerCon(Stream dataSerialized) {
+	Stream ptrByte = dataSerialized;
+	Int32U logLen;
+	Char action;
+	Char inputType;
+	Byte* data = NULL;
 
-			Stream ptrByte = dataSerialized;
+	memcpy(&action, ptrByte, sizeof(action));
+	ptrByte += sizeof(action);
 
-			Int32U logLen;
-			Byte *data = NULL;
-
+	switch (action) {
+		case STD_INPUT:
+			memcpy(&inputType, ptrByte, sizeof(inputType));
+			ptrByte += sizeof(inputType);		
+			break;
+		case STD_OUTPUT:
 			memcpy(&logLen, ptrByte, sizeof(logLen));
 			ptrByte += sizeof(logLen);
-
+			
 			data = malloc(logLen);
 			memcpy(data, ptrByte, logLen);
 			ptrByte += logLen;
-
-			free(dataSerialized);
-			return newStrKerCon(logLen,data);
-
+			break;
+		default: break;
+	}
+	
+	free(dataSerialized);
+	return newStrKerCon(logLen, data, action, inputType);
 }
 
-StrCpuMsp* newStrCpuMsp(Char id, Int32U address, Char action, Byte* data,
-		Int16U dataLen) {
+//==============================================//
+/**
+ * Constructors
+ */
+
+StrCpuMsp* newStrCpuMsp(Char id, Int32U address, Char action, Byte* data, Int16U dataLen, Int32U pid) {
 	StrCpuMsp* scm = malloc(sizeof(StrCpuMsp));
 	scm->id = id;
 	scm->address = address;
 	scm->data = data;
 	scm->dataLen = dataLen;
 	scm->action = action;
+	scm->pid = pid;
 	return scm;
 }
-
 
 StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	StrKerCpu* skc = malloc(sizeof(StrKerCpu));
@@ -573,20 +988,29 @@ StrKerCpu* newStrKerCpu(Tcb tcb, Int8U quantum) {
 	return skc;
 }
 
-StrCpuKer* newStrCpuKer(Char id, String log, Tcb tcb, Char status, Char action,
-		Int16U logLen) {
+StrCpuKer* newStrCpuKer(Char id,
+						Tcb tcb,
+						Char action,
+						Int16U logLen,
+						String log,
+						Int32U address, //interruption
+						Int32U tid, // join
+						Char inputType,
+						Char resource) {
+
 	StrCpuKer* sck = malloc(sizeof(StrCpuKer));
 	sck->id = id;
 	sck->log = log;
 	sck->tcb = tcb;
-	sck->status = status;
 	sck->action = action;
 	sck->logLen = logLen;
+	sck->inputType = inputType;
+	sck->resource = resource;
+	sck->tid = tid;
 	return sck;
 }
 
-
-StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
+StrConKer* newStrConKer(Char id, Byte* fileContent, Byte* bufferWriter, Char action, Int16U bufferWriterLen, Int16U fileContentLen) {
 	StrConKer* sconk = malloc(sizeof(StrConKer));
 	sconk->id = id;
 	sconk->fileContent = fileContent;
@@ -597,30 +1021,25 @@ StrConKer* newStrConKer(Char id, Byte* fileContent, String bufferWriter, Char ac
 	return sconk;
 }
 
-
-StrMspCpu* newStrMspCpu(Int32U size, Byte* data, Boolean status) {
+StrMspCpu* newStrMspCpu(Int16U dataLen, Byte* data, Char action) {
 	StrMspCpu* smc = malloc(sizeof(StrMspCpu));
-	smc->size = size;
+	smc->dataLen = dataLen;
 	smc->data = data;
-	smc->status = status;
+	smc->action = action;
 	return smc;
 }
 
-StrMspKer* newStrMspKer(Char id, Int32U address, Char status, Int16U size) {
+StrMspKer* newStrMspKer(Char id, Int32U address, Char action) {
 	StrMspKer* smk = malloc(sizeof(StrMspKer));
 	smk->id = id;
 	smk->address = address;
-	smk->status = status;
-	smk->size = size;
+	smk->action = action;
 	return smk;
 }
 
-StrKerMsp* newStrKerMsp(Char id, Int16U dataLength,Byte *data,Char action, Int16U size,Int32U pid, Int32U address) {
-
+StrKerMsp* newStrKerMsp(Char id, Byte *data, Char action, Int16U size, Int32U pid, Int32U address) {
 	StrKerMsp* skm = malloc(sizeof(StrKerMsp));
-
 	skm->id = id;
-	skm->dataLength = dataLength;
 	skm->data = data;
 	skm->action = action;
 	skm->size = size;
@@ -629,13 +1048,206 @@ StrKerMsp* newStrKerMsp(Char id, Int16U dataLength,Byte *data,Char action, Int16
 	return skm;
 }
 
-
-StrKerCon* newStrKerCon(Int32U logLen, Byte *log) {
-
+StrKerCon* newStrKerCon(Int32U logLen, Byte *log, Char action, Char inputType) {
 	StrKerCon* skc = malloc(sizeof(StrKerCon));
-
 	skc->logLen = logLen;
 	skc->log = log;
-
+	skc->action = action;
+	skc->inputType = inputType;
 	return skc;
+}
+
+
+//==============================================//
+/**
+ * Sizes
+ */
+
+Int16U getSizeStrCpuKer(StrCpuKer* sck) {
+ 	Int16U size = 0;
+	size += sizeof(sck->id); 
+	size += sizeof(sck->action);
+ 	switch (sck->action) {
+		case NEXT_TCB:
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid); 
+			break;
+		case FIRST_TCB: 
+		break;
+		case INTE:
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid);
+			size += sizeof(sck->address); 
+			break;
+		case STD_INPUT: 
+			size += sizeof(sck->inputType);
+			size += sizeof(sck->tcb.pid);
+			break;
+		case STD_OUTPUT: 
+			size += sizeof(sck->logLen);
+			size += sck->logLen;
+			size += sizeof(sck->tcb.pid);
+			break;
+		case NEW_THREAD: 
+			size += sizeof(sck->tcb.A);
+			size += sizeof(sck->tcb.B);
+			size += sizeof(sck->tcb.C);
+			size += sizeof(sck->tcb.D);
+			size += sizeof(sck->tcb.E);
+			size += sizeof(sck->tcb.F);
+			size += sizeof(sck->tcb.X);
+			size += sizeof(sck->tcb.M);
+			size += sizeof(sck->tcb.P);
+			size += sizeof(sck->tcb.S);
+			size += sizeof(sck->tcb.kernelMode);
+			size += sizeof(sck->tcb.csLenght);
+			size += sizeof(sck->tcb.pid);
+			size += sizeof(sck->tcb.tid);
+			break;
+		case JOIN_THREADS:
+			size += sizeof(sck->tcb.tid);
+			size += sizeof(sck->tid);
+			break;
+		case BLOCK_THREAD: 
+			size += sizeof(sck->tcb.tid);
+			size += sizeof(sck->resource);
+			break;
+		case WAKE_THREAD:
+			size += sizeof(sck->resource);
+			break;
+		default: break;
+	}
+ 	return size;
+ }
+
+Int16U getSizeStrConKer(StrConKer* sck) {
+	Int16U size = 0;
+	size += sizeof(sck->id); 
+	size += sizeof(sck->action);
+	switch (sck->action) {
+		case STD_INPUT: 
+			size += sizeof(sck->bufferWriterLen);
+			size += sck->bufferWriterLen;
+			break;
+		case BESO_FILE: 
+			size += sizeof(sck->fileContentLen);
+			size += sck->fileContentLen;
+			break;
+		default: break;
+	}
+	return size;
+}
+
+Int16U getSizeStrMspCpu(StrMspCpu* smp) {
+	Int16U size = 0;
+	size += sizeof(smp->action);
+	switch (smp->action) {
+		case SEG_FAULT: 
+			break;
+		default: 
+			size += sizeof(smp->dataLen);
+			size += smp->dataLen;
+			break;
+	}
+	return size;
+}
+
+Int16U getSizeStrKerMsp(StrKerMsp* skm) {
+ 	Int16U size = 0;
+ 	size += sizeof(skm->id);
+	size += sizeof(skm->action);
+ 	switch (skm->action) {
+ 		case CREATE_SEG: 
+ 			size += sizeof(skm->pid);
+ 			size += sizeof(skm->size);
+ 			break;
+		case DELETE_SEG: 
+			size += sizeof(skm->pid);
+			size += sizeof(skm->address);
+			break;
+		case MEM_WRITE:
+			size += sizeof(skm->pid);
+			size += sizeof(skm->address);
+			size += sizeof(skm->size);
+			size += skm->size;
+			break; 
+ 		default: 
+ 			break;
+ 	}
+ 	return size;
+}
+
+Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
+ 	Int16U size = 0;
+ 	size += sizeof(scm->id);
+ 	size += sizeof(scm->action);
+ 	switch (scm->action) {
+		case MEM_READ: 
+			size += sizeof(scm->address);
+			break;
+		case MEM_WRITE:
+			size += sizeof(scm->address);
+			size += sizeof(scm->dataLen);
+			size += scm->dataLen;
+			break;
+		case MEM_ALLOC:
+			size += sizeof(scm->pid);
+			size += sizeof(scm->address);
+			size += sizeof(scm->dataLen);
+			break;
+		default: break;
+	}
+ 	return size;
+}
+
+Int16U getSizeStrKerCon(StrKerCon* skc) {
+	Int16U size = 0;
+	size += sizeof(skc->action);
+	switch (skc->action) {
+		case STD_INPUT:
+			size += sizeof(skc->inputType);
+			break;
+		case STD_OUTPUT:
+			size += sizeof(skc->logLen);
+			size += skc->logLen;
+			break;
+		default: break;
+	}
+	return size;
+}
+
+//==============================================//
+/**
+ * Handshake
+ */
+ 
+Char getStreamId(Stream dataSerialized) {
+	Char id;
+	Stream ptrByte = dataSerialized;
+	memcpy(&id, ptrByte, sizeof(id));
+	return id;
 }
