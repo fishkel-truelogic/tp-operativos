@@ -190,3 +190,26 @@ Pages* reservePages(Int32U size){
 
 	return ptrPages
 }
+
+Int32U getOffset(Int32U address) {
+	Int32U offset;
+	Int32U mask = 4293918720; // last 12 bits
+	offset = address & mask;
+	return offset;
+}
+
+Int32U getPage(Int32U address) {
+	Int32U page;
+	Int32U mask = 1048320; //12 middle bits
+	mask = mask & address;
+	page = mask >> 8;
+	return page;
+}
+
+Int32U getSegment(Int32U address) {
+	Int32U segment;
+	Int32U mask = 255; // first 8 bits
+	mask = mask & address;
+	segment = mask >> 20;
+	return segment;
+}

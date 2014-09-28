@@ -28,7 +28,9 @@
 #define SWAP_ALGORITHM "SUST_PAGS"		//Algoritmo de sustitucion de paginas
 #define FRAME_SIZE 256					//TAMAÑO DE LOS MARCOS DE PAGINA
 
-
+Int32U getOffset(Int32U);
+Int32U getPage(Int32U);
+Int32U getSegment(Int32U);
 Boolean loadConfig(void);
 Boolean initMemory(void);
 Boolean createSegment(Int32U, Int32U);
