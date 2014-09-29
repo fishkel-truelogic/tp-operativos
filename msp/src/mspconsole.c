@@ -81,10 +81,12 @@ void consleDestroySegment(){
 	printf("BASE ADDRESS:");
 	scanf("%d", &base);
 
-	if (pid >= 0 && pid <= 65535)
+	if (pid >= 0 && pid <= 65535 && destroySegment(pid, base)) {
 		printf("Destruyo el segmento del PID: %d con base %d.\n\n", pid, base);
-	else
-		printf("Error\n\n");
+	}
+	else {
+		printf("Error numero de proceso invalido\n\n");
+	}
 }
 
 /*Escribir Memoria [PID], [Dirección Virtual], [Tamaño],
