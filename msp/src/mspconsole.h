@@ -8,9 +8,10 @@
 #ifndef MSPCONSOLE_H_
 #define MSPCONSOLE_H_
 
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <src/fereTypes.h>
+#include "msp.h"
 
 
 void mspConsole(void);
@@ -58,7 +59,7 @@ existentes en el sistema, indicando: Número de Marco, si está
 ocupado o no y por qué programa, y toda la información
 relacionada con los algoritmos de reemplazo de páginas
 implementados9.*/
-void consoleShowFreePages(void);
+void consoleShowFrames(void);
 
 
 #endif /* MSPCONSOLE_H_ */
