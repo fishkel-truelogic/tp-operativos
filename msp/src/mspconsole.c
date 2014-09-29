@@ -2,10 +2,11 @@
  * mspconsole.c
  *
  *  Created on: 25/09/2014
- *      Author: utnso
+ *      Author: Leandro Sampayo
  */
 
-#include"mspconsole.h"
+#include "msp.h"
+#include "mspconsole.h"
 
 
 void mspConsole(void){
@@ -71,7 +72,7 @@ void consoleCreateSegment(){
 /*Destruir Segmento [PID], [Dirección Base] Destruye el
 segmento identificado por <Dirección Base> en el
 espacio de direcciones del Proceso <PID>.*/
-void consleDestroySegment(){
+void consleDestroySegment() {
 	Int32U pid;
 	Int32U base;
 
@@ -94,11 +95,12 @@ void consleDestroySegment(){
 ingresado en la dirección <Dirección Virtual> del espacio
 de direcciones del Proceso <PID>.
 En caso de error por violación de segmento debe ser informado.*/
-void consoleWriteMemory(){
+void consoleWriteMemory() {
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
-	String text=malloc(201);
+	Boolean segFault = FALSE;
+	String text = malloc(200);
 
 	//LEO PID/VIRTUAL ADDRESS/SIZE/TEXT
 	printf("PID:");
@@ -110,17 +112,17 @@ void consoleWriteMemory(){
 	printf("TEXT (200caracteres max.):");
 	scanf("%s", text);
 
-	//SI ESTA DENTRO DEL RANGO IMPRIMO --->IMPLEMENTAR UN int FETCHPID() a futuro
-	/*
-	if (!fetchPid(pid))
-		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
-	else
-		printf("Error: No existe el PID: %d\n\n", pid);
-	 */
-	if (pid >= 0 && pid <= 65535)
-		printf("Escribo hasta %d bytes del texto \"%s\" ingresado en la direccion %d del espacio de direcciones del PID: %d.\n\n", size, text, virAddress, pid);
-	else
-		printf("Error\n\n");
+	if (pid >= 0 && pid <= 65535) {
+		if (writeMemory(pid, virAddress, size, text, &segFault)) {
+			printf("Error: Abortado");
+		}
+		if (segFault) {
+			printf("Error: Abortado por segmentation fault");
+		}
+	} else {
+
+		printf("Error: PID incorrecto\n\n");
+	}
 
 	free(text);
 }

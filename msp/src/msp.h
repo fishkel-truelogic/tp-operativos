@@ -28,14 +28,21 @@
 #define SWAP_ALGORITHM "SUST_PAGS"		//Algoritmo de sustitucion de paginas
 #define FRAME_SIZE 256					//TAMAÑO DE LOS MARCOS DE PAGINA
 
+//Prototypes
+Boolean loadConfig(void);
+Boolean initMemory(void);
+
+Boolean createSegment(Int32U, Int32U);
+Boolean destroySegment(Int32U, Int32U);
+Boolean writeMemory(Int32U, Int32U, Int32U, Byte*, &Boolean);
+
+Pages* reservePages(Int32U);
+Boolean used(Frame*);
+Boolean notUsed(Frame*);
+
 Int32U getOffset(Int32U);
 Int32U getPage(Int32U);
 Int32U getSegment(Int32U);
-Boolean loadConfig(void);
-Boolean initMemory(void);
-Boolean createSegment(Int32U, Int32U);
-Boolean destroySegment(Int32U, Int32U);
-Pages* reservePages(Int32U)
 
 //STRUCTURES
 typedef struct segments {

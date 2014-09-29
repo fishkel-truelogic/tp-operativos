@@ -15,7 +15,7 @@ String swapAlgorithm = "\0";
 
 Byte* memory;
 t_dictionary* segmentTable = NULL;
-t_dictionary* frames = NULL;
+t_list* frames = NULL;
 
 int main() {
 
@@ -108,7 +108,7 @@ Boolean initMemory(void){
 	memory = malloc( memLengthKB * 1000);
 	
 	//creo el diccionario de frames
-	frames = dictionary_create();
+	frames = list_create();
 
 	//top es la cantidad de marcos que puede llegar a haber
 	Int32U top = sizeof(memory) / FRAME_SIZE;
@@ -128,7 +128,7 @@ Boolean initMemory(void){
 		prtFrame->address= memory+offset;
 		offset += FRAME_SIZE;
 		//agrego al dicc
-		dictionary_put(frames, intToStr(index), ptrFrame);
+		list_add_in_index(frames, index, ptrFrame);
 	}
 
 	segmentTable = dictionary_create();
@@ -186,6 +186,52 @@ Boolean destroySegment(Int32U pid, Int32U segment) {
 	return TRUE;
 }
 
+Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boolean segFault) {
+	String pidStr = intToStr(pid);
+	if (!dictionary_has_key(segmentTable, pidStr)) {
+		printf("No existe ningun segmento para el proceso %s\n", pidStr);
+		return FALSE;
+	}
+
+	Int32U offset = getOffset(address);
+	Int32U pageNumber = getPage(address);
+	Int32U segmentNumber = getSegment(address);
+	String segmentStr = intToStr(segmentNumber);
+
+	Segments* segments = dictionary_get(segmentTable, pid);
+// TODO SWAPPING
+	Pages* pages = dictionary_get(segments->segments, segmentStr);
+	Page* page = list_get(pages->pagesList, pageNumber);
+	Byte* writeLocation;
+
+	if (size > FRAME_SIZE - 1 - offset) {
+		segFault = TRUE;
+		printf("Ocurrio un segmentation fault al tratar de escribir en la direccion %d\n", address);
+		return FALSE;
+	}
+	if (page != NULL) {
+		if (page ->frame == NULL) {
+			// asgignar marco de memoria a la pagina
+			if(list_all_satisfy(frames, used)) {
+				// TODO SWAPPING
+			}
+			Frame* frame = list_find(frames, notUsed);
+			page->frame = frame;	
+			frame->used = TRUE;
+		}
+		//Actualizo el estado de la pagina respecto de los algoritmos
+		page->timestamp = time();
+		page->clock = TRUE;
+		writeLocation = page->frame->address + offset;
+		memcpy(writeLocation, content, size);
+	} else {
+		printf("No existe la pagina numero %d para el segmento numero %d \n", pageNumber, segmentNumber);
+		return FALSE;
+		
+	}
+	return TRUE;	
+}
+
 
 //Recibo un size en BYTES y creo la lista con las paginas para ese size
 Pages* reservePages(Int32U size){
@@ -215,16 +261,24 @@ Pages* reservePages(Int32U size){
 	return ptrPages
 }
 
+Boolean used(Frame* frame) {
+	return frame->used;
+}
+
+Boolean notUsed(Frame* frame) {
+	return !frame->used;
+}
+
 Int32U getOffset(Int32U address) {
 	Int32U offset;
-	Int32U mask = 4293918720; // last 12 bits
+	Int32U mask = 255; // 00000000000000000000000011111111
 	offset = address & mask;
 	return offset;
 }
 
 Int32U getPage(Int32U address) {
 	Int32U page;
-	Int32U mask = 1048320; //12 middle bits
+	Int32U mask = 1048320; // 00000000000011111111111100000000
 	mask = mask & address;
 	page = mask >> 8;
 	return page;
@@ -232,7 +286,7 @@ Int32U getPage(Int32U address) {
 
 Int32U getSegment(Int32U address) {
 	Int32U segment;
-	Int32U mask = 255; // first 8 bits
+	Int32U mask = 4293918720; // 11111111111100000000000000000000
 	mask = mask & address;
 	segment = mask >> 20;
 	return segment;
