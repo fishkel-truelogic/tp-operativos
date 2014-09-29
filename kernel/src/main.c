@@ -10,26 +10,15 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <src/commons/config.h>
-#include <src/commons/collections/queue.h>
+#include <src/commons/collections/list.h>
+#include <src/fereTypes.h>
 #include <src/fereSockets.h>
 #include <src/fereStream.h>
+#include <src/fereSemaphore.h>
 
-//CONSTANTES Y DEFINES
-//==========================================================================
-#define CONFIG_FILE "config.txt"
-#define PARAM_LENGTH 6
+#include "kdefine.h"
 
-#define PORT_ATRIB 		"PUERTO"
-#define IP_MSP_ATRIB 	"IP_MSP"
-#define PORT_MSP_ATRIB	"PUERTO_MSP"
-#define QUANTUM_ATRIB 	"QUANTUM"
-#define SYSCALLS_ATRIB 	"SYSCALLS"
-#define STACK_ATRIB		"STACK"
 
-#define TITLE "** Kernel V2.0 **"
-
-#define KERNEL_MODE	'K'
-#define USER_MODE 	'U'
 
 
 //VARIABLES GLOBALES Y ESTRUCTURAS PROPIAS
@@ -41,31 +30,46 @@ typedef struct strKernelConfig {
 	Int32U mspPort;
 	Int8U quantum;
 	String syscalls;
-	Int32U stack;
+	Int16U stack;
 
 } KernelConfig;
 
 
-//LA PRIMER Y SEGUNDA COLA SE PUEDEN ELIMINAR...LA AGREGO POR SI LAS DUDAS
-//PERO YO NO SE SI EL SO TIENE QUE GESTIONAR LOS PROCESOS UNA VEZ TERMINADOS
-//IDEM PARA CUANDO RECIEN SE CREAN
-t_queue *newQueue;
-t_queue *readyQueue;
-t_queue *execQueue;
-t_queue *blockQueue;
-t_queue *exitQueue;
+t_list *newQueue;
+t_list *readyQueue;
+t_list *execQueue;
+t_list *blockQueue;
+t_list *exitQueue;
 
 KernelConfig *config;
-SocketClient *ptrSocketMsp;
+SocketClient *socketMsp;
 
 Int32U lastPid;
 Tcb *tcbKm;
 
 pthread_t thrScheduler;
 
+//CONJUNTO MAESTRO DE DESCRIPTORES
+fd_set master;
+//CONJUNTO TEMPORAL DE DESCRIPTORES
+fd_set read_fds;
+//MAXIMO DESCRIPTOR A MONITOREAR
+Int32U fdmax;
+
+//LISTA DE CLIENTES CPU Y CONSOLA
+t_list *cpuList;
+t_list *consoleList;
+
+pthread_mutex_t mtxCpuList;
+sem_t semCpuList;
 
 //PROTOTIPOS Y FUNCIONES
 //==========================================================================
+
+/**
+ * @NAME: printHeader
+ * @DESC: Imprime un pequeño encabezado por pantalla
+ */
 void printHeader() {
 
 	printf("\n");
@@ -73,7 +77,10 @@ void printHeader() {
 	printf("\n");
 
 }
-
+/**
+ * @NAME: init
+ * @DESC: Realiza las inicializaciones de TODOS los componentes del sistema
+ */
 void init()
 {
 	printHeader();
@@ -81,50 +88,23 @@ void init()
 	lastPid = 2; //PORQUE PID 1 ES EL TCB KERNEL MODE
 	config = malloc(sizeof(KernelConfig));
 
-	newQueue = queue_create();
-	readyQueue = queue_create();
-	execQueue = queue_create();
-	blockQueue = queue_create();
-	exitQueue = queue_create();
+	newQueue = list_create();
+	readyQueue = list_create();
+	execQueue = list_create();
+	blockQueue = list_create();
+	exitQueue = list_create();
+
+	cpuList = list_create();
+	consoleList = list_create();
+
+	mtxInit(&mtxCpuList);
+	semInit(&semCpuList, 0);
 }
-
-
-
-void clientHandler(Int32U clientDescriptor, fd_set *master) {
-
-	Socket *ptrTemp = malloc(sizeof(Socket));
-
-	ptrTemp->descriptor = clientDescriptor;
-
-	SocketBuffer *ptrBuffer = socketReceive(ptrTemp);
-
-	if (ptrBuffer == NULL ) {
-		printf("Ha ocurrido un error al intentar recibir de %d\n",
-				clientDescriptor);
-
-		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
-		FD_CLR(clientDescriptor, master);
-
-		//CIERRO EL SOCKET
-		socketDestroy(ptrTemp);
-		free(ptrTemp);
-
-	} else {
-
-		//ACA SE TIENE QUE ATENDER PEDIDOS DE LAS CONSOLAS
-
-		//PRIMRO SE TIENE QUE PEDIR EL ID PARA DETERMINAR SI ES CONSOLA
-		//O CPU, SEGUN ESO, DESERIALIZO
-		StrConKer *sck = unserializeConKer((Stream)ptrBuffer->data);
-
-		//DESPUES TENGO QUE DETERMINAR QUE ACCION ES
-
-		printf("%d: %s", clientDescriptor, ptrBuffer->data);
-
-	}
-
-}
-
+/**
+ * @NAME: loadConfig
+ * @DESC: Realiza la carga del archivo config del kernel
+ * 		: Retorna TRUE si el proceso tuvo exito, FALSE caso contrario
+ */
 Boolean loadConfig() {
 
 	//Gennero tabla de configuracion
@@ -198,42 +178,295 @@ Boolean loadConfig() {
 	}
 }
 
-Tcb* createTcb(Char mode){
+
+//ESTA FUNCION SE ELIMINA CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
+//PARA QUE ME COMPILE EL PROGRAMA
+void moveToNew(Tcb *tcb){
+
+}
 
 
-	Tcb *tcb = malloc(sizeof(Tcb));
+/**
+ * @NAME: newCpuClient
+ * @DESC: Realiza la gestion de una nueva conexion de cpu recibida
+ * @PARAM:
+ * 	cpuClient		: Estrucutura Socket con el descriptor del socket
+ * 	dataSerialized	: Stream con los datos sin deserializar recibidos por la cpu
+ *
+ */
+void newCpuClient(Socket *cpuClient,Stream dataSerialized){
 
-	if(mode == KERNEL_MODE){
-		tcb->pid = 1;
-		tcb->kernelMode = TRUE;
+	printf("Nuevo Cliente CPU aceptado!! \n");
+
+	StrCpuKer * sck = unserializeCpuKer(dataSerialized);
+
+	if(sck->action == FIRST_TCB){
+
+		//AGREGARLO A LA LISTA DE DESCRIPTORES DE CPU  DEL PLANIFICADOR
+		mtxLock(&mtxCpuList);
+		list_add(cpuList,cpuClient);
+		mtxUnlock(&mtxCpuList);
+		semSignal(&semCpuList);
+
+
 	}else{
-		tcb->pid = lastPid;
-		tcb->kernelMode = FALSE;
-
-		//SINCRONIZAR BIEN ESTO!!!!!!
-		//ESTA FUNCION PUEDE SER ACCEDIDA POR MUCHAS CONSOLAS A LA VEZ Y
-		//lastPid ES VARIABLE GLOBAL
-		//CLAVAR MUTEX!!!!
-
-		lastPid++;
+		printf("No se pudo determinar la accion del cliente CPU\n");
 	}
-	tcb->tid = 1; //COMO MINIMO, TENDREMOS UN PROCESO MONOHILO
-	tcb->M = 0;
-	tcb->csLenght = 0;
-	tcb->P = 0;
-	tcb->X = 0;
-	tcb->S = 0;
-	tcb->A = 0;
-	tcb->B = 0;
-	tcb->C = 0;
-	tcb->D = 0;
-	tcb->E = 0;
-	tcb->F = 0;
+
+}
+/**
+ * @NAME: createNewTcb
+ * @DESC: Realiza la creacion de un Tcb no kernel mode.
+ * 		: Al principio se inicializan los valores de CS y SS en 0,
+ * 		: mas adelante seran modificados, cuando se posean esos valores
+ * @PARAM:
+ * 	sck	: Estructura StrConKer que contendra la longitud del CS
+ */
+Tcb *createNewTcb(StrConKer *sck){
+
+	Tcb *tcb;
+
+	tcb = newTcb(lastPid, 1, 0, 0, 0, 0, FALSE, sck->fileContentLen, 0, 0, 0, 0,0, 0);
+
+	//ACTUALIZO EL PID
+	lastPid++;
 
 	return tcb;
 
 }
+/**
+ * @NAME: createNewTcbKM
+ * @DESC: Realiza la creacion de un Tcb en modo Kernel.
+ */
+Tcb *createNewTcbKM(){
 
+
+	Tcb *tcb = malloc(sizeof(Tcb));
+
+	tcb = newTcb(1, 1, 0, 0, 0, 0, TRUE, 0, 0, 0, 0, 0,0, 0);
+
+	return tcb;
+
+}
+/**
+ * @NAME: getSegmentFromMSP
+ * @DESC: Solicita a la MSP un Segmento para el tamaño ingresado.
+ * 		: Retorna la direccion base de ese segmento o un codigo de error
+ * @PARAM:
+ * 	size	: La longitud del segmento a solicitar
+ * 	tcb		: Estrcutura Tcb de donde se obtendra el pid del proceso
+ */
+Int32U getSegmentFromMSP(Int16U size,Tcb *tcb){
+
+	StrKerMsp *skm = malloc(sizeof(StrKerMsp));
+	skm->id = KERNEL_ID;
+	skm->action = CREATE_SEG;
+	skm->pid = tcb->pid;
+	skm->size = size;
+
+	//ENVIO A MSP
+	t_bitarray *barray = serializeKerMsp(skm);
+	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
+	Byte *ptrByte = (Byte*) barray->bitarray;
+
+	int i;
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+
+	socketSend(socketMsp->ptrSocket,sb);
+
+	//RECIBO DE MSP
+	sb = socketReceive(socketMsp->ptrSocket);
+	StrMspKer *smk = unserializeMspKer((Stream) sb->data);
+
+	//ESTE CHEQUEO ES MEDIO REDUNDANTE...VER SI SE QUEDA...
+	if(smk->action == CREATE_SEG){
+
+		if(smk->address == ERROR){
+			return ERROR;
+		}else{
+			return smk->address;
+		}
+
+
+	}
+
+	return ERROR;
+}
+/**
+ * @NAME: creationError
+ * @DESC: Notifica a la consola de que ocurrio un error al momento de crear
+ * 		: el nuevo proceso solicitado. Esto ocurre al producirse un error al
+ * 		: reservar los segmentos CS y SS en la MSP
+ * @PARAM:
+ * 	client	: Estructura Socket con el descriptor del cliente consola
+ */
+void creationError(Socket *client){
+
+	StrKerCon *skc = malloc(sizeof(StrKerCon));
+
+	skc->action = STD_OUTPUT;
+	skc->log = (Byte *) "No se pudo reservar los segmentos CS y SS. El programa terminara\n";
+	skc->logLen =  strlen((char *)skc->log) + 1;
+
+	//ENVIO A MSP
+	t_bitarray *barray = serializeKerCon(skc);
+
+	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
+	Byte *ptrByte = (Byte*) barray->bitarray;
+
+	int i;
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+
+	socketSend(client,sb);
+
+	//ELIMINO EL DESCRIPTOR DEL CONJUNTO
+	FD_CLR(client->descriptor, &master);
+
+	//CIERRO EL SOCKET
+	socketDestroy(client);
+	free(client);
+
+
+}
+/**
+ * @NAME: newConsoleClient
+ * @DESC: Realiza la gestion de una nueva conexion de consola recibida
+ * @PARAM:
+ * 	consoleClient	: Estrucutura Socket con el descriptor del socket
+ * 	dataSerialized	: Stream con los datos sin deserializar recibidos por la consola
+ */
+void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
+
+	StrConKer * sck = unserializeConKer(dataSerialized);
+
+	printf("Nuevo Cliente Consola aceptado!! \n");
+
+	if(sck->action == BESO_FILE){
+
+		//SI ESAS DOS SALEN BIEN, SE GENERA EL NUEVO TCB
+		Tcb *tcb = createNewTcb(sck);
+
+		//RESERVAR DE MSP SEGMENTO DE CODIGO
+		Int32U csDir = getSegmentFromMSP(sck->fileContentLen,tcb);
+
+		//RESERVAR DE MSP SEGMENTO DE STACK
+		Int32U ssDir = getSegmentFromMSP(config->stack,tcb);
+
+		if(csDir != ERROR && ssDir != ERROR){
+
+			//ESCRIBIR EL CODIGO BESO EN EL SEGMENTO CS DE LA MSP
+			SocketBuffer *codeBuffer = malloc(sizeof(SocketBuffer));
+
+			int i;
+			for (i = 0; i < sck->fileContentLen; i++) {
+				codeBuffer->data[i] = *sck->fileContent;
+				sck->fileContent++;
+			}
+			codeBuffer->size = sck->fileContentLen;
+
+			socketSend(socketMsp->ptrSocket,codeBuffer);
+
+			//ACTUALIZO LOS REGISTROS DE CS Y SS
+			tcb->M = csDir;
+			tcb->P = csDir;
+
+			tcb->X = ssDir;
+			tcb->S = ssDir;
+
+			//MUEVO EL NUEVO TCB A LA COLA DE NEW
+			//TODO PREGUNTARLE A NACHO COMO SE LLAMA LA FUNCION...
+			moveToNew(tcb);
+		}
+		else{
+
+			//NOTIFICO A CONSOLA QUE SE ABORTARA LA CONEXION
+			creationError(consoleClient);
+		}
+
+
+
+	}else{
+		printf("No se pudo determinar la accion de un cliente Consola\n");
+	}
+
+
+
+}
+/**
+ * @NAME: newClientHandler
+ * @DESC: Realiza la gestion de las NUEVAS conexiones que ingresan al kernel.
+ * 		: Como pueden ser CPU o Consola, la funcion realiza la distincion y
+ * 		: las guarda en la lista que corresponda (cpuList, consoleList)
+ * @PARAMS:
+ *
+ * 	client	: Estructura Socket con el descriptor del nuevo cliente que se conecto
+ */
+void newClientHandler(Socket *client){
+
+	printf("Nueva Conexion detectada, realizando handshake\n");
+
+	//ADMINISTRO LA NUEVA CONEXION Y REALIZO EL HANDSHAKE
+	SocketBuffer *buffer = socketReceive(client);
+	Stream strReceived = (Stream)buffer->data;
+	Char id = getStreamId(strReceived);
+
+	switch (id) {
+
+	case CPU_ID:
+		newCpuClient(client,strReceived);
+		break;
+
+	case CONSOLA_ID:
+		newConsoleClient(client,strReceived);
+		break;
+
+	}
+}
+
+
+void clientHandler(Int32U clientDescriptor, fd_set *master) {
+
+	Socket *ptrTemp = malloc(sizeof(Socket));
+	ptrTemp->descriptor = clientDescriptor;
+
+	SocketBuffer *ptrBuffer = socketReceive(ptrTemp);
+
+	if (ptrBuffer == NULL ) {
+		printf("Ha ocurrido un error al intentar recibir de %d\n",
+				clientDescriptor);
+
+		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
+		FD_CLR(clientDescriptor, master);
+
+		//CIERRO EL SOCKET
+		socketDestroy(ptrTemp);
+		free(ptrTemp);
+
+	} else {
+
+		// ** SE ATIENDEN SOLICITUDES DE CLIENTES **
+
+
+
+		//PRIMRO SE TIENE QUE PEDIR EL ID PARA DETERMINAR SI ES CONSOLA
+		//O CPU, SEGUN ESO, DESERIALIZO
+		//StrConKer *sck = unserializeConKer((Stream)ptrBuffer->data);
+
+		//DESPUES TENGO QUE DETERMINAR QUE ACCION ES
+
+		printf("%d: %s", clientDescriptor, ptrBuffer->data);
+
+	}
+
+}
 
 void *thrSchedulerHandler(void *ptr) {
 
@@ -257,7 +490,8 @@ void *thrSchedulerHandler(void *ptr) {
 		printf("%s : %d\n", message, p);
 		sleep(1);
 	}*/
-
+	//PARA QUE NO HINCHE LAS PELOTAS CUANDO COMPILO
+	return NULL;
 }
 
 //PROGRAMA PRINCIPAL
@@ -276,8 +510,8 @@ int main() {
 	}
 
 	//HACER CONEXION CON MSP
-	ptrSocketMsp = socketCreateClient();
-	if (!socketConnect(ptrSocketMsp, config->mspAddress, config->mspPort)) {
+	socketMsp = socketCreateClient();
+	if (!socketConnect(socketMsp, config->mspAddress, config->mspPort)) {
 
 		printf(
 				"No se ha podido realizar la conexion con la MSP. El programa terminara\n");
@@ -295,8 +529,8 @@ int main() {
 
 
 	//CREO TCB KERNEL MODE Y LO ENCOLO EN BLOCK
-	tcbKm = createTcb(KERNEL_MODE);
-	queue_push(blockQueue,tcbKm);
+	tcbKm = createNewTcbKM();
+
 
 	//TODO: COMUNICARME CON MSP Y CARGAR EL SYSCALL DEL TCBKM Y SU STACK
 
@@ -304,14 +538,6 @@ int main() {
 	//TODO: LLEVAR ESTO A OTRO ARCHIVO....
 	Socket *ptrServerSocket = socketCreateServer(config->port);
 	socketListen(ptrServerSocket);
-
-	//CONJUNTO MAESTRO DE DESCRIPTORES
-	fd_set master;
-
-	//CONJUNTO TEMPORAL DE DESCRIPTORES
-	fd_set read_fds;
-
-	Int32U fdmax, i;
 
 	//SETEO A "0" EL MASTER Y EL TEMPORAL
 	FD_ZERO(&master);
@@ -324,18 +550,16 @@ int main() {
 	fdmax = ptrServerSocket->descriptor;
 
 	struct timeval timeout;
-	Int32U selectTimeout = 0;
 
 	//BUCLE PRINCIPAL
-	while (1) {
+	while (TRUE) {
 
 		read_fds = master;
 		timeout.tv_sec = 10;
 		timeout.tv_usec = 0;
 
 		//HAGO EL SELECT
-		Int32U selectResult = select(fdmax + 1, &read_fds, NULL, NULL,
-				&timeout);
+		Int32U selectResult = select(fdmax + 1, &read_fds, NULL, NULL,&timeout);
 
 		if (selectResult == -1) {
 
@@ -344,17 +568,10 @@ int main() {
 			break;
 
 
-		} else if (selectResult == 0) { //VER SI ESTO DESPUES LO SEGUIMOS NECESITANDO
-
-			//SALE POR TIMEOUT
-			selectTimeout++;
-
 		} else {
 
-			//PASO ALGO POSTA
-			selectTimeout = 0;
-
 			//RECORRO TODOS LOS DESCRIPTORES MONITOREADOS PARA VER QUIEN LLAMO
+			Int32U i;
 			for (i = 0; i <= fdmax; i++) {
 
 				if (FD_ISSET(i, &read_fds)) {
@@ -362,16 +579,17 @@ int main() {
 					//FUE EL SOCKET DE ESCUCHA??
 					if (i == ptrServerSocket->descriptor) {
 
-						//SI, CREO UN NUEVO SOCKET
-						Socket *ptrClientSocket = socketAcceptClient(
-								ptrServerSocket);
+						//SI, ENTONCES GESTIONO LA NUEVA CONEXION ENTRANTE
+						Socket *clientSocket = socketAcceptClient(ptrServerSocket);
+						newClientHandler(clientSocket);
 
-						//LO CARGO A LA LISTA DE DESCRIPTORES A MONITOREAR
-						FD_SET(ptrClientSocket->descriptor, &master);
+						//LO CARGO A LA LISTA DE DESCRIPTORES A MONITOREAR Y ACTUALIZO EL MAXIMO
+						FD_SET(clientSocket->descriptor, &master);
 
-						if (ptrClientSocket->descriptor > fdmax) {
-							fdmax = ptrClientSocket->descriptor;
+						if (clientSocket->descriptor > fdmax) {
+							fdmax = clientSocket->descriptor;
 						}
+
 
 					} else {
 
