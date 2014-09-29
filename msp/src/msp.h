@@ -36,6 +36,8 @@ Boolean createSegment(Int32U, Int32U);
 Boolean destroySegment(Int32U, Int32U);
 Boolean writeMemory(Int32U, Int32U, Int32U, Byte*, &Boolean);
 
+Boolean showPages(Int32U);
+
 Pages* reservePages(Int32U);
 Boolean used(Frame*);
 Boolean notUsed(Frame*);
@@ -65,6 +67,7 @@ typedef struct page {
 	Frame* frame;
 	Int16U timestamp;
 	Boolean clock; 
+	Boolean swapped;
 } Page;
 
 #endif /* MSP_H_ */

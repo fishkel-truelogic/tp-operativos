@@ -176,17 +176,11 @@ void consoleShowPagesTable(){
 	printf("PID:");
 	scanf("%d", &pid);
 
-	//SI ESTA DENTRO DEL RANGO IMPRIMO --->IMPLEMENTAR UN int FETCHPID() a futuro
-	/*
-	if (!fetchPid(pid))
+	if (pid >= 0 && pid <= 65535 && showPages(pid)) {
 		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
-	else
-		printf("Error: No existe el PID: %d\n\n", pid);
-	 */
-	if (pid >= 0 && pid <= 65535)
-		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
-	else
+	} else {
 		printf("Error\n\n");
+	}
 
 }
 

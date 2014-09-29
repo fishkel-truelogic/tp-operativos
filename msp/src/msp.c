@@ -211,8 +211,9 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 	}
 	if (page != NULL) {
 		if (page ->frame == NULL) {
+
 			// asgignar marco de memoria a la pagina
-			if(list_all_satisfy(frames, used)) {
+			if(page->swapped || list_all_satisfy(frames, used)) {
 				// TODO SWAPPING
 			}
 			Frame* frame = list_find(frames, notUsed);
@@ -232,6 +233,35 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 	return TRUE;	
 }
 
+
+Boolean showPages(Int32U pid) {
+	String pidStr = intToStr(pid);
+	if (!dictionary_has_key(segmentTable, pidStr)) {
+		printf("No existe ningun segmento para el proceso %s\n", pidStr);
+		return FALSE;
+	}
+
+	Segments* segments = dictionary_get(segmentTable, pid);
+	dictionary_iterator(segments, printPagesClosure);
+	return TRUE;
+}
+
+void printPagesClosure(String key, void* value) {
+	printf("Paginas del segmento nro %s\n", key);
+	t_list* pages = ((Pages) value)->pagesList;
+	for (Int8U = 0; i < FRAME_SIZE, i++) {
+		Page* page = list_get(i);
+		String pageContent;
+		if (page->frame != NULL) {
+			pageContent = malloc(FRAME_SIZE);
+			memcpy(pageContent, page->frame->address, FRAME_SIZE);
+			
+		}  else {
+			pageContent = "";
+		}
+		printf("Nro de pagina: %d, swapped: %s, last time: %d, content: %s\n", i, page->swapped ? "Si": "No", page->timestamp, pageContent);
+	}
+}
 
 //Recibo un size en BYTES y creo la lista con las paginas para ese size
 Pages* reservePages(Int32U size){
@@ -254,6 +284,7 @@ Pages* reservePages(Int32U size){
 		ptrPage->frame = NULL;
 		ptrPage->timestamp = time();
 		ptrPage->clock = TRUE;
+		ptrPage->swapped = FALSE; 
 
 		list_add(ptrPages, ptrPage);
 	}
