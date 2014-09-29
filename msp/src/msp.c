@@ -155,11 +155,32 @@ Boolean createSegment(Int32U pid, Int32U size){
 	Int8U segmentId = dictionary_size(ptrSegments);
 
 	//creo las paginas
-	Page* ptrPages = reservePages(size);
+	Pages* ptrPages = reservePages(size);
 
 	//agrego la lista de Paginas a la tabla de Segmentos de PID
 	dictionary_put(ptrSegments, intToStr(segmentId), ptrPages);
 
+}
+/**
+ * Libera la memoria del segmento y las paginas asociadas
+ */
+Boolean destroySegment(Int32U pid, Int32U segment) {
+	String pidStr = intToStr(pid);
+	
+	if (!dictionary_has_key(segmentTable, pidStr)) {
+		printf("No existe ningun segmento para el proceso %s\n", pidStr);
+		return FALSE;
+	}
+
+	String segmentStr = intToStr(getSegment(segment));
+	Segments* segments = dictionary_get(segmentTable, pid);
+// TODO SWAPPING
+	Pages* pages = dictionary_get(segments->segments, segmentStr);
+	list_destroy_and_destroy_elements(pages);
+	dictionary_remove_and_destroy(segmentTable, segmentStr);
+	free(segmentStr);
+	free(pidStr);
+	return TRUE;
 }
 
 

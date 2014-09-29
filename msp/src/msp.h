@@ -34,6 +34,7 @@ Int32U getSegment(Int32U);
 Boolean loadConfig(void);
 Boolean initMemory(void);
 Boolean createSegment(Int32U, Int32U);
+Boolean destroySegment(Int32U, Int32U);
 Pages* reservePages(Int32U)
 
 //STRUCTURES
