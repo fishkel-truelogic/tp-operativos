@@ -22,11 +22,27 @@
 
 #define TITLE "** Kernel V2.0 **"
 
-#define KERNEL_MODE	'K'
-#define USER_MODE 	'U'
 
 //DEFINE TEMPORAL, CUANDO ESTE HECHO EN EL STREAM.H, SACARLO
 #define ERROR -1
 #define ABORT -1
+
+void printHeader();
+void init();
+Boolean loadConfig();
+Boolean initTcbKM();
+Stream loadSyscalls();
+void newCpuClient(Socket *,Stream);
+Tcb *createNewTcb(StrConKer *);
+Tcb *createNewTcbKM();
+Int32U getSegmentFromMSP(Int16U,Tcb *);
+void creationError(Socket *);
+void newConsoleClient(Socket *, Stream);
+void newClientHandler(Socket *);
+
+void clientHandler(Int32U, fd_set *);
+
+void *thrSchedulerHandler(void *);
+
 
 #endif /* KDEFINE_H_ */

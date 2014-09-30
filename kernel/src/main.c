@@ -66,6 +66,17 @@ sem_t semCpuList;
 //PROTOTIPOS Y FUNCIONES
 //==========================================================================
 
+
+
+
+//==========================================================================
+//ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
+//PARA QUE ME COMPILE EL PROGRAMA
+void moveToNew(Tcb *tcb){}
+void moveToBlock(Tcb *tcb){}
+//==========================================================================
+
+
 /**
  * @NAME: printHeader
  * @DESC: Imprime un pequeño encabezado por pantalla
@@ -177,15 +188,102 @@ Boolean loadConfig() {
 		return FALSE;
 	}
 }
+/**
+ * @NAME: initTcbKM
+ * @DESC: Realiza el proceso de inicializacion del Tcb Kernel Mode.
+ * 		: Inicializa, levanta archivo de Syscalls, crea los CS y SS, y copia el codigo
+ * 		: en la MSP
+ * 		: Retorna TRUE si todo el proceso salio bien, FALSE si hubo algun error
+ */
+Boolean initTcbKM(){
 
+	//CREA E INICIALIZA EL TCB KM
+	tcbKm = createNewTcbKM();
 
-//ESTA FUNCION SE ELIMINA CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
-//PARA QUE ME COMPILE EL PROGRAMA
-void moveToNew(Tcb *tcb){
+	//CARGA EL ARCHIVO DE SYSCALLS
+	Stream stream = loadSyscalls();
+	if(stream == NULL){
+		return FALSE;
+	}
+	Int32U streamLength = strlen((char *)stream);
+
+	//RESERVAR DE MSP SEGMENTO DE CODIGO
+	Int32U csDir = getSegmentFromMSP(streamLength,tcbKm);
+
+	//RESERVAR DE MSP SEGMENTO DE STACK
+	Int32U ssDir = getSegmentFromMSP(config->stack,tcbKm);
+
+	if(csDir != ERROR && ssDir != ERROR){
+
+		//ESCRIBIR EL CODIGO BESO EN EL SEGMENTO CS DE LA MSP
+		SocketBuffer *codeBuffer = malloc(sizeof(SocketBuffer));
+
+		int i;
+		for (i = 0; i < streamLength; i++) {
+			codeBuffer->data[i] = *stream;
+			stream++;
+		}
+		codeBuffer->size = streamLength;
+
+		socketSend(socketMsp->ptrSocket,codeBuffer);
+
+		//ACTUALIZO LOS REGISTROS DE CS Y SS
+		tcbKm->M = csDir;
+		tcbKm->P = csDir;
+
+		tcbKm->X = ssDir;
+		tcbKm->S = ssDir;
+
+	}else{
+
+		return FALSE;
+
+	}
+
+	//ENCOLA EL HILO EN BLOCK
+	moveToBlock(tcbKm);
+
+	return TRUE;
+}
+/**
+ * @NAME: loadSyscalls
+ * @DESC: Levanta el archivo de Syscalls y retorna una estructura Stream de lo leido
+ * 		: La ruta del archivo se encuentra en el archivo de configuracion
+ */
+Stream loadSyscalls(){
+
+	//rb = READ BINARY
+	FILE* file = fopen(config->syscalls, "rb");
+
+	if (!file) {
+		return NULL;
+	}
+
+	Byte* read = malloc(sizeof(Byte));
+	Byte* ptrBuffer;
+	Stream buffer = NULL;
+	Int32U size = 0;
+	Int32U readed;
+
+	while (!feof(file)) {
+
+		readed = fread(read, sizeof(Byte), sizeof(Byte), file);
+
+		//CARGA EL BUFFER DINAMICAMENTE
+		if (readed) {
+			buffer = realloc(buffer, size + readed);
+			ptrBuffer = buffer + readed;
+			memcpy(ptrBuffer, read, readed);
+			size += readed;
+		}
+
+	}
+
+	fclose(file);
+
+	return buffer;
 
 }
-
-
 /**
  * @NAME: newCpuClient
  * @DESC: Realiza la gestion de una nueva conexion de cpu recibida
@@ -527,12 +625,16 @@ int main() {
 		return -1;
 	}
 
+	//CREO EL TCB KM
+	if(!initTcbKM()){
+		printf("No se ha podido inicial el Tcb Kernel Mode. El programa terminara\n");
+		return -1;
+	}
 
-	//CREO TCB KERNEL MODE Y LO ENCOLO EN BLOCK
-	tcbKm = createNewTcbKM();
 
 
-	//TODO: COMUNICARME CON MSP Y CARGAR EL SYSCALL DEL TCBKM Y SU STACK
+
+
 
 
 	//TODO: LLEVAR ESTO A OTRO ARCHIVO....
