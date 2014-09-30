@@ -19,8 +19,6 @@
 #include "kdefine.h"
 
 
-
-
 //VARIABLES GLOBALES Y ESTRUCTURAS PROPIAS
 //==========================================================================
 typedef struct strKernelConfig {
@@ -34,6 +32,11 @@ typedef struct strKernelConfig {
 
 } KernelConfig;
 
+typedef struct console {
+
+	Socket *consoleClient;
+	Tcb *tcb;
+} Console;
 
 t_list *newQueue;
 t_list *readyQueue;
@@ -77,6 +80,29 @@ void moveToNew(Tcb *tcb){}
 void moveToBlock(Tcb *tcb){}
 //==========================================================================
 
+/**
+ * @NAME: barrayToBuffer
+ * @DESC: Recibe una Estructura t_bitarray y la convierte en una SocketBuffer
+ * 		: para facilitar el envio de estrucutras serializadas por sockets
+ * @PARAMS:
+ * 	barray	: Puntero a t_bitarray que se desea convertir
+ */
+SocketBuffer *barrayToBuffer(t_bitarray *barray){
+
+	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
+
+	Byte *ptrByte = (Byte*) barray->bitarray;
+
+	int i;
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+
+	return sb;
+
+}
 
 /**
  * @NAME: printHeader
@@ -365,16 +391,7 @@ Int32U getSegmentFromMSP(Int16U size,Tcb *tcb){
 
 	//ENVIO A MSP
 	t_bitarray *barray = serializeKerMsp(skm);
-	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
-	Byte *ptrByte = (Byte*) barray->bitarray;
-
-	int i;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
-
+	SocketBuffer *sb = barrayToBuffer(barray);
 	socketSend(socketMsp->ptrSocket,sb);
 
 	//RECIBO DE MSP
@@ -413,17 +430,7 @@ void creationError(Socket *client){
 
 	//ENVIO A MSP
 	t_bitarray *barray = serializeKerCon(skc);
-
-	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
-	Byte *ptrByte = (Byte*) barray->bitarray;
-
-	int i;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
-
+	SocketBuffer *sb = barrayToBuffer(barray);
 	socketSend(client,sb);
 
 	//ELIMINO EL DESCRIPTOR DEL CONJUNTO
@@ -462,15 +469,16 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 		if(csDir != ERROR && ssDir != ERROR){
 
 			//ESCRIBIR EL CODIGO BESO EN EL SEGMENTO CS DE LA MSP
-			SocketBuffer *codeBuffer = malloc(sizeof(SocketBuffer));
+			StrKerMsp *skm = malloc(sizeof(StrKerMsp));
 
-			int i;
-			for (i = 0; i < sck->fileContentLen; i++) {
-				codeBuffer->data[i] = *sck->fileContent;
-				sck->fileContent++;
-			}
-			codeBuffer->size = sck->fileContentLen;
+			skm->action = MEM_WRITE;
+			skm->pid = tcb->pid;
+			skm->address = csDir;
+			skm->size = sck->fileContentLen;
+			skm->data = sck->fileContent;
 
+			t_bitarray *barray = serializeKerMsp(skm);
+			SocketBuffer *codeBuffer = barrayToBuffer(barray);
 			socketSend(socketMsp->ptrSocket,codeBuffer);
 
 			//ACTUALIZO LOS REGISTROS DE CS Y SS
@@ -481,8 +489,18 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 			tcb->S = ssDir;
 
 			//MUEVO EL NUEVO TCB A LA COLA DE NEW
-			//TODO PREGUNTARLE A NACHO COMO SE LLAMA LA FUNCION...
 			moveToNew(tcb);
+
+			//CARGO LA CONSOLA INGRESADA JUNTO CON EL TCB QUE
+			//TRAJO A LA LISTA DE CONSOLAS QUE VOY A USAR PARA GESTIONAR
+			//LOS SERVICIOS EXPUESTOS A LA CPU
+			Console *clientConsole = malloc(sizeof(Console));
+
+			clientConsole->consoleClient = consoleClient;
+			clientConsole->tcb = tcb;
+
+			list_add(consoleList,clientConsole);
+
 		}
 		else{
 
@@ -529,70 +547,6 @@ void newClientHandler(Socket *client){
 
 	}
 }
-
-
-void clientHandler(Int32U clientDescriptor, fd_set *master) {
-
-	Socket *ptrTemp = malloc(sizeof(Socket));
-	ptrTemp->descriptor = clientDescriptor;
-
-	SocketBuffer *ptrBuffer = socketReceive(ptrTemp);
-
-	if (ptrBuffer == NULL ) {
-		printf("Ha ocurrido un error al intentar recibir de %d\n",
-				clientDescriptor);
-
-		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
-		FD_CLR(clientDescriptor, master);
-
-		//CIERRO EL SOCKET
-		socketDestroy(ptrTemp);
-		free(ptrTemp);
-
-	} else {
-
-		// ** SE ATIENDEN SOLICITUDES DE CLIENTES **
-
-
-
-		//PRIMRO SE TIENE QUE PEDIR EL ID PARA DETERMINAR SI ES CONSOLA
-		//O CPU, SEGUN ESO, DESERIALIZO
-		//StrConKer *sck = unserializeConKer((Stream)ptrBuffer->data);
-
-		//DESPUES TENGO QUE DETERMINAR QUE ACCION ES
-
-		printf("%d: %s", clientDescriptor, ptrBuffer->data);
-
-	}
-
-}
-
-void *thrSchedulerHandler(void *ptr) {
-
-	printf("Planificador BPRR iniciado\n");
-
-	while(TRUE)
-	{
-		//PRIMERO TOMO CUALQUIER PROCESO DE LA COLA NEW, Y LO AGREGO A LA COLA DE READY
-
-		//PLANIFICO EL PROXIMO PROCESO A EJECUTAR
-	}
-
-	/*char *message;
-	message = (char *) ptr;
-
-	int i = 0;
-	for (i = 0; i < 1000; i++) {
-
-		p = p + 1;
-
-		printf("%s : %d\n", message, p);
-		sleep(1);
-	}*/
-	//PARA QUE NO HINCHE LAS PELOTAS CUANDO COMPILO
-	return NULL;
-}
-
 /**
  * @NAME: initServer
  * @DESC: Realiza la inicializacion del socket de escucha, y lo pone a escuchar
@@ -684,7 +638,116 @@ void checkConections(){
 	}
 
 }
+/**
+ * @NAME: clientHandler
+ * @DESC: Realiza la gestion de conexion de un cliente que ya se encuentra conectado
+ * 		: al sistema. La funcion NO GESTIONA NUEVAS CONEXIONES, sino ya existentes
+ * @PARAMS:
+ * 	clientDescriptor	: El descriptor que produjo el llamado
+ * 	master				: Puntero al master de descriptores a monitorear por el SELECT
+ */
+void clientHandler(Int32U clientDescriptor, fd_set *master) {
 
+	Socket *ptrTemp = malloc(sizeof(Socket));
+	ptrTemp->descriptor = clientDescriptor;
+
+	SocketBuffer *ptrBuffer = socketReceive(ptrTemp);
+
+	if (ptrBuffer == NULL ) {
+
+		printf("Ha ocurrido un error al intentar recibir de %d\n",
+				clientDescriptor);
+
+		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
+		FD_CLR(clientDescriptor, master);
+
+		//CIERRO EL SOCKET
+		socketDestroy(ptrTemp);
+		free(ptrTemp);
+
+	} else {
+
+		// ** SE ATIENDEN SOLICITUDES DE CLIENTES **
+
+
+	}
+
+}
+
+void *thrSchedulerHandler(void *ptr) {
+
+	printf("Planificador BPRR iniciado\n");
+
+	while(TRUE)
+	{
+		//PRIMERO TOMO CUALQUIER PROCESO DE LA COLA NEW, Y LO AGREGO A LA COLA DE READY
+
+		//PLANIFICO EL PROXIMO PROCESO A EJECUTAR
+	}
+
+	/*char *message;
+	message = (char *) ptr;
+
+	int i = 0;
+	for (i = 0; i < 1000; i++) {
+
+		p = p + 1;
+
+		printf("%s : %d\n", message, p);
+		sleep(1);
+	}*/
+	//PARA QUE NO HINCHE LAS PELOTAS CUANDO COMPILO
+	return NULL;
+}
+
+
+//SERVICIOS EXPUESTOS A LA CPU
+//==========================================================================
+void serviceInterrupt(){
+
+}
+
+void serviceStdInput(Int32U pid, Char type){
+
+	StrKerCon *skc = malloc(sizeof(StrKerCon));
+
+	skc->action = STD_INPUT;
+
+	switch (type){
+
+	case TEXT_INPUT:
+		skc->inputType = TEXT_INPUT;
+		break;
+
+	case NUMBER_INPUT:
+		skc->inputType = NUMBER_INPUT;
+		break;
+	}
+
+	//t_bitarray *barray = serializeKerCon(skc);
+
+
+}
+
+void serviceStdOutput(Int32U pid, String text){
+
+}
+
+void serviceCreateThread(Tcb *tcb){
+
+}
+
+void serviceJoinThread(Int32U callerTid, Int32U waitingTid){
+
+}
+
+void serviceBlock(Tcb *tcb, Int32U resourceId){
+
+}
+
+void serviceWake(Int32U resourceId){
+
+}
 
 //PROGRAMA PRINCIPAL
 //==========================================================================

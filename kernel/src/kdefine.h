@@ -22,7 +22,6 @@
 
 #define TITLE "** Kernel V2.0 **"
 
-
 //DEFINE TEMPORAL, CUANDO ESTE HECHO EN EL STREAM.H, SACARLO
 #define ERROR -1
 #define ABORT -1
@@ -47,5 +46,7 @@ void clientHandler(Int32U, fd_set *);
 
 void *thrSchedulerHandler(void *);
 
+//VER DE PONER ESTO EN LAS COMMONS
+SocketBuffer *barrayToBuffer(t_bitarray *);
 
 #endif /* KDEFINE_H_ */
