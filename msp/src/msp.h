@@ -47,15 +47,15 @@ Int32U getPage(Int32U);
 Int32U getSegment(Int32U);
 
 //STRUCTURES
-typedef struct segments {
+typedef struct segmentsTable {
 	// Este diccionario tiene como key el nro de segmento empezando en 0
 	// y el value va a ser Pages definida aca abajo
 	t_dictionary* segments; 
-} Segments;
+} SegmentsTable;
 
-typedef struct pages {
+typedef struct segment {
 	t_list* pagesList; //esto es una lista de Page
-} Pages;
+} Segment;
 
 typedef struct frame {
 	Int32U pid;
