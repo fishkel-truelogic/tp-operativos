@@ -5,164 +5,155 @@
  *      Author: sampower06 - Leandro Sampayo
  */
 
+//==========================================//
+//******************************************//
+// Dependencies								//	
+//******************************************//
+//==========================================//
+#include <stdio.h>
+#include <stdlib.h>
+#include <src/commons/collections/dictionary.h>
+#include <src/commons/collections/list.h>
 #include "msp.h"
 
-//GLOBAL VARIABLES
+
+//==========================================//
+//******************************************//
+// Global Variables							//	
+//******************************************//
+//==========================================//
 Int16U mspPort = 0;
 Int16U memLengthKB = 0;
 Int16U swapLengthMB = 0;
 String swapAlgorithm = "\0";
 
 Byte* memory;
-t_dictionary* segmentTable = NULL;
+t_dictionary* processSegments = NULL;
 t_list* frames = NULL;
 
+//==========================================//
+//******************************************//
+// Prototypes								//	
+//******************************************//
+//==========================================//
+Int32U getSegment(Int32U);
+Int32U getPage(Int32U);
+Int32U getOffset(Int32U);
+Int32U getPagesCountBySize(Int32U, Int32U);
+Boolean notUsed(Frame*);
+Boolean used(Frame*);
+Boolean swapped(Page*);
+Boolean loadConfig();
+Boolean nextPage(Page*, Int32U, Int8U, Int32U, Int32U);
+Boolean checkSegFault(Int32U, Int32U, Int32U);
+Boolean showPages(Int32U);
+Segment getSegmentBy(Int32U, Int32U);
+Segment reservePages(Int32U);
+void initMemory();
+void printPages(String, void*);
+
+//==========================================//
+//******************************************//
+// Main Function							//	
+//******************************************//
+//==========================================//
 int main() {
-
-	//Imprimo hora al arrancar
-	Char * ptrTime = temporal_get_string_time();
-	printf("Server time is %s\n\n", ptrTime);
-	free (ptrTime);
-
-	//INICIALIZO, LEO ARCHIVO DE CONFIGURACION
+	printDate();
 	if (!loadConfig()){
 		return FALSE;
 	}
-
-	//INICIALIZO ESTRUTURAS ADMINISTRATIVAS
 	initMemory();
-
-
-
-	while(TRUE){
-		mspConsole();
-
-
+	while(mspConsole()) {
+		//TODO poner la consola en un thread
 	}
-	return 0;
-
+	return TRUE;
 }
 
-
-Boolean loadConfig() {
-
-	//Gennero tabla de configuracion
-	t_config * tConfig = config_create(CONFIG_FILE);
-	if (tConfig == NULL){
-		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
-		return FALSE;
-	}
-	//Verifico consistencia, tiene que haber 4 campos
-	if (config_keys_amount(tConfig) == PARAM_LENGTH){
-
-		//Verifico que los parametros tengan sus valores OK-> PORT=12456 | NOK->PORT=
-		if (config_has_property(tConfig, MSP_PORT)){
-			mspPort = config_get_int_value(tConfig, MSP_PORT);
-		}else{
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, MEM_LENGTH)){
-			memLengthKB = config_get_int_value(tConfig, MEM_LENGTH);
-		}else{
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, SWAP_LENGTH)){
-			swapLengthMB = config_get_int_value(tConfig, SWAP_LENGTH);
-		}else{
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, SWAP_ALGORITHM)){
-			swapAlgorithm = config_get_string_value(tConfig, SWAP_ALGORITHM);
-			//strcat(swapAlgorithm, "\0");
-		}else{
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		//Libero tabla config
-		config_destroy(tConfig);
-		if (DEBUG == 1){
-			printf("Archivo de config MSP leído\n===========\n");
-			printf("MSP Port: %u\nMemory Length: %ukB\nSwap Memory Length: %uMB\nSwap Algorithm: %s\n",
-					mspPort, memLengthKB, swapLengthMB, swapAlgorithm);
-		}
-
-		return TRUE;
-	}
-	else{
-		printf("El archivo config.txt no tiene todos los campos.\n");
-		return TRUE;
-	}
+/**
+ * Imprimo la fecha y hora de inicio del programa
+ */
+void printDate() {
+	String ptrTime = temporal_get_string_time();
+	printf("Server time is %s\n\n", ptrTime);
+	free (ptrTime);
 }
 
-//Hago el malloc inicial, divido en marcos y creo la tabla de segmentos
-Boolean initMemory(void){
+/**
+ * Se crea la porcion de memoria y se divide en marcos. 
+ * Se la tabla de segmentos
+ */
+void initMemory() { 
+	Int32U memorySize = memLengthKB * 1000; 	
+	Int32U framesCount = memorySize / FRAME_SIZE;  // cantidad de marcos que puede llegar a haber
 	
-	//malloc reserva en bytes, reservo el gran bloque inicial
-	memory = malloc( memLengthKB * 1000);
-	
-	//creo el diccionario de frames
+	memory = malloc(memorySize);
 	frames = list_create();
 
-	//top es la cantidad de marcos que puede llegar a haber
-	Int32U top = sizeof(memory) / FRAME_SIZE;
-
-	Frame* ptrFrame=NULL;
-	Int32U offset=0;
+	Frame* frame = NULL;
+	Int32U offset = 0;
 	
 	//DIVIDO EL GRAN BLOQUE DE MEMORIA EN MARCOS
-	for(Int32U index = 0; index < top; index++){
-		//Creo un marco
-		ptrFrame = malloc(sizeof(Frame));
-		//esta libre => True
-		ptrFrame->pid=0;
-		//esta libre => True
-		ptrFrame->used=FALSE;
-		//La dir de Mem Principal va a ser + el offset de los que ya cree
-		prtFrame->address= memory+offset;
+	for(Int32U index = 0; index < framesCount; index++) {
+		frame = malloc(sizeof(Frame));
+		frame->pid = 0;
+		frame->used = FALSE;
+		frame->address = memory + offset;
 		offset += FRAME_SIZE;
-		//agrego al dicc
-		list_add_in_index(frames, index, ptrFrame);
+
+		list_add_in_index(frames, index, frame);
 	}
 
-	segmentTable = dictionary_create();
-
-	return TRUE;
+	processSegments = dictionary_create();
 }
 
 
-//Creo un segmento en mi estrucutras administrativas
-Boolean createSegment(Int32U pid, Int32U size){
-	SegmentsTable* ptrSegments;
+/**
+ * Se crea el segmento paginado segun el size
+ * Si el pid no tiene tabla de segmentos se crea
+ */
+Boolean createSegment(Int32U pid, Int32U size) {
+	SegmentsTable segments;
 	String pidStr = intToStr(pid);
 	
-	//me fijo si en la segmentTable tengo una entrada por ese PID
-	if (!dictionary_has_key(segmentTable, pidStr)){
-		ptrSegments = malloc(sizeof(SegmentsTable));
-		ptrSegments->segments = dictionary_create();
-
-		dictionary_put(segmentTable, pidStr, ptrSegments);
+	//me fijo si en la processSegments tengo una entrada por ese PID
+	if (!dictionary_has_key(processSegments, pidStr)){
+		segments = malloc(sizeof(SegmentsTable));
+		segments->table = dictionary_create();
+		segments->lastId = 0;
+		dictionary_put(processSegments, pidStr, segments);
 	}
+	// Se crea el segmento paginado
+	Segment segment = reservePages(size);
 
-	//ptrSegments apunta a la tabla de segmentos de ese PID
-	ptrSegments = dictionary_get(segmentTable, pidStr);
-
-	//el ID del nuevo segmento va a ser 1 más del ultimo que ya exista
-	Int8U segmentId = dictionary_size(ptrSegments);
-
-	//creo las paginas
-	Segment* ptrPages = reservePages(size);
-
-	//agrego la lista de Paginas a la tabla de Segmentos de PID
-	dictionary_put(ptrSegments, intToStr(segmentId), ptrPages);
-
+	segments = dictionary_get(processSegments, pidStr);
+	String segmentId = intToStr(segments->lastId);
+	segments->lastId++;
+	
+	dictionary_put(segments->table, segmentId, segment);
+	
+	free(segmentId);
+	free(pidStr);
 	return TRUE;
+}
+
+/**
+ * Devuelve un segmento con la cantidad de paginas correspondientes al size
+ */
+Segment reservePages(Int32U size) {
+	Segment segment = list_create();
+	Int32U pageCount = getPagesCountBySize(size, 0); //cantidad paginas a crear
+
+	Page* page = NULL;
+	for(Int32U index = 0; index < pageCount; index++) { //Creo las paginas
+		page = malloc(sizeof(Page)); 
+		page->frame = NULL;
+		page->timestamp = time();
+		page->clock = TRUE;
+		page->swapped = FALSE; 
+
+		list_add_in_index(segment, index, page);
+	}
+	return segment;
 }
 
 /**
@@ -171,34 +162,45 @@ Boolean createSegment(Int32U pid, Int32U size){
 Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	String pidStr = intToStr(pid);
 	
-	if (!dictionary_has_key(segmentTable, pidStr)) {
+	if (!dictionary_has_key(processSegments, pidStr)) {
 		printf("No existe ningun segmento para el proceso %s\n", pidStr);
+		free(pidStr);
 		return FALSE;
 	}
 
 	String segmentStr = intToStr(segmentNumber);
-	SegmentsTable* segments = dictionary_get(segmentTable, pid);
-	Segment* segment = dictionary_get(segments->segments, segmentStr);
-	while(list_any_satisfy(segment->pagesList, swapped)) {
-		// TODO SWAPPING
+	if (!dictionary_has_key(segments->table, segmentStr)) {
+		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", getSegment(address), pidStr);
+		free(segmentStr);
+		free(pidStr);
+		return FALSE;
+	}
+	SegmentsTable segments = dictionary_get(processSegments, pidStr);
+
+	Segment segment = dictionary_get(segments->table, segmentStr);
+
+	while(list_any_satisfy(segment, swapped)) {
+		// TODO SWAPPING 
+		// Page* page = list_find(segment, swapped); 
+		// swappingDestroy(page);
 	}
 
-	list_destroy_and_destroy_elements(segment->pagesList);
-	dictionary_remove_and_destroy(segmentTable, segmentStr);
+	list_clean_and_destroy_elements(segment, NULL);
+	dictionary_remove_and_destroy(segments, segmentStr, NULL);
+	dictionary_remove_and_destroy(processSegments, pidStr, NULL);
 	free(segmentStr);
 	free(pidStr);
 	return TRUE;
 }
 
 /**
- * Devuelve TRUE si escribio correctamente
- * Setea  el flag segFault en TRUE si ocurre segmentation fault
+ * Devuelve TRUE si escribio correctamente y FALSE si ocurrio Segmentation Fault
  * Busca pagina por pagina segun el size y el address
  * y para cada una de ellas pisa su contendio con el content
  * para la primera pagina
  */
-Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boolean segFault) {
-	if (*segFault = checkSegFault(size, address, pid)) {
+Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
+	if (checkSegFault(size, address, pid)) {
 		printf("Ocurrio un segmentation fault al tratar de escribir en la direccion %d\n", address);
 		return FALSE;
 	}
@@ -206,11 +208,12 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 	Int8U segmentOffset = 0;
 	Boolean firstPage = TRUE;
 	Byte* ptrContent = content;
-	Int8U pagesToRead = getPagesToRead(size, offset);
-	while (nextPage(page, size, segmentOffset, address, offset, pid)) {
+	Int32U pagesCount = getPagesCountBySize(size, offset);
+	while (nextPage(page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
 			if (page->swapped || list_all_satisfy(frames, used)) {
-				// TODO SWAPPING
+				// TODO SWAPPING 
+				// swapping(page);
 			} else {
 				Frame* frame = list_find(frames, notUsed);
 				page->frame = frame;	
@@ -220,17 +223,16 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 		
 		Byte* writeLocation;
 		Int8U writeSize;
-		if (firstPage) {
+		if (firstPage) {  										// first page
 			writeLocation = page->frame->address + offset;
-			writeSize = FRAME_SIZE - offset;
-		} else if (pagesToRead == segmentOffset + 1) {
+			writeSize = (size >= FRAME_SIZE - offset) ? FRAME_SIZE - offset : size;
+		} else if (pagesCount == segmentOffset + 1) { 			// last page
 			writeLocation = page->frame->address;
-			writeSize = size - FRAME_SIZE * (pagesToRead - 1);
-		} else {
+			writeSize = size - FRAME_SIZE * (pagesCount - 1);
+		} else { 												// middle page
 			writeLocation = page->frame->address;
-			writeSize = FRAME_SIZE;
+			writeSize = (size >= FRAME_SIZE) ? FRAME_SIZE : size;
 		}
-
 
 		memcpy(writeLocation, ptrContent, writeSize);
 		ptrContent += writeSize;
@@ -247,29 +249,29 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 
 /**
  * Busco la siguiente pagina segun el desplazamiento dentro del segmento, la direccion y el tamaño del dato
+ * Devuelvo FALSE si ya accedio a todas las paginas segun el segmentOffset y el size
  */
-Boolean nextPage(Page* page, Int32U size, Int8U segmentOffset, Int32U address, Int32U offset, Int32U pid) {
+Boolean nextPage(Page* page, Int32U pagesCount, Int8U segmentOffset, Int32U address, Int32U pid) {
 	Int32U pageNumber = getPage(address);
-	Int8U pagesToRead = getPagesToRead(size, offset);
-	if (pagesToRead == segmentOffset) {
+	if (pagesCount == segmentOffset) {
 		return FALSE;
 	}
-	Segment* segment = getSegmentBy(address, pid);
-	page = list_get(segment->pagesList, pageNumber + segmentOffset);
+	Segment segment = getSegmentBy(address, pid);
+	page = list_get(segment, pageNumber + segmentOffset);
 	return TRUE;
 }
 
 /**
  * obtengo el segmento que contiene la lista de paginas correspondiente al address y pid
+ * Devuelve NULL si el segmento no existe
  */
-Segment* getSegmentBy(Int32U address, Int32U pid) {
+Segment getSegmentBy(Int32U address, Int32U pid) {
 	String pidStr = intToStr(pid);
-	Int32U offset = getOffset(address);
 	Int32U segmentNumber = getSegment(address);
+	SegmentsTable segments = dictionary_get(processSegments, pidStr);
 	String segmentStr = intToStr(segmentNumber);
-	SegmentsTable* segments = dictionary_get(segmentTable, pidStr);
+	Segment segment = dictionary_get(segments->table, segmentStr);
 	free(pidStr);
-	Segment* segment = dictionary_get(segments->segments, segmentStr);
 	free(segmentStr);
 	return segment;
 }
@@ -277,108 +279,83 @@ Segment* getSegmentBy(Int32U address, Int32U pid) {
 /**
  * Obtiene la cantidad de paginas a la que se quiere acceder segun el size y offset
  */
-Int8U getPagesToRead(Int32U size, Int32U offset) {
-	// calculo la cantidad a paginas a leer segun el size
+Int32U getPagesCountBySize(Int32U size, Int32U offset) {
 	Int32U sizeTotal = size + offset;
-	Int8U pagesToRead = sizeTotal / FRAME_SIZE;
-	pagesToRead += (sizeTotal % FRAME_SIZE != 0) ? 1 : 0;
-	return pagesToRead;	
+	Int32U pagesCount = sizeTotal / FRAME_SIZE;
+	pagesCount += (sizeTotal % FRAME_SIZE != 0) ? 1 : 0;
+	return pagesCount;	
 }
 
 /**
+ * Se fija la cantidad de paginas a las que tiene que acceder,
+ * a partir de cual y con que desplazamiento.
+ * Si no existe alguna de esas paginas devuelve TRUE porque ocurre segmentation fault
+ * 
  * Esta funcion recibe como parametros:
  * 1. Int32U size - Es el tamaño de lo que quiero leer o escribir
  * 2. Int32U address - la direccion logica de donde quiere leer o escribir
  * 3. Int32U pid - identificador del proceso
- * 
- * Se fija la cantidad de paginas a las que tiene que acceder,
- * a partir de cual y con que desplazamiento.
- * Si no existe alguna de esas paginas devuelve TRUE porque ocurre segmentation fault
  */
 Boolean checkSegFault(Int32U size, Int32U address, Int32U pid) {
 	String pidStr = intToStr(pid);
-	if (!dictionary_has_key(segmentTable, pidStr)) {
+	if (!dictionary_has_key(processSegments, pidStr)) {
 		printf("No existe ningun segmento para el proceso %s\n -- Segmentation Fault\n", pidStr);
+		free(pidStr);
+		return TRUE;
+	}
+
+	Segment segment = getSegmentBy(address, pid);
+	if (segment == NULL) {
+		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", getSegment(address), pidStr);
+		free(pidStr);
 		return TRUE;
 	}
 
 	Int32U offset = getOffset(address);
+	Int32U pagesCount = getPagesCountBySize(size, offset);
 	Int32U pageNumber = getPage(address);
-	Int8U pagesToRead = getPagesToRead(size, offset);
 
-	Segment* segment = getSegmentBy(address, pid);
 
-	if (list_size(segment->pagesList) < pageNumber + pagesToRead) {
-		printf("Tratando de acceder a la pagina nro %d cuando tan solo hay %d\n -- Segmentation Fault\n", pageNumber + pagesToRead - 1, list_size(segment->pagesList) - 1);
+	if (list_size(segment) < pageNumber + pagesCount) {
+		printf("Tratando de acceder a la pagina nro %d cuando tan solo hay %d\n -- Segmentation Fault\n", pageNumber + pagesCount - 1, list_size(segment) - 1);
+		free(pidStr);
 		return TRUE;
 	}
+
+	free(pidStr);
 	return FALSE;
 }
 
+/**
+ * Itera la tabla de segmentos del pid, y para cada uno ejecuta la funcion printPages
+ */
 Boolean showPages(Int32U pid) {
 	String pidStr = intToStr(pid);
-	if (!dictionary_has_key(segmentTable, pidStr)) {
+	if (!dictionary_has_key(processSegments, pidStr)) {
 		printf("No existe ningun segmento para el proceso %s\n", pidStr);
 		return FALSE;
 	}
-
-	SegmentsTable* segments = dictionary_get(segmentTable, pidStr);
-	dictionary_iterator(segments, printPages);
+	SegmentsTable segments = dictionary_get(processSegments, pidStr);
+	dictionary_iterator(segments->table, printPages);
 	return TRUE;
 }
 
-void printPages(String key, void* value) {
-	printf("Paginas del segmento nro %s\n", key);
-	t_list* segment = ((Segment) value)->pagesList;
-	for (Int8U = 0; i < FRAME_SIZE, i++) {
-		Page* page = list_get(i);
-		String pageContent;
-		if (page->frame != NULL) {
-			pageContent = malloc(FRAME_SIZE);
-			memcpy(pageContent, page->frame->address, FRAME_SIZE);
-			
-		}  else {
-			pageContent = "";
-		}
-		printf("Nro de pagina: %d, swapped: %s, last time: %d, content: %s\n", i, page->swapped ? "Si": "No", page->timestamp, pageContent);
-	}
-}
-
 /**
- * Devuelve un segmento con la cantidad de paginas correspondientes al size
+ * Imprime por pantalla nro de pagina, swapped y last time para cada una de las paginas del segmento 'segment'
  */
-Segment* reservePages(Int32U size) {
-	//creo la estructura que 
-	Segment* segment = malloc(sizeof(Segment));
-
-	//creo la lista
-	segment->pagesList = listCreate();
-	
-	//top es la cantidad paginas a crear
-	Int32U top = size / FRAME_SIZE;
-	
-	Page* page = NULL;
-	//CREO LAS PAGINAS EN LA LISTA
-	for(Int32U index = 0; index < top; index++){
-		//Creo una pagina
-		page = malloc(sizeof(Page));
-		
-		//inicializo
-		page->frame = NULL;
-		page->timestamp = time();
-		page->clock = TRUE;
-		page->swapped = FALSE; 
-
-		list_add(segment->pagesList, page);
+void printPages(String segmentNumber, void* segment) {
+	printf("Paginas del segmento nro %s\n\n", segmentNumber);
+	for (Int16U i = 0; i < list_size((Segment) segment, i++) {
+		Page* page = list_get((Segment) segment, i);
+		printf("Nro de pagina: %d, swapped: %s, last time: %d\n", i, page->swapped ? "Si": "No", page->timestamp);
 	}
-
-	return segment;
 }
+
 
 /**
  * Devuelve TRUE si la pagina esta swappeada
  */
-Boolean used(Page* page) {
+Boolean swapped(Page* page) {
 	return page->swapped;
 }
 
@@ -426,4 +403,63 @@ Int32U getSegment(Int32U address) {
 	mask = mask & address;
 	segment = mask >> 20;
 	return segment;
+}
+
+/**
+ * Carga las variables de configuracion externa
+ */
+Boolean loadConfig() {
+
+	//Gennero tabla de configuracion
+	t_config * tConfig = config_create(CONFIG_FILE);
+	if (tConfig == NULL){
+		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
+		return FALSE;
+	}
+	//Verifico consistencia, tiene que haber 4 campos
+	if (config_keys_amount(tConfig) == PARAM_LENGTH){
+
+		//Verifico que los parametros tengan sus valores OK-> PORT=12456 | NOK->PORT=
+		if (config_has_property(tConfig, MSP_PORT)){
+			mspPort = config_get_int_value(tConfig, MSP_PORT);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, MEM_LENGTH)){
+			memLengthKB = config_get_int_value(tConfig, MEM_LENGTH);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, SWAP_LENGTH)){
+			swapLengthMB = config_get_int_value(tConfig, SWAP_LENGTH);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, SWAP_ALGORITHM)){
+			swapAlgorithm = config_get_string_value(tConfig, SWAP_ALGORITHM);
+		}else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		//Libero tabla config
+		config_destroy(tConfig);
+		if (DEBUG == 1){
+			printf("Archivo de config MSP leído\n===========\n");
+			printf("MSP Port: %u\nMemory Length: %ukB\nSwap Memory Length: %uMB\nSwap Algorithm: %s\n",
+					mspPort, memLengthKB, swapLengthMB, swapAlgorithm);
+		}
+
+		return TRUE;
+	}
+	else{
+		printf("El archivo config.txt no tiene todos los campos.\n");
+		return TRUE;
+	}
 }

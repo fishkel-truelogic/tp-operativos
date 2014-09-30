@@ -14,7 +14,7 @@
 #include "msp.h"
 
 
-void mspConsole(void);
+Boolean mspConsole();
 void consolHelpMsp(void);
 
 
