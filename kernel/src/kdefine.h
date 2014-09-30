@@ -31,6 +31,7 @@ void printHeader();
 void init();
 Boolean loadConfig();
 Boolean initTcbKM();
+Boolean initServer();
 Stream loadSyscalls();
 void newCpuClient(Socket *,Stream);
 Tcb *createNewTcb(StrConKer *);
@@ -39,6 +40,8 @@ Int32U getSegmentFromMSP(Int16U,Tcb *);
 void creationError(Socket *);
 void newConsoleClient(Socket *, Stream);
 void newClientHandler(Socket *);
+
+void checkConections();
 
 void clientHandler(Int32U, fd_set *);
 

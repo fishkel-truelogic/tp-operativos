@@ -42,6 +42,7 @@ t_list *blockQueue;
 t_list *exitQueue;
 
 KernelConfig *config;
+Socket *serverSocket;
 SocketClient *socketMsp;
 
 Int32U lastPid;
@@ -592,6 +593,99 @@ void *thrSchedulerHandler(void *ptr) {
 	return NULL;
 }
 
+/**
+ * @NAME: initServer
+ * @DESC: Realiza la inicializacion del socket de escucha, y lo pone a escuchar
+ * 		: Retorna TRUE si el proceso tuvo exito. FALSE si hubo errores
+ */
+Boolean initServer(){
+
+	serverSocket = socketCreateServer(config->port);
+	if(serverSocket == NULL){
+		return FALSE;
+	}
+
+	if(!socketListen(serverSocket)){
+		return FALSE;
+	}
+
+	return TRUE;
+
+}
+/**
+ * @NAME: checkConections
+ * @DESC: Realiza la configuracion inicial del SELECT y lo realiza periodicamente.
+ * 		: Gestiona conexiones nuevas y existentes
+ */
+void checkConections(){
+
+	//SETEO A "0" EL MASTER Y EL TEMPORAL
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+
+	//CARGO EL SOCKET DE ESCUCHA A MASTER
+	FD_SET(serverSocket->descriptor, &master);
+
+	//CARGO EL SOCKET MAS GRANDE
+	fdmax = serverSocket->descriptor;
+
+	struct timeval timeout;
+
+	//BUCLE PRINCIPAL
+	while (TRUE) {
+
+		read_fds = master;
+		timeout.tv_sec = 10;
+		timeout.tv_usec = 0;
+
+		//HAGO EL SELECT
+		Int32U selectResult = select(fdmax + 1, &read_fds, NULL, NULL,&timeout);
+
+		if (selectResult == -1) {
+
+			//SE CAYO MI SOCKET DE ESCUCHA
+			printf("Error en el socket de escucha\n");
+			break;
+
+
+		} else {
+
+			//RECORRO TODOS LOS DESCRIPTORES MONITOREADOS PARA VER QUIEN LLAMO
+			Int32U i;
+			for (i = 0; i <= fdmax; i++) {
+
+				if (FD_ISSET(i, &read_fds)) {
+
+					//FUE EL SOCKET DE ESCUCHA??
+					if (i == serverSocket->descriptor) {
+
+						//SI, ENTONCES GESTIONO LA NUEVA CONEXION ENTRANTE
+						Socket *clientSocket = socketAcceptClient(serverSocket);
+						newClientHandler(clientSocket);
+
+						//LO CARGO A LA LISTA DE DESCRIPTORES A MONITOREAR Y ACTUALIZO EL MAXIMO
+						FD_SET(clientSocket->descriptor, &master);
+
+						if (clientSocket->descriptor > fdmax) {
+							fdmax = clientSocket->descriptor;
+						}
+
+
+					} else {
+
+						//NO, ENTONCES GESTIONO EL SOCKET QUE HABLO...
+						clientHandler(i, &master);
+
+					}
+				}
+			}
+		}
+
+	}
+
+}
+
+
 //PROGRAMA PRINCIPAL
 //==========================================================================
 int main() {
@@ -627,89 +721,25 @@ int main() {
 
 	//CREO EL TCB KM
 	if(!initTcbKM()){
-		printf("No se ha podido inicial el Tcb Kernel Mode. El programa terminara\n");
+		printf("No se ha podido iniciar el Tcb Kernel Mode. El programa terminara\n");
 		return -1;
 	}
 
-
-
-
-
-
-
-	//TODO: LLEVAR ESTO A OTRO ARCHIVO....
-	Socket *ptrServerSocket = socketCreateServer(config->port);
-	socketListen(ptrServerSocket);
-
-	//SETEO A "0" EL MASTER Y EL TEMPORAL
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
-
-	//CARGO EL SOCKET DE ESCUCHA A MASTER
-	FD_SET(ptrServerSocket->descriptor, &master);
-
-	//CARGO EL SOCKET MAS GRANDE
-	fdmax = ptrServerSocket->descriptor;
-
-	struct timeval timeout;
-
-	//BUCLE PRINCIPAL
-	while (TRUE) {
-
-		read_fds = master;
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;
-
-		//HAGO EL SELECT
-		Int32U selectResult = select(fdmax + 1, &read_fds, NULL, NULL,&timeout);
-
-		if (selectResult == -1) {
-
-			//SE CAYO MI SOCKET DE ESCUCHA
-			printf("Error en el socket de escucha\n");
-			break;
-
-
-		} else {
-
-			//RECORRO TODOS LOS DESCRIPTORES MONITOREADOS PARA VER QUIEN LLAMO
-			Int32U i;
-			for (i = 0; i <= fdmax; i++) {
-
-				if (FD_ISSET(i, &read_fds)) {
-
-					//FUE EL SOCKET DE ESCUCHA??
-					if (i == ptrServerSocket->descriptor) {
-
-						//SI, ENTONCES GESTIONO LA NUEVA CONEXION ENTRANTE
-						Socket *clientSocket = socketAcceptClient(ptrServerSocket);
-						newClientHandler(clientSocket);
-
-						//LO CARGO A LA LISTA DE DESCRIPTORES A MONITOREAR Y ACTUALIZO EL MAXIMO
-						FD_SET(clientSocket->descriptor, &master);
-
-						if (clientSocket->descriptor > fdmax) {
-							fdmax = clientSocket->descriptor;
-						}
-
-
-					} else {
-
-						//NO, ENTONCES GESTIONO EL SOCKET QUE HABLO...
-						clientHandler(i, &master);
-
-					}
-				}
-			}
-		}
-
+	//GENERO EL SERVER Y LO PONGO A ESCUCHAR
+	if(!initServer()){
+		printf("No se ha podido iniciar el Socket de escucha. El programa terminara\n");
+		return -1;
 	}
 
-	//FINALIZO EL HILO PLANIFICADOR
+	//REALIZO EL SELECT PARA GESTIONAR CONEXIONES
+	checkConections();
+
+
+	//FINALIZO EL PROGRAMA
 	pthread_join(thrScheduler, NULL );
 
-	socketDestroy(ptrServerSocket);
-	free(ptrServerSocket);
+	socketDestroy(serverSocket);
+	free(serverSocket);
 
 
 	return 0;
