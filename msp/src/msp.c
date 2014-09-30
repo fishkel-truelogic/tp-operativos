@@ -202,10 +202,10 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 // TODO SWAPPING
 	Pages* pages = dictionary_get(segments->segments, segmentStr);
 	Page* page = list_get(pages->pagesList, pageNumber);
-	Byte* writeLocation;
+	Byte* writeLocation, ptrContent;
 
-	if (size > FRAME_SIZE - 1 - offset) {
-		segFault = TRUE;
+	
+	if (*segFault = checkSegFault(size, offset, pageNumber, pages->pagesList)) {
 		printf("Ocurrio un segmentation fault al tratar de escribir en la direccion %d\n", address);
 		return FALSE;
 	}
@@ -224,15 +224,55 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content, &Boo
 		page->timestamp = time();
 		page->clock = TRUE;
 		writeLocation = page->frame->address + offset;
-		memcpy(writeLocation, content, size);
+		for (Int32U i = 0; i < size; i++) {
+			memcpy(writeLocation, content, 1);
+			ptrContent++;
+			writeLocation++;
+
+			
+		}
 	} else {
-		printf("No existe la pagina numero %d para el segmento numero %d \n", pageNumber, segmentNumber);
+		segFault = TRUE;
+		printf("Ocurrio un segmentation fault al tratar de escribir en la direccion %d\n", address);
 		return FALSE;
 		
 	}
 	return TRUE;	
 }
 
+/**
+ * Esta funcion recibe como parametros:
+ * 1. Int32U size - Es el tamaño de lo que quiero leer o escribir
+ * 2. Int32U address - la direccion logica de donde quiere leer o escribir
+ * 3. Int32U pid - identificador del proceso
+ * 
+ * Se fija la cantidad de paginas a las que tiene que acceder,
+ * a partir de cual y con que desplazamiento.
+ * Si no existe alguna de esas paginas devuelve TRUE porque ocurre segmentation fault
+ */
+Boolean checkSegFault(Int32U size, Int32U address, Int32U pid) {
+	String pidStr = intToStr(pid);
+	if (!dictionary_has_key(segmentTable, pidStr)) {
+		printf("No existe ningun segmento para el proceso %s\n -- Segmentation Fault", pidStr);
+		return TRUE;
+	}
+
+	Int32U offset = getOffset(address);
+	Int32U pageNumber = getPage(address);
+	Int32U segmentNumber = getSegment(address);
+	String segmentStr = intToStr(segmentNumber);
+
+	Segments* segments = dictionary_get(segmentTable, pid);
+	Pages* pages = dictionary_get(segments->segments, segmentStr);
+	Int32U sizeTotal = size + offset;
+	Int8U pagesCount = sizeTotal / FRAME_SIZE;
+	pagesCount += (sizeTotal % FRAME_SIZE != 0) ? 1 : 0;
+	if (list_size(pages->pagesList) < pageNumber + pagesCount) {
+		printf("Tratando de acceder a la pagina nro %d cuando tan solo hay %d\n -- Segmentation Fault", pageNumber + pagesCount - 1, list_size(pages->pagesList) - 1);
+		return TRUE;
+	}
+	return FALSE;
+}
 
 Boolean showPages(Int32U pid) {
 	String pidStr = intToStr(pid);
