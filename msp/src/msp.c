@@ -12,6 +12,10 @@
 //==========================================//
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <src/fereTypes.h>
+#include <src/commons/config.h>
 #include <src/commons/collections/dictionary.h>
 #include <src/commons/collections/list.h>
 #include "msp.h"
@@ -42,15 +46,17 @@ Int32U getOffset(Int32U);
 Int32U getPagesCountBySize(Int32U, Int32U);
 Boolean notUsed(Frame*);
 Boolean used(Frame*);
-Boolean swapped(Page*);
+bool swapped(Page*);
 Boolean loadConfig();
 Boolean nextPage(Page*, Int32U, Int8U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
-Boolean showPages(Int32U);
 Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
 void initMemory();
 void printPages(String, void*);
+void printDate();
+String intToStr(Int32U);
+Int16U getCurrentTime();
 
 //==========================================//
 //******************************************//
@@ -91,9 +97,10 @@ void initMemory() {
 
 	Frame* frame = NULL;
 	Int32U offset = 0;
+	Int32U index;
 	
 	//DIVIDO EL GRAN BLOQUE DE MEMORIA EN MARCOS
-	for(Int32U index = 0; index < framesCount; index++) {
+	for(index = 0; index < framesCount; index++) {
 		frame = malloc(sizeof(Frame));
 		frame->pid = 0;
 		frame->used = FALSE;
@@ -112,7 +119,7 @@ void initMemory() {
  * Si el pid no tiene tabla de segmentos se crea
  */
 Boolean createSegment(Int32U pid, Int32U size) {
-	SegmentsTable segments;
+	SegmentsTable* segments;
 	String pidStr = intToStr(pid);
 	
 	//me fijo si en la processSegments tengo una entrada por ese PID
@@ -142,12 +149,12 @@ Boolean createSegment(Int32U pid, Int32U size) {
 Segment reservePages(Int32U size) {
 	Segment segment = list_create();
 	Int32U pageCount = getPagesCountBySize(size, 0); //cantidad paginas a crear
-
+	Int32U index;
 	Page* page = NULL;
-	for(Int32U index = 0; index < pageCount; index++) { //Creo las paginas
+	for(index = 0; index < pageCount; index++) { //Creo las paginas
 		page = malloc(sizeof(Page)); 
 		page->frame = NULL;
-		page->timestamp = time();
+		page->timestamp = getCurrentTime();
 		page->clock = TRUE;
 		page->swapped = FALSE; 
 
@@ -169,24 +176,24 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	}
 
 	String segmentStr = intToStr(segmentNumber);
+	SegmentsTable* segments = dictionary_get(processSegments, pidStr);
 	if (!dictionary_has_key(segments->table, segmentStr)) {
-		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", getSegment(address), pidStr);
+		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", segmentNumber, pidStr);
 		free(segmentStr);
 		free(pidStr);
 		return FALSE;
 	}
-	SegmentsTable segments = dictionary_get(processSegments, pidStr);
 
 	Segment segment = dictionary_get(segments->table, segmentStr);
 
-	while(list_any_satisfy(segment, swapped)) {
+	while (list_any_satisfy(segment, swapped)) {
 		// TODO SWAPPING 
 		// Page* page = list_find(segment, swapped); 
 		// swappingDestroy(page);
 	}
 
 	list_clean_and_destroy_elements(segment, NULL);
-	dictionary_remove_and_destroy(segments, segmentStr, NULL);
+	dictionary_remove_and_destroy(segments->table, segmentStr, NULL);
 	dictionary_remove_and_destroy(processSegments, pidStr, NULL);
 	free(segmentStr);
 	free(pidStr);
@@ -205,6 +212,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 		return FALSE;
 	}
 	Page* page = NULL;
+	Int32U offset = getOffset(address);
 	Int8U segmentOffset = 0;
 	Boolean firstPage = TRUE;
 	Byte* ptrContent = content;
@@ -237,7 +245,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 		memcpy(writeLocation, ptrContent, writeSize);
 		ptrContent += writeSize;
 		
-		page->timestamp = time();
+		page->timestamp = getCurrentTime();
 		page->clock = TRUE;
 
 		firstPage = FALSE;
@@ -268,7 +276,7 @@ Boolean nextPage(Page* page, Int32U pagesCount, Int8U segmentOffset, Int32U addr
 Segment getSegmentBy(Int32U address, Int32U pid) {
 	String pidStr = intToStr(pid);
 	Int32U segmentNumber = getSegment(address);
-	SegmentsTable segments = dictionary_get(processSegments, pidStr);
+	SegmentsTable* segments = dictionary_get(processSegments, pidStr);
 	String segmentStr = intToStr(segmentNumber);
 	Segment segment = dictionary_get(segments->table, segmentStr);
 	free(pidStr);
@@ -335,9 +343,29 @@ Boolean showPages(Int32U pid) {
 		printf("No existe ningun segmento para el proceso %s\n", pidStr);
 		return FALSE;
 	}
-	SegmentsTable segments = dictionary_get(processSegments, pidStr);
+	SegmentsTable* segments = dictionary_get(processSegments, pidStr);
 	dictionary_iterator(segments->table, printPages);
 	return TRUE;
+}
+
+void showFrames() {
+	Int32U size = list_size(frames);
+	Frame* ptrFrame = NULL;
+	Char used = ' ';
+	Int32U i;
+	for (i = 0; i < size; i++) {
+		//obtengo el frame correspondiente al i
+		ptrFrame = list_get(frames, i);
+		//si esta en uso le clavo un asterisco para mostrar piola
+		if (ptrFrame->used == TRUE) {
+			used = '*';
+
+		} else {
+			used = ' ';
+		}
+		//muestro
+		printf("%d\t\t%d\t\t%c\t\tS", i, ptrFrame->pid, used);
+	}
 }
 
 /**
@@ -345,7 +373,8 @@ Boolean showPages(Int32U pid) {
  */
 void printPages(String segmentNumber, void* segment) {
 	printf("Paginas del segmento nro %s\n\n", segmentNumber);
-	for (Int16U i = 0; i < list_size((Segment) segment, i++) {
+	Int16U i;
+	for (i = 0; i < list_size((Segment) segment); i++) {
 		Page* page = list_get((Segment) segment, i);
 		printf("Nro de pagina: %d, swapped: %s, last time: %d\n", i, page->swapped ? "Si": "No", page->timestamp);
 	}
@@ -355,7 +384,7 @@ void printPages(String segmentNumber, void* segment) {
 /**
  * Devuelve TRUE si la pagina esta swappeada
  */
-Boolean swapped(Page* page) {
+bool swapped(Page* page) {
 	return page->swapped;
 }
 
@@ -399,10 +428,29 @@ Int32U getPage(Int32U address) {
  */
 Int32U getSegment(Int32U address) {
 	Int32U segment;
-	Int32U mask = 4293918720; // 11111111111100000000000000000000
+	// 11111111111100000000000000000000
+
+	// 0xfff00000
+	Int32U mask = 0xfff00000;
 	mask = mask & address;
 	segment = mask >> 20;
 	return segment;
+}
+
+/**
+ * Convierte un int en un String
+ */
+String intToStr(Int32U integer) {
+	String result = malloc(sizeof(Byte)* 10);
+	sprintf(result, "%d", integer);
+	return result;
+}
+
+/**
+ * Obtiene la fecha actual en milisegundos
+ */
+Int16U getCurrentTime() {
+	return 0;
 }
 
 /**

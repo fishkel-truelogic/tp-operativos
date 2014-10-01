@@ -15,7 +15,8 @@
 
 
 Boolean mspConsole();
-void consolHelpMsp(void);
+
+void consoleHelpMsp();
 
 
 /*Crear Segmento [PID], [Tamaño] Crea un nuevo segmento

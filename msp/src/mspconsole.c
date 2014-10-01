@@ -8,8 +8,7 @@
 #include "msp.h"
 #include "mspconsole.h"
 
-
-void mspConsole(){
+Boolean mspConsole() {
 	Int32U option = 0;
 	Boolean leave = FALSE;
 
@@ -30,20 +29,38 @@ void mspConsole(){
 	printf("Ingrese numero de operacion: ");
 	scanf("%d", &option);
 	switch (option) {
-		case 1: leave = consoleCreateSegment(); break;
-		case 2: consoleDestroySegment(); break;
-		case 3: consoleWriteMemory(); break;
-		case 4: consoleReadMemory(); break;
-		case 5: consoleShowSegmentTable(); break;
-		case 6: consoleShowPagesTable(); break;
-		case 7: consoleShowFrames(); break;
-		case 8: consoleHelpMsp(); break;
-		case 9: leave = TRUE;
-		default: puts("Error, por favor intente de nuevo."); break;
+	case 1:
+		consoleCreateSegment();
+		break;
+	case 2:
+		consoleDestroySegment();
+		break;
+	case 3:
+		consoleWriteMemory();
+		break;
+	case 4:
+		consoleReadMemory();
+		break;
+	case 5:
+		consoleShowSegmentTable();
+		break;
+	case 6:
+		consoleShowPagesTable();
+		break;
+	case 7:
+		consoleShowFrames();
+		break;
+	case 8:
+		consoleHelpMsp();
+		break;
+	case 9:
+		leave = TRUE;
+	default:
+		puts("Error, por favor intente de nuevo.");
+		break;
 	}
 	return !leave;
 }
-
 
 /**
  * Crear Segmento [PID], [Tamaño] Crea un nuevo segmento
@@ -51,9 +68,9 @@ void mspConsole(){
  * tamaño <Tamaño>. Imprime la dirección base del segmento
  * creado.
  */
-void consoleCreateSegment(){
-	Int32U pid=0;
-	Int32U size=0;
+void consoleCreateSegment() {
+	Int32U pid = 0;
+	Int32U size = 0;
 
 	printf("\nPID:");
 	while (!scanf("%d", &pid)) {
@@ -64,10 +81,14 @@ void consoleCreateSegment(){
 		printf("Error: valor de size incorrecto, intente nuevamente:\n\n");
 	}
 
-	if(createSegment(pid, size)) {
-		printf("Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes con exito.\n\n", pid, size);
+	if (createSegment(pid, size)) {
+		printf(
+				"Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes con exito.\n\n",
+				pid, size);
 	} else {
-		printf("Ocurrio un error al intentar crear un segmento para el PID: %d de tamaño %d bytes.\n\n", pid, size);
+		printf(
+				"Ocurrio un error al intentar crear un segmento para el PID: %d de tamaño %d bytes.\n\n",
+				pid, size);
 	}
 }
 
@@ -87,9 +108,10 @@ void consoleDestroySegment() {
 
 	printf("\nSEGMENT BASE ADDRESS:");
 	while (!scanf("%d", &base)) {
-		printf("Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
+		printf(
+				"Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
 	}
-	
+
 	if (destroySegment(pid, base)) {
 		printf("Destruyo el segmento del PID: %d con base %d.\n\n", pid, base);
 	} else {
@@ -108,7 +130,6 @@ void consoleWriteMemory() {
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
-	Boolean segFault = FALSE;
 	String text = malloc(200);
 
 	printf("\nPID:");
@@ -118,7 +139,8 @@ void consoleWriteMemory() {
 
 	printf("\nVIRTUAL ADDRESS:");
 	while (!scanf("%d", &virAddress)) {
-		printf("Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
+		printf(
+				"Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
 	}
 	printf("\nSIZE:");
 	while (!scanf("%d", &size)) {
@@ -126,7 +148,7 @@ void consoleWriteMemory() {
 	}
 
 	printf("\nTEXT (200caracteres max.):");
-	while (!scanf("%s", &text)) {
+	while (!scanf("%s", text)) {
 		printf("Error: valor de TEXT incorrecto, intente nuevamente:\n\n");
 	}
 
@@ -145,7 +167,7 @@ void consoleWriteMemory() {
  * comenzando en <Dirección Virtual>, del espacio de direcciones
  * del Proceso <PID>.
  */
-void consoleReadMemory(){
+void consoleReadMemory() {
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
@@ -160,13 +182,14 @@ void consoleReadMemory(){
 
 	//SI ESTA DENTRO DEL RANGO IMPRIMO --->IMPLEMENTAR UN int FETCHPID() a futuro
 	/*
-	if (!fetchPid(pid))
-		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
-	else
-		printf("Error: No existe el PID: %d\n\n", pid);
+	 if (!fetchPid(pid))
+	 printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
+	 else
+	 printf("Error: No existe el PID: %d\n\n", pid);
 	 */
 	if (pid >= 0 && pid <= 65535)
-		printf("Imprimo %d bytes de memoria del PID: %d comenzando en %d.\n\n", size, pid, virAddress);
+		printf("Imprimo %d bytes de memoria del PID: %d comenzando en %d.\n\n",
+				size, pid, virAddress);
 	else
 		printf("Error\n\n");
 }
@@ -177,7 +200,7 @@ void consoleReadMemory(){
  * debe imprimir al menos: PID, número de segmento, tamaño,
  * dirección virtual base del segmento.
  */
-void consoleShowSegmentTable(){
+void consoleShowSegmentTable() {
 	puts("MUESTRO LA TABLA DE SEGMENTOS.");
 }
 
@@ -187,14 +210,16 @@ void consoleShowSegmentTable(){
  * imprimir al menos: Número de segmento al que pertenece, si
  * se encuentra en memoria principal o esta swappeada.
  */
-void consoleShowPagesTable(){
+void consoleShowPagesTable() {
 	Int32U pid;
 
 	//LEO PID
-	printf("PID:");
-	scanf("%d", &pid);
+	printf("\nPID:");
+	while (!scanf("%d", &pid)) {
+		printf("Error: valor de pid incorrecto, intente nuevamente:\n\n");
+	}
 
-	if (pid >= 0 && pid <= 65535 && showPages(pid)) {
+	if (showPages(pid)) {
 		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
 	} else {
 		printf("Error\n\n");
@@ -209,8 +234,8 @@ void consoleShowPagesTable(){
  * relacionada con los algoritmos de reemplazo de páginas
  * implementados.
  */
-void consoleShowFrames(void){
-	
+void consoleShowFrames(void) {
+
 	//IMPRIMO LA CABECERA
 	puts("MUESTRO LOS MARCOS DE MEMORIA (PAGINAS LIBRES).");
 	puts("#\tNro de marco de memoria");
@@ -218,71 +243,56 @@ void consoleShowFrames(void){
 	puts("O\t* si esta ocupado");
 	puts("S\tLo que sea de swapeo ");
 	puts("#\t\tPID\t\tO\t\tS");
-
-	Int32U size = dictionary_size(frames);
-	Frame* ptrFrame = NULL;
-	Char used = ' '
-	for (Int32U i = 0; i < size; i++)
-	{
-		//obtengo el frame correspondiente al i
-		ptrFrame = dictionary_get(frames, intToChar(i));
-		//si esta en uso le clavo un asterisco para mostrar piola
-		if (ptrFrame->usde==TRUE)
-			used = '*'
-		else
-			used = ' '
-		//muestro
-		printf("%d\t\t%d\t\t%c\t\tS", i, ptrFrame->pid, used)
-	}
+	showFrames();
 //TODO SWAPPING --> Aca hay que implementar ir a leer los marcos de memoria que esten swapeados
 }
 
 /**
  * Help para la consola
  */
-void consoleHelpMsp(void){
-	puts("CREAR SEGMENTO [PID], [Tamaño] Crea un nuevo segmento");
-	puts("en el espacio de direcciones del Proceso <PID> de");
-	puts("tamaño <Tamaño>. Imprime la dirección base del segmento");
-	puts("creado.");
-	puts("");
-	puts("");
-	puts("DESTRUIR SEGMENTO [PID], [Dirección Base] Destruye el");
-	puts("segmento identificado por <Dirección Base> en el");
-	puts("espacio de direcciones del Proceso <PID>.");
-	puts("");
-	puts("");
-	puts("ESCRIBIR MEMORIA [PID], [Dirección Virtual], [Tamaño],");
-	puts("[Texto] Escribe hasta <Tamaño> bytes del <Texto>");
-	puts("ingresado en la dirección <Dirección Virtual> del espacio");
-	puts("de direcciones del Proceso <PID>.");
-	puts("En caso de error por violación de segmento debe ser informado.");
-	puts("");
-	puts("");
-	puts("LEER MEMORIA [PID], [Dirección Virtual],");
-	puts("[Tamaño] Imprime hasta <Tamaño> del contenido de la memoria");
-	puts("comenzando en <Dirección Virtual>, del espacio de direcciones");
-	puts("del Proceso <PID>.");
-	puts("");
-	puts("");
-	puts("IMPRIMIR TABLA DE SEGMENTOS: Imprime el contenido de la/las tablas de");
-	puts("segmentos de todos los procesos ESO. Por cada segmento se");
-	puts("debe imprimir al menos: PID, número de segmento, tamaño,");
-	puts("dirección virtual base del segmento.");
-	puts("");
-	puts("");
-	puts("IMPRIMIR TABLA DE PAGINAS [PID] Imprime el contenido de la/las tablas");
-	puts("de páginas del Proceso ESO <PID>. Por cada segmento se debe");
-	puts("imprimir al menos: Número de segmento al que pertenece, si");
-	puts("se encuentra en memoria principal o esta swappeada.");
-	puts("");
-	puts("");
-	puts("LISTAR MARCOS: Imprime una lista de todos los marcos de memoria");
-	puts("existentes en el sistema, indicando: Número de Marco, si está");
-	puts("ocupado o no y por qué programa, y toda la información");
-	puts("relacionada con los algoritmos de reemplazo de páginas");
-	puts("implementados.");
-	puts("");
-	puts("");
+void consoleHelpMsp() {
+puts("CREAR SEGMENTO [PID], [Tamaño] Crea un nuevo segmento");
+puts("en el espacio de direcciones del Proceso <PID> de");
+puts("tamaño <Tamaño>. Imprime la dirección base del segmento");
+puts("creado.");
+puts("");
+puts("");
+puts("DESTRUIR SEGMENTO [PID], [Dirección Base] Destruye el");
+puts("segmento identificado por <Dirección Base> en el");
+puts("espacio de direcciones del Proceso <PID>.");
+puts("");
+puts("");
+puts("ESCRIBIR MEMORIA [PID], [Dirección Virtual], [Tamaño],");
+puts("[Texto] Escribe hasta <Tamaño> bytes del <Texto>");
+puts("ingresado en la dirección <Dirección Virtual> del espacio");
+puts("de direcciones del Proceso <PID>.");
+puts("En caso de error por violación de segmento debe ser informado.");
+puts("");
+puts("");
+puts("LEER MEMORIA [PID], [Dirección Virtual],");
+puts("[Tamaño] Imprime hasta <Tamaño> del contenido de la memoria");
+puts("comenzando en <Dirección Virtual>, del espacio de direcciones");
+puts("del Proceso <PID>.");
+puts("");
+puts("");
+puts("IMPRIMIR TABLA DE SEGMENTOS: Imprime el contenido de la/las tablas de");
+puts("segmentos de todos los procesos ESO. Por cada segmento se");
+puts("debe imprimir al menos: PID, número de segmento, tamaño,");
+puts("dirección virtual base del segmento.");
+puts("");
+puts("");
+puts("IMPRIMIR TABLA DE PAGINAS [PID] Imprime el contenido de la/las tablas");
+puts("de páginas del Proceso ESO <PID>. Por cada segmento se debe");
+puts("imprimir al menos: Número de segmento al que pertenece, si");
+puts("se encuentra en memoria principal o esta swappeada.");
+puts("");
+puts("");
+puts("LISTAR MARCOS: Imprime una lista de todos los marcos de memoria");
+puts("existentes en el sistema, indicando: Número de Marco, si está");
+puts("ocupado o no y por qué programa, y toda la información");
+puts("relacionada con los algoritmos de reemplazo de páginas");
+puts("implementados.");
+puts("");
+puts("");
 }
 
