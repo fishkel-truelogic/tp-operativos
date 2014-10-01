@@ -10,6 +10,24 @@
 
 //CONSTANTES Y DEFINES
 //==========================================================================
+
+typedef struct strKernelConfig {
+
+	Int32U port;
+	String mspAddress;
+	Int32U mspPort;
+	Int8U quantum;
+	String syscalls;
+	Int16U stack;
+
+} KernelConfig;
+
+typedef struct console {
+
+	Socket *consoleClient;
+	Tcb *tcb;
+} Console;
+
 #define CONFIG_FILE "config.txt"
 #define PARAM_LENGTH 6
 
@@ -39,14 +57,24 @@ Int32U getSegmentFromMSP(Int16U,Tcb *);
 void creationError(Socket *);
 void newConsoleClient(Socket *, Stream);
 void newClientHandler(Socket *);
-
+Console *getConsoleByPid(Int32U);
 void checkConections();
+void clientHandler(Int32U);
+void cpuClientHandler();
+void consoleClientHandler(Socket *, Stream);
 
-void clientHandler(Int32U, fd_set *);
+void serviceInterrupt();
+void serviceStdInput(Int32U, Char);
+void serviceStdOutput(Int32U, String);
+void serviceCreateThread(Tcb *);
+void serviceJoinThread(Int32U, Int32U);
+void serviceBlock(Tcb *, Int32U);
+void serviceWake(Int32U);
 
 void *thrSchedulerHandler(void *);
 
 //VER DE PONER ESTO EN LAS COMMONS
 SocketBuffer *barrayToBuffer(t_bitarray *);
+
 
 #endif /* KDEFINE_H_ */

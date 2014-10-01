@@ -21,22 +21,7 @@
 
 //VARIABLES GLOBALES Y ESTRUCTURAS PROPIAS
 //==========================================================================
-typedef struct strKernelConfig {
 
-	Int32U port;
-	String mspAddress;
-	Int32U mspPort;
-	Int8U quantum;
-	String syscalls;
-	Int16U stack;
-
-} KernelConfig;
-
-typedef struct console {
-
-	Socket *consoleClient;
-	Tcb *tcb;
-} Console;
 
 t_list *newQueue;
 t_list *readyQueue;
@@ -80,6 +65,55 @@ void moveToNew(Tcb *tcb){}
 void moveToBlock(Tcb *tcb){}
 //==========================================================================
 
+void cpuClientHandler(){
+
+}
+void consoleClientHandler(Socket *consoleClient, Stream data){
+
+	StrConKer *sck = unserializeConKer(data);
+
+	switch(sck->action){
+
+	//POR AHORA ESTA ESTE SOLO, NO DEBERIA ESTAR OUTPUT TAMBIEN???
+	//PORQUE FALTA EN LOS STREAMS
+	case STD_INPUT:
+
+
+
+		break;
+
+	default:
+		break;
+
+	}
+
+}
+/**
+ * @NAME: getConsoleByPid
+ * @DESC: Devuelve un elemento de la lista de consolas en funcion del pid
+ * 		: La lista de Consolas es una lista donde se guarda, el socket de
+ * 		: la consola cliente y el tcb que esta envio
+ * @PARAM:
+ * 	pid	: El pid por el que se desea filtrar la lista
+ */
+Console *getConsoleByPid(Int32U pid){
+
+	Console *consoleClient = NULL;
+
+	Int16U i;
+	for(i = 0; i < list_size(cpuList); i++){
+
+		Console *temp = list_get(consoleList,i);
+		if(temp->tcb->pid == pid){
+			consoleClient = temp;
+			break;
+		}
+
+	}
+
+	return consoleClient;
+
+}
 /**
  * @NAME: barrayToBuffer
  * @DESC: Recibe una Estructura t_bitarray y la convierte en una SocketBuffer
@@ -103,7 +137,6 @@ SocketBuffer *barrayToBuffer(t_bitarray *barray){
 	return sb;
 
 }
-
 /**
  * @NAME: printHeader
  * @DESC: Imprime un pequeño encabezado por pantalla
@@ -628,7 +661,7 @@ void checkConections(){
 					} else {
 
 						//NO, ENTONCES GESTIONO EL SOCKET QUE HABLO...
-						clientHandler(i, &master);
+						clientHandler(i);
 
 					}
 				}
@@ -644,30 +677,45 @@ void checkConections(){
  * 		: al sistema. La funcion NO GESTIONA NUEVAS CONEXIONES, sino ya existentes
  * @PARAMS:
  * 	clientDescriptor	: El descriptor que produjo el llamado
- * 	master				: Puntero al master de descriptores a monitorear por el SELECT
  */
-void clientHandler(Int32U clientDescriptor, fd_set *master) {
+void clientHandler(Int32U clientDescriptor) {
 
-	Socket *ptrTemp = malloc(sizeof(Socket));
-	ptrTemp->descriptor = clientDescriptor;
+	Socket *tempClient = malloc(sizeof(Socket));
+	tempClient->descriptor = clientDescriptor;
 
-	SocketBuffer *ptrBuffer = socketReceive(ptrTemp);
+	SocketBuffer *buffer = socketReceive(tempClient);
 
-	if (ptrBuffer == NULL ) {
+	if (buffer == NULL ) {
 
 		printf("Ha ocurrido un error al intentar recibir de %d\n",
 				clientDescriptor);
 
 		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
-		FD_CLR(clientDescriptor, master);
+		FD_CLR(clientDescriptor, &master);
 
 		//CIERRO EL SOCKET
-		socketDestroy(ptrTemp);
-		free(ptrTemp);
+		socketDestroy(tempClient);
+		free(tempClient);
 
 	} else {
 
 		// ** SE ATIENDEN SOLICITUDES DE CLIENTES **
+		printf("El cliente %d ha enviado un paquete\n",clientDescriptor);
+
+		Stream strReceived = (Stream)buffer->data;
+		Char id = getStreamId(strReceived);
+
+		switch (id) {
+
+		case CPU_ID:
+			cpuClientHandler(tempClient,strReceived);
+			break;
+
+		case CONSOLA_ID:
+			consoleClientHandler(tempClient,strReceived);
+			break;
+
+		}
 
 
 	}
@@ -706,30 +754,71 @@ void *thrSchedulerHandler(void *ptr) {
 void serviceInterrupt(){
 
 }
-
+/**
+ * @NAME: serviceStdInput
+ * @DESC: Recibe un PID y un identificador de tipo. Pide a la consola del programa
+ * 		: identificado por ese PID que se ingrese una cadena/texto
+ * @PARAMS:
+ * 	pid		: El pid que identifica a la consola
+ * 	type	: El identificador de tipo de la cadena a ingresar (texto/numeros)
+ */
 void serviceStdInput(Int32U pid, Char type){
 
-	StrKerCon *skc = malloc(sizeof(StrKerCon));
+	Console *consoleClient = getConsoleByPid(pid);
+	if(consoleClient != NULL){
 
-	skc->action = STD_INPUT;
+		StrKerCon *skc = malloc(sizeof(StrKerCon));
 
-	switch (type){
+		skc->action = STD_INPUT;
 
-	case TEXT_INPUT:
-		skc->inputType = TEXT_INPUT;
-		break;
+		switch (type){
 
-	case NUMBER_INPUT:
-		skc->inputType = NUMBER_INPUT;
-		break;
+		case TEXT_INPUT:
+			skc->inputType = TEXT_INPUT;
+			break;
+
+		case NUMBER_INPUT:
+			skc->inputType = NUMBER_INPUT;
+			break;
+		}
+
+		t_bitarray *barray = serializeKerCon(skc);
+		SocketBuffer *sb = barrayToBuffer(barray);
+
+		socketSend(consoleClient->consoleClient,sb);
+
 	}
 
-	//t_bitarray *barray = serializeKerCon(skc);
+	//SI DEVUELVE NULL QUE HAGO????
+
 
 
 }
-
+/**
+ * @NAME: serviceStdOutput
+ * @DESC: Recibe un pid y una cadena de texto. Escribe en la consola del programa
+ * 		: identificado por ese pid la cadena de texto recibida
+ * @PARAMS:
+ * 	pid		: El pid que identifica a la consola
+ * 	text	: La cadena a imprimir en consola
+ */
 void serviceStdOutput(Int32U pid, String text){
+
+	Console *consoleClient = getConsoleByPid(pid);
+	if(consoleClient != NULL){
+
+		StrKerCon *skc = malloc(sizeof(StrKerCon));
+
+		skc->action = STD_OUTPUT;
+		skc->logLen = strlen(text);
+		skc->log = (Byte*)text;
+
+		t_bitarray *barray = serializeKerCon(skc);
+		SocketBuffer *sb = barrayToBuffer(barray);
+
+		socketSend(consoleClient->consoleClient,sb);
+
+	}
 
 }
 
