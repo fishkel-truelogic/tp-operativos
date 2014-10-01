@@ -14,13 +14,24 @@
 #include <src/fereStream.h>
 #include <src/fereTypes.h>
 
+//VARIABLES GLOBALES
+//==========================================================================
 t_list *newList; //newList
 t_list *readyList;
 t_list *execList;
 t_list *blockList;
 t_list *exitList;
+//==========================================================================
 
+//FUNCIONES
+//==========================================================================
 void *newProcessesHandlerThread(void *ptr);
+Boolean isTCBKernelMode(void *ptr);
+void *readyProcessesHandlerThread(void *ptr);
+void *thrSchedulerHandler(void *ptr);
+
+//==========================================================================
+
 
 //HILO ENCARGADO DE PASAR TODOS LOS PROCESO/HILOS DE LA LISTA DE NUEVOS A READY
 void *newProcessesHandlerThread(void *ptr) {
@@ -36,7 +47,50 @@ void *newProcessesHandlerThread(void *ptr) {
 
 	}
 
-	printf("Se callo hilo newProcessesHandler\n");
+	printf("Se callo hilo newProcessesHandlerThread \n");
+
+	return NULL ;
+
+}
+
+//FUNCION PARA SABER SI UN TCB ES KERNEL MODE
+Boolean isTCBKernelMode(void *ptr){
+
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	return tcb->kernelMode;
+}
+
+//HILO ENCARGADO DE PASAR TODOS LOS PROCESO/HILOS DE LA LISTA DE READY A EXEC
+//DISPATCHER
+void *readyProcessesHandlerThread(void *ptr) {
+
+	while (TRUE) {
+		//CONSUMIDOR READYLIST
+		//SEMAFORO CANTIDAD DE CPUS LIBRES
+		//tener en cuenta bajar lo antes posible la cantidad de cpu disponible
+		//PRODUCTOR  EXECLIST
+		//MUTEX READYLIST
+
+		Tcb tcbToExec = NULL;
+
+		if(list_any_satisfy(readyList, isTCBKernelMode)){
+
+			tcbToExec = list_remove_by_condition(readyList , isTCBKernelMode);
+		}else{
+
+			tcbToExec = list_remove(readyList,0);
+		}
+		//END MUTEX READYLIST
+
+		//MUTEX EXCECLIST
+		list_add(execList, tcbToExec);
+		//END MUTEX EXECLIST
+		sendTcbToAFreeCPU(tcbToExec);
+
+	}
+
+	printf("Se callo hilo readyProcessesHandlerThread \n");
 
 	return NULL ;
 
