@@ -46,7 +46,7 @@ Int32U getOffset(Int32U);
 Int32U getPagesCountBySize(Int32U, Int32U);
 Boolean notUsed(Frame*);
 Boolean used(Frame*);
-bool swapped(Page*);
+Boolean swapped(Page*);
 Boolean loadConfig();
 Boolean nextPage(Page*, Int32U, Int8U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
@@ -186,7 +186,9 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 
 	Segment segment = dictionary_get(segments->table, segmentStr);
 
-	while (list_any_satisfy(segment, swapped)) {
+	//fpointer
+	Boolean (*fptrSwapped)(Page*) = swapped;
+	while (list_any_satisfy(segment, fptrSwapped() )) {
 		// TODO SWAPPING 
 		// Page* page = list_find(segment, swapped); 
 		// swappingDestroy(page);
@@ -217,13 +219,17 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 	Boolean firstPage = TRUE;
 	Byte* ptrContent = content;
 	Int32U pagesCount = getPagesCountBySize(size, offset);
+	//fpointer
+	Boolean (*fptrUsed)(Frame*) = used;
+	Boolean (*fptrNotUsed)(Frame*) = notUsed;
+
 	while (nextPage(page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
-			if (page->swapped || list_all_satisfy(frames, used)) {
+			if (page->swapped || list_all_satisfy(frames, fptrUsed())) {
 				// TODO SWAPPING 
 				// swapping(page);
 			} else {
-				Frame* frame = list_find(frames, notUsed);
+				Frame* frame = list_find(frames, fptrNotUsed());
 				page->frame = frame;	
 				frame->used = TRUE;
 			}
@@ -384,7 +390,7 @@ void printPages(String segmentNumber, void* segment) {
 /**
  * Devuelve TRUE si la pagina esta swappeada
  */
-bool swapped(Page* page) {
+Boolean swapped(Page* page) {
 	return page->swapped;
 }
 
