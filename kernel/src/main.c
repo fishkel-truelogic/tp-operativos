@@ -89,11 +89,13 @@ void consoleClientHandler(Socket *consoleClient, Stream data){
 
 	switch(sck->action){
 
-	//POR AHORA ESTA ESTE SOLO, NO DEBERIA ESTAR OUTPUT TAMBIEN???
-	//PORQUE FALTA EN LOS STREAMS
+	//vUELVE DE UNA LLAMADA AL SERVICIO ENTRADA ESTANDAR
 	case STD_INPUT:
 
+		//COMO SE A QUE CPU TENGO QUE ENVIARSELO???
+		//StrKerCpu *skc = malloc(sizeof(StrKerCpu));
 
+		//MODIFICAR LAS FERECOMMONS PARA QUE EL STREAM SOPORTE
 
 
 		break;
