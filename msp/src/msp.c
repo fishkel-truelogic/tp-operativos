@@ -44,9 +44,9 @@ Int32U getSegment(Int32U);
 Int32U getPage(Int32U);
 Int32U getOffset(Int32U);
 Int32U getPagesCountBySize(Int32U, Int32U);
-Boolean notUsed(Frame*);
-Boolean used(Frame*);
-Boolean swapped(Page*);
+bool notUsed(void*);
+bool used(void*);
+bool swapped(void*);
 Boolean loadConfig();
 Boolean nextPage(Page*, Int32U, Int8U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
@@ -187,8 +187,8 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	Segment segment = dictionary_get(segments->table, segmentStr);
 
 	//fpointer
-	Boolean (*fptrSwapped)(Page*) = swapped;
-	while (list_any_satisfy(segment, fptrSwapped() )) {
+	bool (*fptrSwapped)(void*) = swapped;
+	while (list_any_satisfy(segment, fptrSwapped)) {
 		// TODO SWAPPING 
 		// Page* page = list_find(segment, swapped); 
 		// swappingDestroy(page);
@@ -199,6 +199,30 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	dictionary_remove_and_destroy(processSegments, pidStr, NULL);
 	free(segmentStr);
 	free(pidStr);
+	return TRUE;
+}
+
+
+/** Solicitar Memoria (PID, Dirección Lógica, Tamaño): Para el espacio de direcciones del proceso PID,
+* devuelve la cantidad en bytes Tamaño comenzando desde Dirección Lógica. En caso que el pedido 
+* intente solicitar datos desde una posición de memoria inválida o que el mismo exceda los límites 
+* del segmento, retornará el correspondiente error de Violación de Segmento (Segmentation Fault).
+*/
+Boolean  readMemory (Int32U pid, Int32U address, Int32U size){
+	if (checkSegFault(size, address, pid)) {
+		printf("Ocurrio un segmentation fault al tratar de leer en la direccion %d\n", address);
+		return FALSE;
+	}
+	/*Int32U rOffset = getOffset(address);
+	Int32U rSegment = getSegment(address);
+	Int32U rPage = getPage(address);
+	Page* page = NULL;*/
+	
+	//reservo lo que voy a leer
+	Byte* read = malloc ( sizeof(Byte) * size );
+
+	//enviar(read);
+	free (read);
 	return TRUE;
 }
 
@@ -220,16 +244,16 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 	Byte* ptrContent = content;
 	Int32U pagesCount = getPagesCountBySize(size, offset);
 	//fpointer
-	Boolean (*fptrUsed)(Frame*) = used;
-	Boolean (*fptrNotUsed)(Frame*) = notUsed;
+	bool (*fptrUsed)(void*) = used;
+	bool (*fptrNotUsed)(void*) = notUsed;
 
 	while (nextPage(page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
-			if (page->swapped || list_all_satisfy(frames, fptrUsed())) {
+			if (page->swapped || list_all_satisfy(frames, fptrUsed)) {
 				// TODO SWAPPING 
 				// swapping(page);
 			} else {
-				Frame* frame = list_find(frames, fptrNotUsed());
+				Frame* frame = list_find(frames, fptrNotUsed);
 				page->frame = frame;	
 				frame->used = TRUE;
 			}
@@ -390,22 +414,28 @@ void printPages(String segmentNumber, void* segment) {
 /**
  * Devuelve TRUE si la pagina esta swappeada
  */
-Boolean swapped(Page* page) {
-	return page->swapped;
+bool swapped(void* page) {
+	Page* ptr;
+	ptr = (Page*)page;
+	return ptr->swapped;
 }
 
 /**
  * Devuelve TRUE si el marco esta siendo usado
  */
-Boolean used(Frame* frame) {
-	return frame->used;
+bool used(void* frame) {
+	Frame* ptr;
+	ptr = (Frame*)frame;
+	return ptr->used;
 }
 
 /**
  * Devuelve TRUE si el marco esta libre
  */
-Boolean notUsed(Frame* frame) {
-	return !frame->used;
+bool notUsed(void* frame) {
+	Frame* ptr;
+	ptr = (Frame*)frame;
+	return !ptr->used;
 }
 
 /**

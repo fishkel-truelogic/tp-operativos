@@ -4,7 +4,7 @@
  *  Created on: 28/09/2014
  *      Author: Ignacio Doring
  */
-
+/*
 #include <stdio.h>
 
 #include <pthread.h>
@@ -88,3 +88,4 @@ int main() {
 	return 0;
 
 }
+*/

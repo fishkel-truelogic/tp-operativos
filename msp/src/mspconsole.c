@@ -55,6 +55,7 @@ Boolean mspConsole() {
 		break;
 	case 9:
 		leave = TRUE;
+		break;
 	default:
 		puts("Error, por favor intente de nuevo.");
 		break;
