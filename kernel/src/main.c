@@ -95,6 +95,7 @@ void consoleClientHandler(Socket *consoleClient, Stream data){
 
 
 
+
 		break;
 
 	default:
@@ -769,7 +770,18 @@ void *thrSchedulerHandler(void *ptr) {
 
 //SERVICIOS EXPUESTOS A LA CPU
 //==========================================================================
-void serviceInterrupt(){
+/**
+ * @NAME: serviceInterrupt
+ * @DESC: Recibe un TCB y una direccion de memoria de la Syscall a ejecutar
+ * 		: y lo encola en estado BLOCK. Luego agregara una entrada en la cola
+ * 		: de llamadas al sistema con el TCB en cuestion
+ * @PARAMS:
+ * 	tcb		: Estructura Tcb que solicito el syscall
+ * 	address	: Direccion de memoria de la Syscall a ejecutar
+ */
+void serviceInterrupt(Tcb *tcb,Int32U address){
+
+	//TODO: Ver como quiere manejar Nacho esto
 
 }
 /**
