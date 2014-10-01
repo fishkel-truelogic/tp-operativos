@@ -21,11 +21,11 @@
 
 //VARIABLES GLOBALES
 //==========================================================================
-t_list *newQueue;
-t_list *readyQueue;
-t_list *execQueue;
-t_list *blockQueue;
-t_list *exitQueue;
+t_list *newList; //newList
+t_list *readyList;
+t_list *execList;
+t_list *blockList;
+t_list *exitList;
 
 KernelConfig *config;
 Socket *serverSocket;
@@ -179,11 +179,11 @@ void init()
 	lastPid = 2; //PORQUE PID 1 ES EL TCB KERNEL MODE
 	config = malloc(sizeof(KernelConfig));
 
-	newQueue = list_create();
-	readyQueue = list_create();
-	execQueue = list_create();
-	blockQueue = list_create();
-	exitQueue = list_create();
+	newList = list_create();
+	readyList = list_create();
+	execList = list_create();
+	blockList = list_create();
+	exitList = list_create();
 
 	cpuList = list_create();
 	consoleList = list_create();
