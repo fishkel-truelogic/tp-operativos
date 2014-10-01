@@ -19,10 +19,8 @@
 #include "kdefine.h"
 
 
-//VARIABLES GLOBALES Y ESTRUCTURAS PROPIAS
+//VARIABLES GLOBALES
 //==========================================================================
-
-
 t_list *newQueue;
 t_list *readyQueue;
 t_list *execQueue;
@@ -50,13 +48,11 @@ t_list *cpuList;
 t_list *consoleList;
 
 pthread_mutex_t mtxCpuList;
+pthread_mutex_t mtxConsoleList;
 sem_t semCpuList;
 
-//PROTOTIPOS Y FUNCIONES
+//FUNCIONES
 //==========================================================================
-
-
-
 
 //==========================================================================
 //ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
@@ -64,6 +60,25 @@ sem_t semCpuList;
 void moveToNew(Tcb *tcb){}
 void moveToBlock(Tcb *tcb){}
 //==========================================================================
+
+Tcb* cloneTcb(Tcb *tcbParent) {
+	Tcb* tcb = malloc(sizeof(Tcb));
+	tcb->pid = tcbParent->pid;
+	tcb->tid = tcbParent->tid;
+	tcb->M = tcbParent->M;
+	tcb->S = tcbParent->S;
+	tcb->X = tcbParent->X;
+	tcb->P = tcbParent->P;
+	tcb->kernelMode = tcbParent->kernelMode;
+	tcb->csLenght = tcbParent->csLenght;
+	tcb->A = tcbParent->A;
+	tcb->B = tcbParent->B;
+	tcb->C = tcbParent->C;
+	tcb->D = tcbParent->D;
+	tcb->E = tcbParent->E;
+	tcb->F = tcbParent->F;
+	return tcb;
+}
 
 void cpuClientHandler(){
 
@@ -103,12 +118,14 @@ Console *getConsoleByPid(Int32U pid){
 	Int16U i;
 	for(i = 0; i < list_size(cpuList); i++){
 
+		mtxLock(&mtxConsoleList);
 		Console *temp = list_get(consoleList,i);
 		if(temp->tcb->pid == pid){
 			consoleClient = temp;
+			mtxUnlock(&mtxConsoleList);
 			break;
 		}
-
+		mtxUnlock(&mtxConsoleList);
 	}
 
 	return consoleClient;
@@ -169,6 +186,7 @@ void init()
 	consoleList = list_create();
 
 	mtxInit(&mtxCpuList);
+	mtxInit(&mtxConsoleList);
 	semInit(&semCpuList, 0);
 }
 /**
@@ -821,20 +839,53 @@ void serviceStdOutput(Int32U pid, String text){
 	}
 
 }
+/**
+ * @NAME: serviceCreateThread
+ * @DESC: Recibe una estructura TCB. Crea un nuevo hilo con el TCB recibido y lo envia
+ * 		: a planificar normalmente. Se le debe crear un nuevo segmento de stack en la MSP
+ * 		: pero no un nuevo segmento de codigo ya que este es igual para todos los hilos de
+ * 		: un mismo programa
+ * @PARAMS:
+ * 	tcbParent	: El tcb padre a copiar
+ */
+void serviceCreateThread(Tcb *tcbParent){
 
-void serviceCreateThread(Tcb *tcb){
+	Tcb *tcbChild = malloc(sizeof(Tcb));
+
+	tcbChild = cloneTcb(tcbParent);
+
+	//ESTO HACE FALTA???? PORQUE CREO QUE VOY A TENER
+	//QUE DIFERENCIAR POR HILO TAMBIEN...VER MAS ADELANTE
+	tcbChild->tid++;
+
+	//RESERVAR DE MSP SEGMENTO DE STACK
+	StrKerMsp *skm = malloc(sizeof(StrKerMsp));
+	skm->id = KERNEL_ID;
+	skm->action = CREATE_SEG;
+	skm->pid = tcbChild->pid;
+	skm->size = config->stack;
+
+	//ENVIO A MSP
+	t_bitarray *barray = serializeKerMsp(skm);
+	SocketBuffer *sb = barrayToBuffer(barray);
+	socketSend(socketMsp->ptrSocket,sb);
 
 }
 
 void serviceJoinThread(Int32U callerTid, Int32U waitingTid){
 
+	//TODO: PREGUNTAR A NACHO COMO QUIERE MANEJAR ESTO
 }
 
 void serviceBlock(Tcb *tcb, Int32U resourceId){
 
+	//TODO: VER EL TEMA DE LOS RECURSOS CON NACHO
+
 }
 
 void serviceWake(Int32U resourceId){
+
+	//TODO: VER EL TEMA DE LOS RECURSOS CON NACHO
 
 }
 
