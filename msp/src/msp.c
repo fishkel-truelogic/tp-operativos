@@ -54,6 +54,7 @@ Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
 void initMemory();
 void printPages(String, void*);
+void destroy(void*);
 void printDate();
 String intToStr(Int32U);
 Int16U getCurrentTime();
@@ -72,7 +73,7 @@ int main() {
 	while(mspConsole()) {
 		//TODO poner la consola en un thread
 	}
-	return TRUE;
+	return 0;
 }
 
 /**
@@ -194,9 +195,10 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 		// swappingDestroy(page);
 	}
 
-	list_clean_and_destroy_elements(segment, NULL);
-	dictionary_remove_and_destroy(segments->table, segmentStr, NULL);
-	dictionary_remove_and_destroy(processSegments, pidStr, NULL);
+	void (*destroyFunc)(void*) = destroy;
+	list_destroy_and_destroy_elements(segment, destroyFunc);
+	dictionary_remove_and_destroy(segments->table, segmentStr, destroyFunc);
+	dictionary_remove_and_destroy(processSegments, pidStr, destroyFunc);
 	free(segmentStr);
 	free(pidStr);
 	return TRUE;
@@ -208,7 +210,7 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 * intente solicitar datos desde una posición de memoria inválida o que el mismo exceda los límites 
 * del segmento, retornará el correspondiente error de Violación de Segmento (Segmentation Fault).
 */
-Boolean  readMemory (Int32U pid, Int32U address, Int32U size){
+Boolean readMemory(Int32U pid, Int32U address, Int32U size){
 	if (checkSegFault(size, address, pid)) {
 		printf("Ocurrio un segmentation fault al tratar de leer en la direccion %d\n", address);
 		return FALSE;
@@ -219,7 +221,7 @@ Boolean  readMemory (Int32U pid, Int32U address, Int32U size){
 	Page* page = NULL;*/
 	
 	//reservo lo que voy a leer
-	Byte* read = malloc ( sizeof(Byte) * size );
+	Byte* read = malloc(sizeof(Byte) * size);
 
 	//enviar(read);
 	free (read);
@@ -487,6 +489,13 @@ String intToStr(Int32U integer) {
  */
 Int16U getCurrentTime() {
 	return 0;
+}
+
+/**
+ * Destruye una pagina (sirve para pasar como parametro a las funciones de lista)
+ */
+void destroy(void* element) {
+	free(element);
 }
 
 /**

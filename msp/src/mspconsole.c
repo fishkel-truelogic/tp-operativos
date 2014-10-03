@@ -63,6 +63,13 @@ Boolean mspConsole() {
 	return !leave;
 }
 
+int clean_stdin()
+{
+    while (getchar()!='\n');
+    return 1;
+}
+
+
 /**
  * Crear Segmento [PID], [Tamaño] Crea un nuevo segmento
  * en el espacio de direcciones del Proceso <PID> de
@@ -72,11 +79,11 @@ Boolean mspConsole() {
 void consoleCreateSegment() {
 	Int32U pid = 0;
 	Int32U size = 0;
+    char c;
+    do {
+		printf("\nPID:");
+    } while (((scanf("%d%c", &pid, &c)!=2 || c!='\n') && clean_stdin()) || pid < 0 || pid > 65535);
 
-	printf("\nPID:");
-	while (!scanf("%d", &pid)) {
-		printf("Error: valor de pid incorrecto, intente nuevamente:\n\n");
-	}
 	printf("\nSIZE:");
 	while (!scanf("%d", &size)) {
 		printf("Error: valor de size incorrecto, intente nuevamente:\n\n");
