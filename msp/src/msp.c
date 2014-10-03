@@ -40,15 +40,12 @@ t_list* frames = NULL;
 // Prototypes								//	
 //******************************************//
 //==========================================//
-Int32U getSegment(Int32U);
-Int32U getPage(Int32U);
-Int32U getOffset(Int32U);
 Int32U getPagesCountBySize(Int32U, Int32U);
 bool notUsed(void*);
 bool used(void*);
 bool swapped(void*);
 Boolean loadConfig();
-Boolean nextPage(Page*, Int32U, Int8U, Int32U, Int32U);
+Boolean nextPage(Page**, Int32U, Int32U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
 Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
@@ -225,6 +222,9 @@ Boolean readMemory(Int32U pid, Int32U address, Int32U size){
 	//reservo lo que voy a leer
 	Byte* read = malloc(sizeof(Byte) * size);
 
+
+
+
 	//enviar(read);
 	free (read);
 	return TRUE;
@@ -243,7 +243,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 	}
 	Page* page = NULL;
 	Int32U offset = getOffset(address);
-	Int8U segmentOffset = 0;
+	Int32U segmentOffset = 0;
 	Boolean firstPage = TRUE;
 	Byte* ptrContent = content;
 	Int32U pagesCount = getPagesCountBySize(size, offset);
@@ -251,7 +251,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 	bool (*fptrUsed)(void*) = used;
 	bool (*fptrNotUsed)(void*) = notUsed;
 
-	while (nextPage(page, pagesCount, segmentOffset, address, pid)) {
+	while (nextPage(&page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
 			if (page->swapped || list_all_satisfy(frames, fptrUsed)) {
 				// TODO SWAPPING 
@@ -293,13 +293,13 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
  * Busco la siguiente pagina segun el desplazamiento dentro del segmento, la direccion y el tamaño del dato
  * Devuelvo FALSE si ya accedio a todas las paginas segun el segmentOffset y el size
  */
-Boolean nextPage(Page* page, Int32U pagesCount, Int8U segmentOffset, Int32U address, Int32U pid) {
+Boolean nextPage(Page** page, Int32U pagesCount, Int32U segmentOffset, Int32U address, Int32U pid) {
 	Int32U pageNumber = getPage(address);
 	if (pagesCount == segmentOffset) {
 		return FALSE;
 	}
 	Segment segment = getSegmentBy(address, pid);
-	page = list_get(segment, pageNumber + segmentOffset);
+	*(page) = list_get(segment, pageNumber + segmentOffset);
 	return TRUE;
 }
 
@@ -395,11 +395,13 @@ void printFrame(void* frame) {
 	Frame* f = (Frame*) frame;
 	Int32U pid = 9999999;
 	String usedStr = "No";
+	Byte* direccion = NULL;
 	if (f->used) {
 		pid = f->pid;
 		usedStr = "Si";
+		direccion = f->address;
 	}
-	printf("Nro de proceso: %d, usado: %s\n", pid, usedStr);
+	printf("Nro de proceso: %d, usado: %s, Address: %s \n", pid, usedStr, direccion);
 }
 
 /**

@@ -8,6 +8,10 @@
 #include "msp.h"
 #include "mspconsole.h"
 
+//PROTOTYPES
+void waitForEnter();
+
+
 Boolean mspConsole() {
 	Int32U option = 0;
 	Boolean leave = FALSE;
@@ -79,24 +83,23 @@ int clean_stdin()
 void consoleCreateSegment() {
 	Int32U pid = 0;
 	Int32U size = 0;
-    char c;
-    do {
-		printf("\nPID:");
-    } while (((scanf("%d%c", &pid, &c)!=2 || c!='\n') && clean_stdin()) || pid < 0 || pid > 65535);
+    
+    printf("\nPID:");
+    scanf("%d", &pid);
 
-	printf("\nSIZE:");
-	while (!scanf("%d", &size)) {
-		printf("Error: valor de size incorrecto, intente nuevamente:\n\n");
-	}
-
+	printf("\nSIZE(bytes):");
+	scanf("%d", &size);
+	
 	if (createSegment(pid, size)) {
 		printf(
 				"Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes con exito.\n\n",
 				pid, size);
+		waitForEnter();
 	} else {
 		printf(
 				"Ocurrio un error al intentar crear un segmento para el PID: %d de tamaño %d bytes.\n\n",
 				pid, size);
+		waitForEnter();
 	}
 }
 
@@ -108,22 +111,31 @@ void consoleCreateSegment() {
 void consoleDestroySegment() {
 	Int32U pid;
 	Int32U base;
-
+	Int32U segmentNr, pageNr, offsetNr;
 	printf("\nPID:");
-	while (!scanf("%d", &pid)) {
-		printf("Error: valor de pid incorrecto, intente nuevamente:\n\n");
-	}
+	scanf("%d", &pid);
 
-	printf("\nSEGMENT BASE ADDRESS:");
-	while (!scanf("%d", &base)) {
-		printf(
-				"Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
-	}
+	printf("\nSEGMENT BASE ADDRESS (E.g. 0xF0F0F0F0):");
+	scanf("%i", &base);
 
-	if (destroySegment(pid, base)) {
-		printf("Destruyo el segmento del PID: %d con base %d.\n\n", pid, base);
-	} else {
-		printf("Error al destruir segmento\n\n");
+	segmentNr = getSegment(base);
+	pageNr = getPage(base);
+	offsetNr = getOffset(base);
+
+	if(offsetNr == 0 && pageNr == 0 ){
+		if (destroySegment(pid, segmentNr)){
+			printf("Se destruyo el segmento del PID %d con base %#08x (%d).\n\n", pid, base, base);
+			waitForEnter();
+		} else {
+			printf("Error al destruir segmento\n\n");
+			waitForEnter();
+		}
+	}else{
+		if( pageNr != 0 )
+			printf("ERROR: La pagina %d no corresponde a la base del segmento.\n", pageNr);
+		if( offsetNr != 0 )
+			printf("ERROR: El offset %d no corresponde a la base del segmento.\n", offsetNr);
+		waitForEnter();
 	}
 }
 
@@ -138,32 +150,27 @@ void consoleWriteMemory() {
 	Int32U pid;
 	Int32U virAddress;
 	Int32U size;
-	String text = malloc(200);
+	String text = malloc(4096);
 
 	printf("\nPID:");
-	while (!scanf("%d", &pid)) {
-		printf("Error: valor de pid incorrecto, intente nuevamente:\n\n");
-	}
+	scanf("%d", &pid);
 
-	printf("\nVIRTUAL ADDRESS:");
-	while (!scanf("%d", &virAddress)) {
-		printf(
-				"Error: valor de BASE ADDRESS es incorrecto, intente nuevamente:\n\n");
-	}
-	printf("\nSIZE:");
-	while (!scanf("%d", &size)) {
-		printf("Error: valor de size incorrecto, intente nuevamente:\n\n");
-	}
+	printf("%d\nVIRTUAL ADDRESS:", pid);
+	scanf("%i", &virAddress);
 
-	printf("\nTEXT (200caracteres max.):");
-	while (!scanf("%s", text)) {
-		printf("Error: valor de TEXT incorrecto, intente nuevamente:\n\n");
-	}
+	printf("\nSIZE(bytes):");
+	scanf("%d", &size);
+
+	printf("\nTEXT (4096caracteres max.):");
+	scanf("%s", text);
+
 
 	if (writeMemory(pid, virAddress, size, (Byte*) text)) {
-		printf("Escribio en la direccion %d del PID: %d.\n\n", virAddress, pid);
+		printf("Escribio en la direccion %#08x (%d) del PID: %d.\n\n", virAddress, virAddress, pid);
+		waitForEnter();
 	} else {
 		printf("Error: Segmentation Fault\n\n");
+		waitForEnter();
 	}
 
 	free(text);
@@ -195,11 +202,15 @@ void consoleReadMemory() {
 	 else
 	 printf("Error: No existe el PID: %d\n\n", pid);
 	 */
-	if (pid >= 0 && pid <= 65535)
+	if (pid >= 0 && pid <= 65535){
 		printf("Imprimo %d bytes de memoria del PID: %d comenzando en %d.\n\n",
 				size, pid, virAddress);
-	else
+		waitForEnter();
+	}
+	else{
 		printf("Error\n\n");
+		waitForEnter();
+	}
 }
 
 /** 
@@ -212,6 +223,7 @@ void consoleShowSegmentTable() {
 	puts("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 	puts(" *** MUESTRO LA TABLA DE SEGMENTOS *** \n");
 	showSegments();
+	waitForEnter();
 }
 
 /**
@@ -225,14 +237,14 @@ void consoleShowPagesTable() {
 
 	//LEO PID
 	printf("\nPID:");
-	while (!scanf("%d", &pid)) {
-		printf("Error: valor de pid incorrecto, intente nuevamente:\n\n");
-	}
+	scanf("%d", &pid);
 
 	if (showPages(pid)) {
-		printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
+		printf("Muestro la tabla de paginas del proceso %d.\n\nPresione ENTER para continuar", pid);
+		waitForEnter();
 	} else {
 		printf("Error\n\n");
+		waitForEnter();
 	}
 
 }
@@ -249,6 +261,7 @@ void consoleShowFrames(void) {
 	puts("\nMUESTRO LOS MARCOS DE MEMORIA.\n===============================\n");
 	puts("99999999 indica que el marco no fue asignado a ningun proceso");
 	showFrames();
+	waitForEnter();
 }
 
 /**
@@ -298,5 +311,15 @@ puts("relacionada con los algoritmos de reemplazo de páginas");
 puts("implementados.");
 puts("");
 puts("");
+puts("Presione ENTER para continuar");
+waitForEnter();
 }
 
+
+void waitForEnter(){
+	printf("Presione ENTER para continuar");
+	fflush (stdin);
+	fflush (stdout);
+	getchar();
+	getchar();
+}
