@@ -54,6 +54,9 @@ Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
 void initMemory();
 void printPages(String, void*);
+void printFrame(void*);
+void printSegment(String, void*);
+void printSegments(String, void*);
 void destroy(void*);
 void printDate();
 String intToStr(Int32U);
@@ -198,7 +201,6 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	void (*destroyFunc)(void*) = destroy;
 	list_destroy_and_destroy_elements(segment, destroyFunc);
 	dictionary_remove_and_destroy(segments->table, segmentStr, destroyFunc);
-	dictionary_remove_and_destroy(processSegments, pidStr, destroyFunc);
 	free(segmentStr);
 	free(pidStr);
 	return TRUE;
@@ -380,37 +382,56 @@ Boolean showPages(Int32U pid) {
 	return TRUE;
 }
 
-void showFrames() {
-	Int32U size = list_size(frames);
-	Frame* ptrFrame = NULL;
-	Char used = ' ';
-	Int32U i;
-	for (i = 0; i < size; i++) {
-		//obtengo el frame correspondiente al i
-		ptrFrame = list_get(frames, i);
-		//si esta en uso le clavo un asterisco para mostrar piola
-		if (ptrFrame->used == TRUE) {
-			used = '*';
+void showSegments() {
+	dictionary_iterator(processSegments, printSegments);
+}
 
-		} else {
-			used = ' ';
-		}
-		//muestro
-		printf("%d\t\t%d\t\t%c\t\tS", i, ptrFrame->pid, used);
+void showFrames() {
+	list_iterate(frames, printFrame);
+	//TODO SWAPPING --> Aca hay que implementar ir a leer los marcos de memoria que esten swapeados
+}
+
+void printFrame(void* frame) {
+	Frame* f = (Frame*) frame;
+	Int32U pid = 9999999;
+	String usedStr = "No";
+	if (f->used) {
+		pid = f->pid;
+		usedStr = "Si";
 	}
+	printf("Nro de proceso: %d, usado: %s\n", pid, usedStr);
 }
 
 /**
  * Imprime por pantalla nro de pagina, swapped y last time para cada una de las paginas del segmento 'segment'
  */
 void printPages(String segmentNumber, void* segment) {
-	printf("Paginas del segmento nro %s\n\n", segmentNumber);
+	printf("\nPaginas del segmento nro %s", segmentNumber);
+	puts("\n=========================\n");
 	Int16U i;
 	for (i = 0; i < list_size((Segment) segment); i++) {
 		Page* page = list_get((Segment) segment, i);
 		printf("Nro de pagina: %d, swapped: %s, last time: %d\n", i, page->swapped ? "Si": "No", page->timestamp);
 	}
+	puts("\n=========================\n");
 }
+
+/**
+ * Imprime por pantalla nro de pagina, swapped y last time para cada una de las paginas del segmento 'segment'
+ */
+void printSegments(String pid, void* segments) {
+	printf("Segmentos del proceso nro %s", pid);
+	puts("\n=========================\n");
+	SegmentsTable* segmentsTable = (SegmentsTable*) segments;
+	dictionary_iterator(segmentsTable->table, printSegment);
+	puts("\n=========================\n");
+}
+
+void printSegment(String sid, void* segment) {
+	Int32U size = list_size((Segment) segment) * 256;
+	printf("Nro de segmento: %s, tamanio: %d\n", sid, size);
+}
+
 
 
 /**
@@ -479,7 +500,7 @@ Int32U getSegment(Int32U address) {
  * Convierte un int en un String
  */
 String intToStr(Int32U integer) {
-	String result = malloc(sizeof(Byte)* 10);
+	String result = malloc(sizeof(Byte) * 10);
 	sprintf(result, "%d", integer);
 	return result;
 }

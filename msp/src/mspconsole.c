@@ -11,7 +11,7 @@
 Boolean mspConsole() {
 	Int32U option = 0;
 	Boolean leave = FALSE;
-
+	puts("\n\n\n\n\n");
 	puts("++++++++++++++++CONSOLA MSP++++++++++++++++");
 	puts("*\tSeleccione el comando a ejecutar:");
 	puts("*");
@@ -209,7 +209,9 @@ void consoleReadMemory() {
  * dirección virtual base del segmento.
  */
 void consoleShowSegmentTable() {
-	puts("MUESTRO LA TABLA DE SEGMENTOS.");
+	puts("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+	puts(" *** MUESTRO LA TABLA DE SEGMENTOS *** \n");
+	showSegments();
 }
 
 /**
@@ -243,16 +245,10 @@ void consoleShowPagesTable() {
  * implementados.
  */
 void consoleShowFrames(void) {
-
 	//IMPRIMO LA CABECERA
-	puts("MUESTRO LOS MARCOS DE MEMORIA (PAGINAS LIBRES).");
-	puts("#\tNro de marco de memoria");
-	puts("PID\tID del Proceso");
-	puts("O\t* si esta ocupado");
-	puts("S\tLo que sea de swapeo ");
-	puts("#\t\tPID\t\tO\t\tS");
+	puts("\nMUESTRO LOS MARCOS DE MEMORIA.\n===============================\n");
+	puts("99999999 indica que el marco no fue asignado a ningun proceso");
 	showFrames();
-//TODO SWAPPING --> Aca hay que implementar ir a leer los marcos de memoria que esten swapeados
 }
 
 /**

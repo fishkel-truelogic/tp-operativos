@@ -43,10 +43,13 @@
 //==========================================//
 Boolean createSegment(Int32U, Int32U); 
 Boolean destroySegment(Int32U, Int32U);
+
 Boolean writeMemory(Int32U, Int32U, Int32U, Byte*);
+Boolean readMemory(Int32U, Int32U, Int32U);
+
 Boolean showPages(Int32U);
 void showFrames();
-Boolean readMemory(Int32U, Int32U, Int32U);
+void showSegments();
 
 
 //==========================================//
