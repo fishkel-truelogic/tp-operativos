@@ -44,6 +44,7 @@ Int32U getPagesCountBySize(Int32U, Int32U);
 bool notUsed(void*);
 bool used(void*);
 bool swapped(void*);
+void setFrameNotUsed(void*);
 Boolean loadConfig();
 Boolean nextPage(Page**, Int32U, Int32U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
@@ -195,6 +196,9 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 		// swappingDestroy(page);
 	}
 
+	void (*setFrameNotUsedFunc)(void*) = setFrameNotUsed;
+	list_iterate(segment, setFrameNotUsedFunc);
+
 	void (*destroyFunc)(void*) = destroy;
 	list_destroy_and_destroy_elements(segment, destroyFunc);
 	dictionary_remove_and_destroy(segments->table, segmentStr, destroyFunc);
@@ -260,6 +264,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 				Frame* frame = list_find(frames, fptrNotUsed);
 				page->frame = frame;	
 				frame->used = TRUE;
+				frame->pid = pid;
 			}
 		}
 		
@@ -461,6 +466,13 @@ bool notUsed(void* frame) {
 	Frame* ptr;
 	ptr = (Frame*)frame;
 	return !ptr->used;
+}
+
+void setFrameNotUsed(void* page){
+	Page* ptr;
+	ptr = (Page*)page;
+	if (ptr->frame != NULL)
+		ptr->frame->used = FALSE;
 }
 
 /**
