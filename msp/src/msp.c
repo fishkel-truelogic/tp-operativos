@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 #include <src/fereTypes.h>
 #include <src/commons/config.h>
 #include <src/commons/collections/dictionary.h>
@@ -41,6 +43,7 @@ t_list* frames = NULL;
 //******************************************//
 //==========================================//
 Int32U getPagesCountBySize(Int32U, Int32U);
+Int16U getCurrentTime();
 bool notUsed(void*);
 bool used(void*);
 bool swapped(void*);
@@ -50,15 +53,15 @@ Boolean nextPage(Page**, Int32U, Int32U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
 Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
-void initMemory();
 void printPages(String, void*);
 void printFrame(void*);
 void printSegment(String, void*);
 void printSegments(String, void*);
 void destroy(void*);
+void initMemory();
 void printDate();
+void* mspConsoleThread(void*);
 String intToStr(Int32U);
-Int16U getCurrentTime();
 
 //==========================================//
 //******************************************//
@@ -71,10 +74,22 @@ int main() {
 		return FALSE;
 	}
 	initMemory();
-	while(mspConsole()) {
-		//TODO poner la consola en un thread
+	pthread_t consoleThread;
+	void* (*consoleFunc)(void*) = mspConsoleThread;
+	pthread_create(&consoleThread, NULL, consoleFunc, NULL);
+	while(TRUE) {
+		printf("\n\nMemoryRunner\n\n");
+		sleep(20);
 	}
+	pthread_join(consoleThread, NULL);
 	return 0;
+}
+
+void* mspConsoleThread(void* param) {
+	while(mspConsole()) {
+		puts("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+	}
+	return NULL;
 }
 
 /**
