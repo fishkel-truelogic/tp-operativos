@@ -38,100 +38,100 @@ Boolean operatorIsRegister(t_dictionary*, String name, Int8U index);
 /**
  * Carga en el registro, el número dado.
  */
-void funcLOAD(Int8U* action, void* op1, void* op2, void* op3);
+void funcLOAD(void* op1, void* op2, void* op3);
 
 /**
  * Obtiene el valor de memoria apuntado por el segundo registro. El valor obtenido lo asigna en el
  * primer registro.
  */
-void funcGETM(Int8U* action, void* op1, void* op2, void* op3);
+void funcGETM(void* op1, void* op2, void* op3);
 
 /**
  * Pone tantos bytes desde el segundo registro, hacia la memoria apuntada por el primer registro
  */
-void funcSETM(Int8U* action, void* op1, void* op2, void* op3);
+void funcSETM(void* op1, void* op2, void* op3);
 
 /**
  * Copia el valor del segundo registro hacia el primero
  */
-void funcMOVR(Int8U* action, void* op1, void* op2, void* op3);
+void funcMOVR(void* op1, void* op2, void* op3);
 
 /**
  * Suma el primer registro con el segundo registro. El resultado de la operación se almacena en el
  * registro A.
  */
-void funcADDR(Int8U* action, void* op1, void* op2, void* op3);
+void funcADDR(void* op1, void* op2, void* op3);
 
 /**
  * Resta el primer registro con el segundo registro. El resultado de la operación se almacena en el
  * registro A.
  */
-void funcSUBR(Int8U* action, void* op1, void* op2, void* op3);
+void funcSUBR(void* op1, void* op2, void* op3);
 
 /**
  * Multiplica el primer registro con el segundo registro. El resultado de la operación se almacena
  * en el registro A.
  */
-void funcMULR(Int8U* action, void* op1, void* op2, void* op3);
+void funcMULR(void* op1, void* op2, void* op3);
 
 /**
  * Obtiene el resto de la división del primer registro con el segundo registro. El resultado de la
  * operación se almacena en el registro A.
  */
-void funcMODR(Int8U* action, void* op1, void* op2, void* op3);
+void funcMODR(void* op1, void* op2, void* op3);
 
 /**
  * Divide el primer registro con el segundo registro. El resultado de la operación se almacena en el
  * registro A; a menos que el segundo operando sea 0, en cuyo caso se asigna el flag de ZERO_DIV
  * y no se hace la operación.
  **/
-void funcDIVR(Int8U* action, void* op1, void* op2, void* op3);
+void funcDIVR(void* op1, void* op2, void* op3);
 
 /**
  *Incrementar una unidad al registro.
  **/
-void funcINCR(Int8U* action, void* op1, void* op2, void* op3);
+void funcINCR(void* op1, void* op2, void* op3);
 
 /**
  *Decrementa una unidad al registro.
  **/
-void funcDECR(Int8U* action, void* op1, void* op2, void* op3);
+void funcDECR(void* op1, void* op2, void* op3);
 
 /**
  * Compara si el primer registro es igual al segundo. De ser verdadero, se almacena el valor 1. De lo
  * contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCOMP(Int8U* action, void* op1, void* op2, void* op3);
+void funcCOMP(void* op1, void* op2, void* op3);
 
 /**
  * Compara si el primer registro es mayor o igual al segundo. De ser verdadero, se almacena el
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCGEQ(Int8U* action, void* op1, void* op2, void* op3);
+void funcCGEQ(void* op1, void* op2, void* op3);
 
 /**
  * Compara si el primer registro es menor o igual al segundo. De ser verdadero, se almacena el
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCLEQ(Int8U* action, void* op1, void* op2, void* op3);
+void funcCLEQ(void* op1, void* op2, void* op3);
 
 /**
  * Altera el flujo de ejecución para ejecutar la instrucción apuntada por el registro. El valor es el
  * desplazamiento desde el inicio del programa.
  **/
-void funcGOTO(Int8U* action, void* op1, void* op2, void* op3);
+void funcGOTO(void* op1, void* op2, void* op3);
 
 /**
  * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
  * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
  **/
-void funcJMPZ(Int8U* action, void* op1, void* op2, void* op3);
+void funcJMPZ(void* op1, void* op2, void* op3);
 
 /**
  * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
  * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
  **/
-void funcJPNZ(Int8U* action, void* op1, void* op2, void* op3);
+void funcJPNZ(void* op1, void* op2, void* op3);
 
 /**
  * Interrumpe la ejecución del programa para ejecutar la rutina del kernel que se encuentra en la
@@ -141,35 +141,35 @@ void funcJPNZ(Int8U* action, void* op1, void* op2, void* op3);
  * servicio correspondiente en el proceso Kernel. Notar que el hilo en cuestión debe bloquearse
  * tras una interrupción.
  **/
-void funcINTE(Int8U* action, void* op1, void* op2, void* op3);
+void funcINTE(void* op1, void* op2, void* op3);
 
 /**
  * Limpia el registro de flags.
  **/
-void funcFLCL(Int8U* action, void* op1, void* op2, void* op3);
+void funcFLCL(void* op1, void* op2, void* op3);
 
 /**
  * Desplaza 12 los bits del registro, tantas veces como se indique en el Número. De ser
  * desplazamiento positivo, se considera hacia la derecha. De lo contrario hacia la izquierda.
  **/
-void funcSHIF(Int8U* action, void* op1, void* op2, void* op3);
+void funcSHIF(void* op1, void* op2, void* op3);
 
 /**
  * Consume un ciclo del CPU sin hacer nada
  **/
-void funcNOPP(Int8U* action, void* op1, void* op2, void* op3);
+void funcNOPP(void* op1, void* op2, void* op3);
 
 /**
  * Apila los primeros bytes, indicado por el número, del registro hacia el stack. Modifica el valor del
  * registro cursor de stack de forma acorde.
  **/
-void funcPUSH(Int8U* action, void* op1, void* op2, void* op3);
+void funcPUSH(void* op1, void* op2, void* op3);
 
 /**
  * Desapila los primeros bytes, indicado por el número, del stack hacia el registro. Modifica el valor
  * del registro de stack de forma acorde.
  **/
-void funcTAKE(Int8U* action, void* op1, void* op2, void* op3);
+void funcTAKE(void* op1, void* op2, void* op3);
 
 /**
  * Finaliza la ejecución.
@@ -179,47 +179,47 @@ void funcTAKE(Int8U* action, void* op1, void* op2, void* op3);
  * http://es.wikipedia.org/wiki/Operador_a_nivel_de_bits#Desplazamiento_l.C3.B3gico
  * 25estas operaciones tiene operadores:
  **/
-void funcXXXX(Int8U* action, void* op1, void* op2, void* op3);
+void funcXXXX(void* op1, void* op2, void* op3);
 
 /**
  * Reserva una cantidad de memoria especificada por el registro A. La direccion de esta se
  * almacena en el registro A. Crea en la MSP un nuevo segmento del tamaño especificado asociado
  * al programa en ejecución.
  **/
-void funcMALC(Int8U* action, void* op1, void* op2, void* op3);
+void funcMALC(void* op1, void* op2, void* op3);
 
 /**
  * Libera la memoria apuntada por el registro A. Solo se podrá liberar memoria alocada por la
  * instrucción de MALC. Destruye en la MSP el segmento indicado en el registro A.
  **/
-void funcFREE(Int8U* action, void* op1, void* op2, void* op3);
+void funcFREE(void* op1, void* op2, void* op3);
 
 /**
  * Pide por consola del programa que se ingrese un número, con signo entre –2.147.483.648 y
  * 2.147.483.647. El mismo será almacenado en el registro A. Invoca al servicio correspondiente en
  * el proceso Kernel.
  **/
-void funcINNN(Int8U* action, void* op1, void* op2, void* op3);
+void funcINNN(void* op1, void* op2, void* op3);
 
 /**
  * Pide por consola del programa que se ingrese una cadena no más larga de lo indicado por el
  * registro B. La misma será almacenada en la posición de memoria apuntada por el registro A.
  * invoca al servicio correspondiente en el proceso Kernel.
  **/
-void funcINNC(Int8U* action, void* op1, void* op2, void* op3);
+void funcINNC(void* op1, void* op2, void* op3);
 
 /**
  * Imprime por consola del programa el número, con signo almacenado en el registro A. Invoca al
  * servicio correspondiente en el proceso Kernel.
  **/
-void funcOUTN(Int8U* action, void* op1, void* op2, void* op3);
+void funcOUTN(void* op1, void* op2, void* op3);
 
 /**
  * Imprime por consola del programa una cadena de tamaño indicado por el registro B que se
  * encuentra en la direccion apuntada por el registro A. Invoca al servicio correspondiente en el
  * proceso Kernel.
  **/
-void funcOUTC(Int8U* action, void* op1, void* op2, void* op3);
+void funcOUTC(void* op1, void* op2, void* op3);
 
 /**
  * Crea un hilo, hijo del TCB que ejecutó la llamada al sistema correspondiente. El nuevo hilo
@@ -232,14 +232,14 @@ void funcOUTC(Int8U* action, void* op1, void* op2, void* op3);
  * que la diferencia entre cursor y base se mantenga igual) 13 y luego invocar al servicio
  * correspondiente en el proceso Kernel con el TCB recién generado.
  **/
-void funcCREA(Int8U* action, void* op1, void* op2, void* op3);
+void funcCREA(void* op1, void* op2, void* op3);
 
 /**
  * Bloquea el programa que ejecutó la llamada al sistema hasta que el hilo con el identificador
  * almacenado en el registro A haya finalizado. Invoca al servicio correspondiente en el proceso
  * Kernel.
  **/
-void funcJOIN(Int8U* action, void* op1, void* op2, void* op3);
+void funcJOIN(void* op1, void* op2, void* op3);
 
 /**
  * De tener una base de stack en 100, y un cursor en 130 (S-X=30). Al crear un nuevo stack, la dirección de este
@@ -249,7 +249,7 @@ void funcJOIN(Int8U* action, void* op1, void* op2, void* op3);
  * La evaluación y decisión de si el recurso está libre o no es hecha por la llamada al sistema WAIT
  * pre-compilada.
  **/
-void funcBLOK(Int8U* action, void* op1, void* op2, void* op3);
+void funcBLOK(void* op1, void* op2, void* op3);
 
 /**
  * Desbloquea al primer programa bloqueado por el recurso apuntado por B.
@@ -259,7 +259,7 @@ void funcBLOK(Int8U* action, void* op1, void* op2, void* op3);
  * como por el tamaño de cada uno de los mismos. Sin embargo, interpretando los primeros 4 bytes de
  * cada una es posible conocer de qué instrucción se trata, y, por lo tanto, cual es el tamaño de la misma.
  **/
-void funcWAKE(Int8U* action, void* op1, void* op2, void* op3);
+void funcWAKE(void* op1, void* op2, void* op3);
 
 /*
 27Anexo II: Especificación de las llamadas al sistema
