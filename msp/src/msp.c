@@ -17,6 +17,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <src/fereTypes.h>
+#include <src/fereSockets.h>
+#include <src/fereStream.h>
 #include <src/commons/config.h>
 #include <src/commons/collections/dictionary.h>
 #include <src/commons/collections/list.h>
@@ -36,6 +38,7 @@ String swapAlgorithm = "\0";
 Byte* memory;
 t_dictionary* processSegments = NULL;
 t_list* frames = NULL;
+t_list* socketConnections = NULL;
 
 //==========================================//
 //******************************************//
@@ -57,10 +60,14 @@ void printPages(String, void*);
 void printFrame(void*);
 void printSegment(String, void*);
 void printSegments(String, void*);
+void manageCpuRequest(StrCpuMsp*);
+void manageKernelRequest(StrKerMsp*);
 void destroy(void*);
 void initMemory();
 void printDate();
+void manageSocketConnections();
 void* mspConsoleThread(void*);
+void* manageSocketConnection(void*);
 String intToStr(Int32U);
 
 //==========================================//
@@ -77,12 +84,50 @@ int main() {
 	pthread_t consoleThread;
 	void* (*consoleFunc)(void*) = mspConsoleThread;
 	pthread_create(&consoleThread, NULL, consoleFunc, NULL);
-	while(TRUE) {
-		printf("\n\nMemoryRunner\n\n");
-		sleep(20);
-	}
+	manageSocketConnections();
 	pthread_join(consoleThread, NULL);
 	return 0;
+}
+
+void manageSocketConnections() {
+	socketConnections = list_create();
+	Socket* s = socketCreateServer(mspPort);
+	while(TRUE) {
+		pthread_t socketConnection;
+		if(socketListen(s)) {
+			Socket* socketClient = socketAcceptClient(s);
+			void* (*manageSocketConnectionFunc)(void*) = manageSocketConnection;
+			pthread_create(&socketConnection, NULL, manageSocketConnectionFunc, (void*) socketClient);
+			list_add(socketConnections, &socketConnection);
+		}
+	}
+}
+
+void* manageSocketConnection(void* param) {
+	Socket* socket = (Socket*) param;
+	SocketBuffer* sb = socketReceive(socket);
+	Char id = getStreamId((Stream) sb->data);
+	StrKerMsp* skm = NULL;
+	StrCpuMsp* scm = NULL;
+	switch (id) {
+		case KERNEL_ID:
+			skm = unserializeKerMsp((Stream) sb->data);
+			manageKernelRequest(skm);
+			break;
+		case CPU_ID:
+			scm = unserializeCpuMsp((Stream) sb->data);
+			manageCpuRequest(scm);
+			break;
+	}
+	return NULL;
+}
+
+void manageCpuRequest(StrCpuMsp* scm) {
+
+}
+
+void manageKernelRequest(StrKerMsp* skm) {
+
 }
 
 void* mspConsoleThread(void* param) {
