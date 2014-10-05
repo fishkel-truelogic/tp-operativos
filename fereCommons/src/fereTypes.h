@@ -58,7 +58,7 @@ typedef  int8_t Int8T;
 typedef  int16_t Int16T;
 
 //ENTERO 32-BITS EXACTO
-typedef  int16_t Int32T;
+typedef  int32_t Int32T;
 
 //ENTERO 32 NO SIGNADO
 typedef unsigned int Int32U;

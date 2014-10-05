@@ -80,7 +80,29 @@ Tcb* cloneTcb(Tcb *tcbParent) {
 	return tcb;
 }
 
-void cpuClientHandler(){
+void cpuClientHandler(Socket *consoleCpu, Stream data){
+
+	StrConKer *sck = unserializeCpuKer(data);
+
+	switch (sck->action) {
+
+	//vUELVE DE UNA LLAMADA AL SERVICIO ENTRADA ESTANDAR
+	case NEXT_TCB:break;
+	case FIRST_TCB: break;
+	case INTE: break;
+	case STD_INPUT:break;
+	case STD_OUTPUT:break;
+	case NEW_THREAD:break;
+	case JOIN_THREADS:break;
+	case BLOCK_THREAD:break;
+	case WAKE_THREAD:break;
+	case PROC_END:break;
+
+	default:
+		break;
+
+	}
+
 
 }
 void consoleClientHandler(Socket *consoleClient, Stream data){

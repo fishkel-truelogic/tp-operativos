@@ -38,6 +38,8 @@
 #define SEG_FAULT 14		// cuadno ocurre segmentation fault en la MSP
 #define CREATE_SEG 15 		// la MSP debe crear un segmento
 #define DELETE_SEG 16		// la MSP debe destruir un segmento
+#define PROC_END 17			// Ocurrio un XXXX en la ejecucion de un TCB
+
  //============================================================
  /**
   * IDs (Dueño del stream)

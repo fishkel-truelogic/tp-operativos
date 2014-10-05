@@ -65,7 +65,7 @@ Boolean socketConnection();
 Boolean getNextTcb();
 Boolean processTcb();
 Boolean loadConfig();
-void execute(Int8U*, Instruction*);
+void execute(Instruction*);
 Boolean mspRequest();
 Instruction* getInstruction();
 void* setRegisterOperator(Byte*);
@@ -153,25 +153,46 @@ Boolean getNextTcb() {
 	}
 
 	skc = unserializeKerCpu((Stream) sb->data);
-
+	currentTcb = skc->tcb;
 	return TRUE;
 }
 
 /**
- *
+ * Se procesa las instrucciones, tantas dependiendo el modo kernel, el quantum y si ocurrio alguna interrupcion
+ * El tcb es devuelto al kernel en esta funcion unicamente si es expulsado por quantum
  */
 Boolean processTcb() {
 	Instruction* instruction;
-	Int8U action;
 	Int8U quantum = skc->quantum;
+	Boolean inte = FALSE;
 	while (currentTcb->kernelMode || quantum > 0) {
 		if ((instruction = getInstruction()) == NULL) {
+			printf("No se pudo obtener la siguiente instruccion\n");
 			return FALSE;
 		}
-		execute(&action, instruction);
-		switch (action) {
-			// TODO action cases
-			default: break;
+		execute(instruction);
+		switch (sck->action) {
+			case INTE:
+			case STD_INPUT:
+			case STD_OUTPUT:
+			case NEW_THREAD:
+			case JOIN_THREADS:
+			case BLOCK_THREAD:
+			case WAKE_THREAD:
+			case PROC_END:
+				inte = TRUE;
+				break;
+			default: 
+				quantum--;
+				if (quantum == 0) {
+					sck->tcb = currentTcb;
+					sck->tcb = NEXT_TCB;
+				}
+				break;
+		}
+		//Si ocurrio una interrupcion, se sale de la ejecucion para dejar lugar a otro proceso
+		if (inte) {
+			break;
 		}
 	}
 
@@ -265,6 +286,7 @@ Instruction* getInstruction() {
 		for (i = 0; i < operatorsTotal; i++) {
 			if (operatorIsRegister(instructionOperators, instructionName, i)) {
 				instruction->op[i] = setRegisterOperator(ptrData);
+				ptrData++;
 			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
 				memcpy(instruction->op[i], ptrData, 4));
 				ptrData += 4;
@@ -275,6 +297,7 @@ Instruction* getInstruction() {
 	}
 	return NULL;
 }
+
 /**
  *  Obtiene una nuevo instruccion para ejecutar de la MSP
  * 
@@ -284,7 +307,7 @@ Instruction* getInstruction() {
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  **/
 Boolean mspRequest() {
-int i;
+	int i;
 	if (scm != NULL) {
 		free(scm);
 	}
@@ -337,7 +360,6 @@ void* setRegisterOperator(Byte* ptrData) {
 	} else if ((Char) *ptrData == 'F') {
 		ptr = &currentTcb->F;
 	}
-	ptrData++;
 	return ptr;
 
 }
@@ -345,11 +367,19 @@ void* setRegisterOperator(Byte* ptrData) {
 /**
  * Ejecuta la funcion correspondiente segun el nombre de la instruccion
  **/
-void execute(Int8U* action, Instruction* instruction) {
+void execute(Instruction* instruction) {
 	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
-	iop->func(action, instruction->op[0], instruction->op[1], instruction->op3[2]);
+	iop->func(instruction->op[0], instruction->op[1], instruction->op3[2]);
 }
 
 Tcb* getCurrentTcb() {
 	return currentTcb;
+}
+
+StrCpuKer* getSCK() {
+	return sck;
+}
+
+StrKerCpu* getSKC() {
+	return skc;
 }
