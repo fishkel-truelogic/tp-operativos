@@ -112,22 +112,42 @@ void* manageSocketConnection(void* param) {
 	switch (id) {
 		case KERNEL_ID:
 			skm = unserializeKerMsp((Stream) sb->data);
-			manageKernelRequest(skm);
+			manageKernelRequest(socket, skm);
 			break;
 		case CPU_ID:
 			scm = unserializeCpuMsp((Stream) sb->data);
-			manageCpuRequest(scm);
+			manageCpuRequest(socket, scm);
 			break;
 	}
 	return NULL;
 }
 
-void manageCpuRequest(StrCpuMsp* scm) {
+void manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
+	//TODO implementar bien modificando las cosas y poder hacer el response
+	switch (scm->action) {
+		case MEM_READ:
+			break;
+		case MEM_WRITE:
 
+			break;
+		case NEXT_INSTRUCTION:
+			readMemory(scm->pid, scm->address, scm->dataLen);
+			break;
+	}
 }
 
-void manageKernelRequest(StrKerMsp* skm) {
+void manageKernelRequest(Socket* socket, StrKerMsp* skm) {
+	//TODO implementar bien modificando las cosas y poder hacer el response
+	switch (skm->action) {
+		case CREATE_SEG:
+			createSegment(skm->pid, skm->size);
+			break;
+		case DELETE_SEG:
+			break;
+		case MEM_WRITE:
 
+			break;
+	}
 }
 
 void* mspConsoleThread(void* param) {
