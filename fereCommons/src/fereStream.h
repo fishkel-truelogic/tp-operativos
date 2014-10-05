@@ -70,6 +70,9 @@ typedef struct strConKer {
 typedef struct strKerCpu { 
 	Tcb tcb;
 	Int8U quantum;
+	Byte *bufferWriter;
+	Char action;
+	Char inputType;
 } StrKerCpu;
 
 typedef struct strCpuKer { 
@@ -132,7 +135,7 @@ StrConKer* newStrConKer(Char, Byte*, Byte*, Char, Int16U, Int16U);
 StrCpuMsp* newStrCpuMsp(Char, Int32U, Char, Byte*, Int16U, Int32U);
 StrCpuKer* newStrCpuKer(Char, Tcb, Char, Int16U, String, Int32U, Int32U, Char, Char);
 
-StrKerCpu* newStrKerCpu(Tcb, Int8U);
+StrKerCpu* newStrKerCpu(Tcb, Int8U,Byte*,Char,Char);
 StrKerMsp* newStrKerMsp(Char, Byte*, Char, Int16U, Int32U, Int32U);
 StrKerCon* newStrKerCon(Int32U, Byte*, Char, Char);
 
