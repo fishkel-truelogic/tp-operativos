@@ -36,6 +36,7 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 
 	switch (sck->action) {
 	case NEXT_TCB:
+	case PROC_END:
 		ptrByte = (Byte*) &sck->tcb.A;
 		memcpy(ptrData, ptrByte, sizeof(sck->tcb.A));
 		ptrData += sizeof(sck->tcb.A);
@@ -686,6 +687,7 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 
 	switch (action) {
 	case NEXT_TCB:
+	case PROC_END:
 		memcpy(&tcb.A, ptrByte, sizeof(tcb.A));
 		ptrByte += sizeof(tcb.A);
 		memcpy(&tcb.B, ptrByte, sizeof(tcb.B));
@@ -1152,6 +1154,7 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 	size += sizeof(sck->action);
 	switch (sck->action) {
 	case NEXT_TCB:
+	case PROC_END:
 		size += sizeof(sck->tcb.A);
 		size += sizeof(sck->tcb.B);
 		size += sizeof(sck->tcb.C);
