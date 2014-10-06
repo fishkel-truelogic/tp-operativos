@@ -28,7 +28,7 @@ t_list *exitList;
 void *newProcessesHandlerThread(void *ptr);
 Boolean isTCBKernelMode(void *ptr);
 void *readyProcessesHandlerThread(void *ptr);
-void *thrSchedulerHandler(void *ptr);
+//void *thrSchedulerHandler(void *ptr);
 
 //==========================================================================
 
@@ -72,7 +72,7 @@ void *readyProcessesHandlerThread(void *ptr) {
 		//PRODUCTOR  EXECLIST
 		//MUTEX READYLIST
 
-		Tcb tcbToExec = NULL;
+		/*Tcb tcbToExec = NULL;
 
 		if(list_any_satisfy(readyList, isTCBKernelMode)){
 
@@ -86,7 +86,7 @@ void *readyProcessesHandlerThread(void *ptr) {
 		//MUTEX EXCECLIST
 		list_add(execList, tcbToExec);
 		//END MUTEX EXECLIST
-		sendTcbToAFreeCPU(tcbToExec);
+		sendTcbToAFreeCPU(tcbToExec);*/
 
 	}
 
@@ -96,8 +96,8 @@ void *readyProcessesHandlerThread(void *ptr) {
 
 }
 
-void *thrSchedulerHandler(void *ptr) {
+/*void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
 	return NULL ;
 
-}
+}*/

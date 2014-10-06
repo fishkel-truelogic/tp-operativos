@@ -82,21 +82,46 @@ Tcb* cloneTcb(Tcb *tcbParent) {
 
 void cpuClientHandler(Socket *consoleCpu, Stream data){
 
-	StrConKer *sck = unserializeCpuKer(data);
+	StrCpuKer *sck = unserializeCpuKer(data);
 
 	switch (sck->action) {
 
-	//vUELVE DE UNA LLAMADA AL SERVICIO ENTRADA ESTANDAR
+	case INTE:
+
+		//LANZAR EL HILO SYSCALLS DEL PLANIFICADOR PASANDOLE COMO
+		//PARAMETRO LA ESTRUCUTRA SCK
+		break;
 	case NEXT_TCB:break;
-	case FIRST_TCB: break;
-	case INTE: break;
-	case STD_INPUT:break;
+
+	//LANZAR HILO DE MANDAR A READY . PASO COMO PARAMETRO EL TCB
+
+	case STD_INPUT:
+		//LLAMAR AL SERVICIO DE STD INPUT
+
+		break;
 	case STD_OUTPUT:break;
+
+		//MANDO LO QUE ME LLEGA A CONSOLA
+
 	case NEW_THREAD:break;
+		//LLAMAR A FUNCION DE SERVICIO CPU
+		//LANZO EL HILO QUE PONE EL TCB EN NEW
 	case JOIN_THREADS:break;
+
+		//LANZAR HILO MANEJO VUELTA DE TCB KERNEL MODE
+		//CON STREAM COMO PARAMETRO
+
 	case BLOCK_THREAD:break;
+
+
+
 	case WAKE_THREAD:break;
+
 	case PROC_END:break;
+
+	//ME FIJO SI ES KM LEVANTO EL QUE VUELVE DEL KM
+	//SINO ES EL FIN DEL PROGRAMA Y LEVANTO EL HILO QUE FINALIZA
+
 
 	default:
 		break;
