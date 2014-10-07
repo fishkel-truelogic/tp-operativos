@@ -322,15 +322,16 @@ Boolean initTcbKM(){
 	if(csDir != ERROR && ssDir != ERROR){
 
 		//ESCRIBIR EL CODIGO BESO EN EL SEGMENTO CS DE LA MSP
-		SocketBuffer *codeBuffer = malloc(sizeof(SocketBuffer));
 
-		int i;
-		for (i = 0; i < streamLength; i++) {
-			codeBuffer->data[i] = *stream;
-			stream++;
-		}
-		codeBuffer->size = streamLength;
+		StrKerMsp *skm = malloc(sizeof(StrKerMsp));
 
+		skm->action = MEM_WRITE;
+		skm->pid = tcbKm->pid;
+		skm->address = csDir;
+		skm->size = streamLength;
+		skm->data = stream;
+
+		SocketBuffer *codeBuffer = serializeKerMsp(skm);
 		socketSend(socketMsp->ptrSocket,codeBuffer);
 
 		//ACTUALIZO LOS REGISTROS DE CS Y SS
