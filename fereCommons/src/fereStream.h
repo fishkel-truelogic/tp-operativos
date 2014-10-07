@@ -150,18 +150,18 @@ StrMspKer* newStrMspKer(Char, Int32U, Char);
  * serialize
  */
 
-t_bitarray* serializeConKer(StrConKer*);
+SocketBuffer* serializeConKer(StrConKer*);
 
-t_bitarray* serializeCpuMsp(StrCpuMsp*);
-t_bitarray* serializeCpuKer(StrCpuKer*);
+SocketBuffer* serializeCpuMsp(StrCpuMsp*);
+SocketBuffer* serializeCpuKer(StrCpuKer*);
 
-t_bitarray* serializeMspCpu(StrMspCpu*);
-t_bitarray* serializeMspKer(StrMspKer*);
+SocketBuffer* serializeMspCpu(StrMspCpu*);
+SocketBuffer* serializeMspKer(StrMspKer*);
 
-t_bitarray* serializeKerMsp(StrKerMsp*);
-t_bitarray* serializeKerCon(StrKerCon*);
+SocketBuffer* serializeKerMsp(StrKerMsp*);
+SocketBuffer* serializeKerCon(StrKerCon*);
 
-t_bitarray* serializeKerCpu(StrKerCpu*);
+SocketBuffer* serializeKerCpu(StrKerCpu*);
 
 //==============================================//
 /**
@@ -200,5 +200,11 @@ Int16U getSizeStrKerCon(StrKerCon* skc);
  * Handshake
  */
 Char getStreamId(Stream);
+
+//==============================================//
+/**
+ * bitarrayToSocketBuffer
+ */
+SocketBuffer* bitarrayToSocketBuffer(t_bitarray*);
 
 #endif /* FERESTREAM_H_ */

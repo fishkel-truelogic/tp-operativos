@@ -181,29 +181,7 @@ Console *getConsoleByPid(Int32U pid){
 	return consoleClient;
 
 }
-/**
- * @NAME: barrayToBuffer
- * @DESC: Recibe una Estructura t_bitarray y la convierte en una SocketBuffer
- * 		: para facilitar el envio de estrucutras serializadas por sockets
- * @PARAMS:
- * 	barray	: Puntero a t_bitarray que se desea convertir
- */
-SocketBuffer *barrayToBuffer(t_bitarray *barray){
 
-	SocketBuffer *sb = malloc(sizeof(SocketBuffer));
-
-	Byte *ptrByte = (Byte*) barray->bitarray;
-
-	int i;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
-
-	return sb;
-
-}
 /**
  * @NAME: printHeader
  * @DESC: Imprime un pequeño encabezado por pantalla
@@ -491,8 +469,7 @@ Int32U getSegmentFromMSP(Int16U size,Tcb *tcb){
 	skm->size = size;
 
 	//ENVIO A MSP
-	t_bitarray *barray = serializeKerMsp(skm);
-	SocketBuffer *sb = barrayToBuffer(barray);
+	SocketBuffer *sb = serializeKerMsp(skm);
 	socketSend(socketMsp->ptrSocket,sb);
 
 	//RECIBO DE MSP
@@ -530,8 +507,7 @@ void creationError(Socket *client){
 	skc->logLen =  strlen((char *)skc->log) + 1;
 
 	//ENVIO A MSP
-	t_bitarray *barray = serializeKerCon(skc);
-	SocketBuffer *sb = barrayToBuffer(barray);
+	SocketBuffer *sb = serializeKerCon(skc);
 	socketSend(client,sb);
 
 	//ELIMINO EL DESCRIPTOR DEL CONJUNTO
@@ -578,8 +554,7 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 			skm->size = sck->fileContentLen;
 			skm->data = sck->fileContent;
 
-			t_bitarray *barray = serializeKerMsp(skm);
-			SocketBuffer *codeBuffer = barrayToBuffer(barray);
+			SocketBuffer *codeBuffer = serializeKerMsp(skm);
 			socketSend(socketMsp->ptrSocket,codeBuffer);
 
 			//ACTUALIZO LOS REGISTROS DE CS Y SS
@@ -861,8 +836,7 @@ void serviceStdInput(Int32U pid, Char type){
 			break;
 		}
 
-		t_bitarray *barray = serializeKerCon(skc);
-		SocketBuffer *sb = barrayToBuffer(barray);
+		SocketBuffer *sb = serializeKerCon(skc);
 
 		socketSend(consoleClient->consoleClient,sb);
 
@@ -892,8 +866,7 @@ void serviceStdOutput(Int32U pid, String text){
 		skc->logLen = strlen(text);
 		skc->log = (Byte*)text;
 
-		t_bitarray *barray = serializeKerCon(skc);
-		SocketBuffer *sb = barrayToBuffer(barray);
+		SocketBuffer *sb = serializeKerCon(skc);
 
 		socketSend(consoleClient->consoleClient,sb);
 
@@ -927,8 +900,7 @@ void serviceCreateThread(Tcb *tcbParent){
 	skm->size = config->stack;
 
 	//ENVIO A MSP
-	t_bitarray *barray = serializeKerMsp(skm);
-	SocketBuffer *sb = barrayToBuffer(barray);
+	SocketBuffer *sb = serializeKerMsp(skm);
 	socketSend(socketMsp->ptrSocket,sb);
 
 }

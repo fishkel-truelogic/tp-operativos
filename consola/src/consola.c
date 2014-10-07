@@ -232,14 +232,7 @@ Boolean sendStream() {
 		return FALSE;
 	}
 
-	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
-	t_bitarray* barray = serializeConKer(sck);
-	Byte* ptrByte = (Byte*) barray->bitarray;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
+	SocketBuffer* sb = serializeConKer(sck);
 
 	//Envio el socketBuffer
 	if(!socketSend(kernelClient->ptrSocketServer, sb)) {

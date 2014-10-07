@@ -19,7 +19,7 @@
  * Serialization
  */
 
-t_bitarray* serializeCpuKer(StrCpuKer* sck) {
+SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 	Int16U size = getSizeStrCpuKer(sck);
 
 	Stream data = malloc(size);
@@ -264,11 +264,11 @@ t_bitarray* serializeCpuKer(StrCpuKer* sck) {
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
 
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 
 }
 
-t_bitarray* serializeMspCpu(StrMspCpu* smp) {
+SocketBuffer* serializeMspCpu(StrMspCpu* smp) {
 	Int16U size = getSizeStrMspCpu(smp);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -289,10 +289,10 @@ t_bitarray* serializeMspCpu(StrMspCpu* smp) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeKerCpu(StrKerCpu* skc) {
+SocketBuffer* serializeKerCpu(StrKerCpu* skc) {
 
 	Int8U size = sizeof(StrKerCpu);
 	Stream data = malloc(size);
@@ -377,10 +377,10 @@ t_bitarray* serializeKerCpu(StrKerCpu* skc) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeCpuMsp(StrCpuMsp* scm) {
+SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 	Int8U size = getSizeStrCpuMsp(scm);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -430,10 +430,10 @@ t_bitarray* serializeCpuMsp(StrCpuMsp* scm) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeMspKer(StrMspKer* smk) {
+SocketBuffer* serializeMspKer(StrMspKer* smk) {
 	Int16U size = sizeof(StrMspKer);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -463,10 +463,10 @@ t_bitarray* serializeMspKer(StrMspKer* smk) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeKerMsp(StrKerMsp* skm) {
+SocketBuffer* serializeKerMsp(StrKerMsp* skm) {
 	Int32U size = getSizeStrKerMsp(skm);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -519,10 +519,10 @@ t_bitarray* serializeKerMsp(StrKerMsp* skm) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeConKer(StrConKer* sconk) {
+SocketBuffer* serializeConKer(StrConKer* sconk) {
 	Int8U size = getSizeStrConKer(sconk);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -562,10 +562,10 @@ t_bitarray* serializeConKer(StrConKer* sconk) {
 		break;
 	}
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
-t_bitarray* serializeKerCon(StrKerCon* skc) {
+SocketBuffer* serializeKerCon(StrKerCon* skc) {
 	Int32U size = getSizeStrKerCon(skc);
 	Stream data = malloc(size);
 	Stream ptrData = data;
@@ -591,7 +591,7 @@ t_bitarray* serializeKerCon(StrKerCon* skc) {
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
-	return barray;
+	return bitarrayToSocketBuffer(barray);
 }
 
 //==============================================//
@@ -1372,3 +1372,19 @@ Char getStreamId(Stream dataSerialized) {
 	memcpy(&id, ptrByte, sizeof(id));
 	return id;
 }
+
+//==============================================//
+/**
+ * bitarrayToSocketBuffer
+ */
+
+ SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray){
+ 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
+	Byte* ptrByte = (Byte*) barray->bitarray;
+ 	for (int i = 0; i < barray->size; i++){
+ 		sb->data[i] = *ptrByte;
+ 		ptrByte++;
+ 	}
+ 	sb->size = barray->size;
+ 	return sb;
+ }

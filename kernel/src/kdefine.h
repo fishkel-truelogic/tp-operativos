@@ -85,8 +85,7 @@ void serviceWake(Int32U);
 //HILOS
 void *thrSchedulerHandler(void *);
 
-//VER DE PONER ESTO EN LAS COMMONS
-SocketBuffer *barrayToBuffer(t_bitarray *);
+
 Tcb* cloneTcb(Tcb *);
 
 

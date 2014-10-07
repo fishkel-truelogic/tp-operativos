@@ -130,14 +130,7 @@ Boolean getNextTcb() {
 		sck = newStrCpuKer(CPU_ID, *currentTcb, FIRST_TCB, 0, NULL, 0, 0, 0, 0);
 	}
 	//Serializo y armo el socketBuffer
-	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
-	t_bitarray* barray = serializeCpuKer(sck);
-	Byte* ptrByte = (Byte*) barray->bitarray;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
+	SocketBuffer* sb = serializeCpuKer(sck);
 
 	//Envio el socketBuffer
 	if(!socketSend(kernelClient->ptrSocketServer, sb)) {
@@ -314,14 +307,7 @@ Boolean mspRequest() {
 	scm = newStrCpuMsp(CPU_ID, currentTcb->P, NEXT_INSTRUCTION, NULL, 0, currentTcb->pid);
 
 	//Serializo y armo el socketBuffer
-	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
-	t_bitarray* barray = serializeCpuMsp(scm);
-	Byte* ptrByte = (Byte*) barray->bitarray;
-	for (i = 0; i < barray->size; i++) {
-		sb->data[i] = *ptrByte;
-		ptrByte++;
-	}
-	sb->size = barray->size;
+	SocketBuffer* sb = serializeCpuMsp(scm);
 
 	//Envio el socketBuffer
 	if(!socketSend(mspClient->ptrSocketServer, sb)) {
