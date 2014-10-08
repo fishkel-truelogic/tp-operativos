@@ -57,8 +57,9 @@ sem_t semCpuList;
 //==========================================================================
 //ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
 //PARA QUE ME COMPILE EL PROGRAMA
-void moveToNew(Tcb *tcb){}
-void moveToBlock(Tcb *tcb){}
+void *schedulerSysCalls(void *sck){}
+void *moveToNew(void *tcb){}
+void *moveToBlock(void *tcb){}
 //==========================================================================
 
 Tcb* cloneTcb(Tcb *tcbParent) {
@@ -80,32 +81,32 @@ Tcb* cloneTcb(Tcb *tcbParent) {
 	return tcb;
 }
 
-void cpuClientHandler(Socket *consoleCpu, Stream data){
+void cpuClientHandler(Socket *cpuClient, Stream data){
 
 	StrCpuKer *sck = unserializeCpuKer(data);
 
 	switch (sck->action) {
 
 	case INTE:
-
-		//LANZAR EL HILO SYSCALLS DEL PLANIFICADOR PASANDOLE COMO
-		//PARAMETRO LA ESTRUCUTRA SCK
+		serviceInterrupt(sck);
 		break;
-	case NEXT_TCB:break;
+	case NEXT_TCB:
 
-	//LANZAR HILO DE MANDAR A READY . PASO COMO PARAMETRO EL TCB
+		//LANZAR HILO DE MANDAR A READY . PASO COMO PARAMETRO EL TCB
+		break;
+
+
 
 	case STD_INPUT:
-		//LLAMAR AL SERVICIO DE STD INPUT
-
+		serviceStdInput(sck->tcb.pid, sck->inputType);
 		break;
-	case STD_OUTPUT:break;
+	case STD_OUTPUT:
+		serviceStdOutput(sck->tcb.pid, sck->log);
+		break;
 
-		//MANDO LO QUE ME LLEGA A CONSOLA
-
-	case NEW_THREAD:break;
-		//LLAMAR A FUNCION DE SERVICIO CPU
-		//LANZO EL HILO QUE PONE EL TCB EN NEW
+	case NEW_THREAD:
+		serviceCreateThread(&sck->tcb);
+		break;
 	case JOIN_THREADS:break;
 
 		//LANZAR HILO MANEJO VUELTA DE TCB KERNEL MODE
@@ -804,9 +805,15 @@ void *thrSchedulerHandler(void *ptr) {
  * 	tcb		: Estructura Tcb que solicito el syscall
  * 	address	: Direccion de memoria de la Syscall a ejecutar
  */
-void serviceInterrupt(Tcb *tcb,Int32U address){
+void serviceInterrupt(StrCpuKer *sck){
 
-	//TODO: Ver como quiere manejar Nacho esto
+	pthread_t thr;
+	Int32U createResult;
+	createResult = pthread_create(&thr, NULL, schedulerSysCalls, (void*) sck);
+	if (createResult != 0) {
+		printf(
+				"No se ha podido iniciar Sub Hilo shcedulerSysCalls. El programa terminara\n");
+	}
 
 }
 /**
@@ -838,7 +845,6 @@ void serviceStdInput(Int32U pid, Char type){
 		}
 
 		SocketBuffer *sb = serializeKerCon(skc);
-
 		socketSend(consoleClient->consoleClient,sb);
 
 	}
@@ -893,16 +899,19 @@ void serviceCreateThread(Tcb *tcbParent){
 	//QUE DIFERENCIAR POR HILO TAMBIEN...VER MAS ADELANTE
 	tcbChild->tid++;
 
-	//RESERVAR DE MSP SEGMENTO DE STACK
-	StrKerMsp *skm = malloc(sizeof(StrKerMsp));
-	skm->id = KERNEL_ID;
-	skm->action = CREATE_SEG;
-	skm->pid = tcbChild->pid;
-	skm->size = config->stack;
+	Int32U ssDir = getSegmentFromMSP(config->stack,tcbChild);
+	if(ssDir != ERROR){
+		tcbChild->X = ssDir;
+		tcbChild->S = ssDir;
+	}
 
-	//ENVIO A MSP
-	SocketBuffer *sb = serializeKerMsp(skm);
-	socketSend(socketMsp->ptrSocket,sb);
+	pthread_t thr;
+	Int32U createResult;
+	createResult = pthread_create(&thr, NULL, moveToNew, (void*) tcbChild);
+	if (createResult != 0) {
+		printf(
+				"No se ha podido iniciar el Sub Hilo MoveToNew\n");
+	}
 
 }
 

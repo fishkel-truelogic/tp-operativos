@@ -13,6 +13,8 @@
 #include <string.h>
 #include "fereTcb.h"
 #include "fereStream.h"
+#include "fereSockets.h"
+
 
 //==============================================//
 /**
@@ -1379,9 +1381,12 @@ Char getStreamId(Stream dataSerialized) {
  */
 
  SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray){
- 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
+
+	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
 	Byte* ptrByte = (Byte*) barray->bitarray;
- 	for (int i = 0; i < barray->size; i++){
+
+	Int32U i;
+ 	for (i = 0; i < barray->size; i++){
  		sb->data[i] = *ptrByte;
  		ptrByte++;
  	}

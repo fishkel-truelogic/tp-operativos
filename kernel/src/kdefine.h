@@ -69,12 +69,12 @@ Tcb *createNewTcbKM();
 //SERVER
 void checkConections();
 void clientHandler(Int32U);
-void cpuClientHandler();
+void cpuClientHandler(Socket *, Stream);
 void consoleClientHandler(Socket *, Stream);
 
 //SERVICIOS EXPUESTOS A CPU
 Console *getConsoleByPid(Int32U);
-void serviceInterrupt();
+void serviceInterrupt(StrCpuKer *sck);
 void serviceStdInput(Int32U, Char);
 void serviceStdOutput(Int32U, String);
 void serviceCreateThread(Tcb *);

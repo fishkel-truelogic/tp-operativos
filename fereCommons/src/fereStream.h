@@ -15,6 +15,7 @@
   */
 #include "fereTcb.h"
 #include "fereTypes.h"
+#include "fereSockets.h"
 #include "commons/bitarray.h"
 
  //============================================================
