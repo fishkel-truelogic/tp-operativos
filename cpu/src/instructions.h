@@ -261,6 +261,10 @@ void funcBLOK(void* op1, void* op2, void* op3);
  **/
 void funcWAKE(void* op1, void* op2, void* op3);
 
+String intSToStr(Int32S);
+
+Boolean sendRequestMsp(StrCpuMsp* scm);
+
 /*
 27Anexo II: Especificación de las llamadas al sistema
 Como se explicó antes, el sistema cuenta con algunas llamadas al sistema (system calls) que son

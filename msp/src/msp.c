@@ -105,6 +105,7 @@ void manageSocketConnections() {
 
 void* manageSocketConnection(void* param) {
 	Socket* socket = (Socket*) param;
+	// TODO que pasa si recibe null?
 	SocketBuffer* sb = socketReceive(socket);
 	Char id = getStreamId((Stream) sb->data);
 	StrKerMsp* skm = NULL;

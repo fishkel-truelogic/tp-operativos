@@ -483,7 +483,17 @@ void funcTAKE(void* op1, void* op2, void* op3){
  * al programa en ejecución.
  **/
 void funcMALC(void* op1, void* op2, void* op3) {
-
+	Tcb* tcb = getCurrentTcb();
+	Boolean segFault = FALSE;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, 0, CREATE_SEG, NULL, tcb->A, tcb->pid);
+	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
+		//TODO que pasa si es exitoso?
+	} else if (segFault) {
+		//TODO que pasa si segFault?
+	} else {
+		//TODO que pasa si falla la conexion	
+	}
+	free(scm);
 }
 
 /**
@@ -491,7 +501,17 @@ void funcMALC(void* op1, void* op2, void* op3) {
  * instrucción de MALC. Destruye en la MSP el segmento indicado en el registro A.
  **/
 void funcFREE(void* op1, void* op2, void* op3) {
-
+	Tcb* tcb = getCurrentTcb();
+	Boolean segFault = FALSE;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, DELETE_SEG, NULL, 0, tcb->pid);
+	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
+		//TODO que pasa si es exitoso?
+	} else if (segFault) {
+		//TODO que pasa si segFault?
+	} else {
+		//TODO que pasa si falla la conexion	
+	}
+	free(scm);
 }
 
 /**
@@ -500,7 +520,18 @@ void funcFREE(void* op1, void* op2, void* op3) {
  * el proceso Kernel.
  **/
 void funcINNN(void* op1, void* op2, void* op3) {
-
+	StrKerCpu* skc = getSKC();
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	if (skc->bufferWriter == NULL) {
+		 sck->action = STD_INPUT;
+		 sck->inputType = NUMBER_INPUT;
+		 sck->tcb = *tcb;
+		 sck->tcb->P += 4;
+	} else {
+		Tcb* tcb = getCurrentTcb();
+		tcb->A = *((Int32S*) skc->bufferWriter);
+	}
 }
 
 /**
@@ -509,7 +540,26 @@ void funcINNN(void* op1, void* op2, void* op3) {
  * invoca al servicio correspondiente en el proceso Kernel.
  **/
 void funcINNC(void* op1, void* op2, void* op3) {
-
+	StrKerCpu* skc = getSKC();
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	Boolean segFault = FALSE;
+	if (skc->bufferWriter == NULL) {
+		 sck->action = STD_INPUT;
+		 sck->inputType = TEXT_INPUT;
+		 sck->tcb = *tcb;
+		 sck->tcb->P += 4;
+	} else {
+		StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_WRITE, skc->bufferWriter, tcb->B, tcb->pid);
+		if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
+			//TODO que pasa si es exitoso?
+		} else if (segFault) {
+			//TODO que pasa si segFault?
+		} else {
+			//TODO que pasa si falla la conexion	
+		}
+		free(scm);
+	}
 }
 
 /**
@@ -517,8 +567,16 @@ void funcINNC(void* op1, void* op2, void* op3) {
  * servicio correspondiente en el proceso Kernel.
  **/
 void funcOUTN(void* op1, void* op2, void* op3) {
+	Tcb* tcb = getCurrentTcb();
+	StrCpuKer* sck = getSCK();
 
-}
+	Int32S number = (Int32S) tcb->A;
+	sck->log = intSToStr(number);
+	sck->logLen = sizeof(Int32S);
+	sck->action = STD_OUTPUT;
+	sck->tcb = *tcb;
+	sck->tcb->P += 4;
+}	
 
 /**
  * Imprime por consola del programa una cadena de tamaño indicado por el registro B que se
@@ -526,7 +584,23 @@ void funcOUTN(void* op1, void* op2, void* op3) {
  * proceso Kernel.
  **/
 void funcOUTC(void* op1, void* op2, void* op3) {
-
+	Tcb* tcb = getCurrentTcb();
+	StrCpuKer* sck = getSCK();
+	Boolean segFault = FALSE;
+	sck->log = intSToStr(number);
+	sck->logLen = sizeof(Int32S);
+	sck->action = STD_OUTPUT;
+	sck->tcb = *tcb;
+	sck->tcb->P += 4;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_READ, NULL, 0, tcb->pid);
+	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
+		//TODO que pasa si es exitoso?
+	} else if (segFault) {
+		//TODO que pasa si segFault?
+	} else {
+		//TODO que pasa si falla la conexion	
+	}
+	free(scm);
 }
 
 /**
@@ -575,4 +649,33 @@ void funcBLOK(void* op1, void* op2, void* op3) {
  **/
 void funcWAKE(void* op1, void* op2, void* op3) {
 
+}
+
+Boolean sendRequestMsp(StrCpuMsp* scm, Boolean* segFault) {
+	//TODO switchear si es read o write y obtener response
+	SocketBuffer* sb = serializeCpuMsp(scm);
+	//Envio el socketBuffer
+	if(!socketSend(mspClient->ptrSocketServer, sb)) {
+		printf("No se pudo enviar el Stream a la MSP. \n");
+		return FALSE;
+	}
+	free(sb);
+
+	switch () {
+		case DELETE_SEG: break;
+		case CREATE_SEG: break;
+		case MEM_WRITE: break;
+		case MEM_READ: break;
+	}
+
+	return TRUE;
+}
+
+/**
+ * Convierte un int en un String
+ */
+String intSToStr(Int32S integer) {
+	String result = malloc(sizeof(Byte) * 10);
+	sprintf(result, "%d", integer);
+	return result;
 }

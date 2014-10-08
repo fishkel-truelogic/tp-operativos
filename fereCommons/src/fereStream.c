@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fereTcb.h"
+#include "fereSockets.h"
 #include "fereStream.h"
 #include "fereSockets.h"
 
@@ -162,6 +163,10 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		ptrByte = (Byte*) &sck->tcb.pid;
 		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
 		ptrData += sizeof(sck->tcb.pid);
+
+		ptrByte = (Byte*) &sck->tcb.B;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+		ptrData += sizeof(sck->tcb.B);
 
 		ptrByte = (Byte*) &sck->inputType;
 		memcpy(ptrData, ptrByte, sizeof(sck->inputType));
@@ -757,6 +762,9 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
 		ptrByte += sizeof(tcb.pid);
 
+		memcpy(&tcb.B, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.B);
+
 		memcpy(&inputType, ptrByte, sizeof(inputType));
 		ptrByte += sizeof(inputType);
 		break;
@@ -1194,6 +1202,7 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 	case STD_INPUT:
 		size += sizeof(sck->inputType);
 		size += sizeof(sck->tcb.pid);
+		size += sizeof(sck->tcb.B);
 		break;
 	case STD_OUTPUT:
 		size += sizeof(sck->logLen);
@@ -1380,16 +1389,16 @@ Char getStreamId(Stream dataSerialized) {
  * bitarrayToSocketBuffer
  */
 
- SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray){
+SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray) {
 
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
 	Byte* ptrByte = (Byte*) barray->bitarray;
 
 	Int32U i;
- 	for (i = 0; i < barray->size; i++){
- 		sb->data[i] = *ptrByte;
- 		ptrByte++;
- 	}
- 	sb->size = barray->size;
- 	return sb;
- }
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+	return sb;
+}

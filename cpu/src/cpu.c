@@ -179,7 +179,7 @@ Boolean processTcb() {
 				quantum--;
 				if (quantum == 0) {
 					sck->tcb = currentTcb;
-					sck->tcb = NEXT_TCB;
+					sck->action = NEXT_TCB;
 				}
 				break;
 		}
@@ -191,6 +191,57 @@ Boolean processTcb() {
 
 	return TRUE;
 }
+
+/**
+ *	Le pide la siguente instruccion BESO a la MSP segun el registro P del TCB
+ *  Parsea los primeros 4 bytes del stream para saber que instruccion es y determina que parametros recibe
+ * 	Completa la instruccion
+ */
+Instruction* getInstruction() {
+	Int8U i, operatorsTotal;
+	String instructionName = malloc(sizeof(Char) * 4);
+	Instruction* instruction = malloc(sizeof(instruction));
+	if (mspRequest()) {
+		Byte* ptrData = smc->data;
+		for (i = 0; i < 4; i++) {
+			memcpy(instructionName, ptrData, sizeof(Char));
+			ptrData++;
+		}
+		instruction->name = instructionName;
+
+		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
+		for (i = 0; i < operatorsTotal; i++) {
+			if (operatorIsRegister(instructionOperators, instructionName, i)) {
+				instruction->op[i] = setRegisterOperator(ptrData);
+				ptrData++;
+			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
+				memcpy(instruction->op[i], ptrData, 4));
+				ptrData += 4;
+			}
+		}
+		free(ptrData);
+		return instruction;
+	}
+	return NULL;
+}
+
+/**
+ *  Obtiene una nuevo instruccion para ejecutar de la MSP
+ * 
+ *	Funciones de sockets.h utilizadas:
+ *	=================================
+ *	SocketBuffer *socketReceive(Socket *emisor);
+ *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
+ **/
+Boolean mspRequest() {
+	int i;
+	if (scm != NULL) {
+		free(scm);
+	}
+	scm = newStrCpuMsp(CPU_ID, currentTcb->P, NEXT_INSTRUCTION, NULL, 0, currentTcb->pid);
+
+	//Serializo y armo el socketBuffer
+	SocketBuffer* sb = serializeCpuMsp(scm);
 
 /**
  * Carga las variables de configuracion externa
@@ -257,57 +308,6 @@ Boolean loadConfig() {
 		return FALSE;
 	}
 }
-
-/**
- *	Le pide la siguente instruccion BESO a la MSP segun el registro P del TCB
- *  Parsea los primeros 4 bytes del stream para saber que instruccion es y determina que parametros recibe
- * 	Completa la instruccion
- */
-Instruction* getInstruction() {
-	Int8U i, operatorsTotal;
-	String instructionName = malloc(sizeof(Char) * 4);
-	Instruction* instruction = malloc(sizeof(instruction));
-	if (mspRequest()) {
-		Byte* ptrData = smc->data;
-		for (i = 0; i < 4; i++) {
-			memcpy(instructionName, ptrData, sizeof(Char));
-			ptrData++;
-		}
-		instruction->name = instructionName;
-
-		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
-		for (i = 0; i < operatorsTotal; i++) {
-			if (operatorIsRegister(instructionOperators, instructionName, i)) {
-				instruction->op[i] = setRegisterOperator(ptrData);
-				ptrData++;
-			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
-				memcpy(instruction->op[i], ptrData, 4));
-				ptrData += 4;
-			}
-		}
-		free(ptrData);
-		return instruction;
-	}
-	return NULL;
-}
-
-/**
- *  Obtiene una nuevo instruccion para ejecutar de la MSP
- * 
- *	Funciones de sockets.h utilizadas:
- *	=================================
- *	SocketBuffer *socketReceive(Socket *emisor);
- *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
- **/
-Boolean mspRequest() {
-	int i;
-	if (scm != NULL) {
-		free(scm);
-	}
-	scm = newStrCpuMsp(CPU_ID, currentTcb->P, NEXT_INSTRUCTION, NULL, 0, currentTcb->pid);
-
-	//Serializo y armo el socketBuffer
-	SocketBuffer* sb = serializeCpuMsp(scm);
 
 	//Envio el socketBuffer
 	if(!socketSend(mspClient->ptrSocketServer, sb)) {
