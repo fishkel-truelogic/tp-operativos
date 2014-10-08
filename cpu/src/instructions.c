@@ -289,8 +289,9 @@ Boolean operatorIsRegister(t_dictionary* iopDic, String name, Int8U index) {
  * Carga en el registro, el número dado.
  */
 void funcLOAD(void* op1, void* op2, void* op3){
-	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
-	*(*op1) = *op2; //para mi esto es *op1 = *op2;   lean!
+	*op1 = *op2;
+	Tcb* tcb = getCurrentTcb();
+	tcb->P += 12;
 }
 
 /**
@@ -454,7 +455,9 @@ void funcSHIF(void* op1, void* op2, void* op3){
 /**
  * Consume un ciclo del CPU sin hacer nada
  **/
-void funcNOPP(void* op1, void* op2, void* op3){
+void funcNOPP(void* op1, void* op2, void* op3) {
+	Tcb* tcb = getCurrentTcb();
+	tcb->P += 4;
 }
 
 /**
@@ -483,17 +486,23 @@ void funcTAKE(void* op1, void* op2, void* op3){
  * al programa en ejecución.
  **/
 void funcMALC(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
 	Boolean segFault = FALSE;
+	StcMspCpu* smc = NULL;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, 0, CREATE_SEG, NULL, tcb->A, tcb->pid);
-	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
-		//TODO que pasa si es exitoso?
+	if (sendRequestMsp(scm, &smc, &segFault)) { 
+		sck->tcb->P += 4;
 	} else if (segFault) {
-		//TODO que pasa si segFault?
+		sck->action = SEG_FAULT;
 	} else {
-		//TODO que pasa si falla la conexion	
+		sck->action = PROC_ABORT;
 	}
 	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
@@ -501,17 +510,23 @@ void funcMALC(void* op1, void* op2, void* op3) {
  * instrucción de MALC. Destruye en la MSP el segmento indicado en el registro A.
  **/
 void funcFREE(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
 	Boolean segFault = FALSE;
+	StcMspCpu* smc = NULL;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, DELETE_SEG, NULL, 0, tcb->pid);
-	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
-		//TODO que pasa si es exitoso?
+	if (sendRequestMsp(scm, &smc, &segFault)) {
+		sck->tcb->P += 4;
 	} else if (segFault) {
-		//TODO que pasa si segFault?
+		sck->action = SEG_FAULT;
 	} else {
-		//TODO que pasa si falla la conexion	
+		sck->action = PROC_ABORT;
 	}
 	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
@@ -523,14 +538,14 @@ void funcINNN(void* op1, void* op2, void* op3) {
 	StrKerCpu* skc = getSKC();
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
 	if (skc->bufferWriter == NULL) {
-		 sck->action = STD_INPUT;
-		 sck->inputType = NUMBER_INPUT;
-		 sck->tcb = *tcb;
-		 sck->tcb->P += 4;
+		sck->action = STD_INPUT;
+		sck->inputType = NUMBER_INPUT;
 	} else {
-		Tcb* tcb = getCurrentTcb();
-		tcb->A = *((Int32S*) skc->bufferWriter);
+		sck->action = -1;
+		sck->tcb->A = *((Int32S*) skc->bufferWriter);
+	 	sck->tcb->P += 4;
 	}
 }
 
@@ -540,25 +555,29 @@ void funcINNN(void* op1, void* op2, void* op3) {
  * invoca al servicio correspondiente en el proceso Kernel.
  **/
 void funcINNC(void* op1, void* op2, void* op3) {
+	StcMspCpu* smc = NULL;
 	StrKerCpu* skc = getSKC();
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
 	Boolean segFault = FALSE;
 	if (skc->bufferWriter == NULL) {
 		 sck->action = STD_INPUT;
 		 sck->inputType = TEXT_INPUT;
-		 sck->tcb = *tcb;
-		 sck->tcb->P += 4;
 	} else {
 		StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_WRITE, skc->bufferWriter, tcb->B, tcb->pid);
-		if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
-			//TODO que pasa si es exitoso?
+		if (sendRequestMsp(scm, &smc, &segFault)) { 
+			sck->action = -1;
+			sck->tcb->P += 4;
 		} else if (segFault) {
-			//TODO que pasa si segFault?
+			sck->action = SEG_FAULT;
 		} else {
-			//TODO que pasa si falla la conexion	
+			sck->action = PROC_ABORT;
 		}
 		free(scm);
+		if (smc != NULL) {
+			free(smc);
+		}
 	}
 }
 
@@ -569,12 +588,11 @@ void funcINNC(void* op1, void* op2, void* op3) {
 void funcOUTN(void* op1, void* op2, void* op3) {
 	Tcb* tcb = getCurrentTcb();
 	StrCpuKer* sck = getSCK();
-
+	sck->tcb = *tcb;
 	Int32S number = (Int32S) tcb->A;
 	sck->log = intSToStr(number);
 	sck->logLen = sizeof(Int32S);
 	sck->action = STD_OUTPUT;
-	sck->tcb = *tcb;
 	sck->tcb->P += 4;
 }	
 
@@ -584,23 +602,26 @@ void funcOUTN(void* op1, void* op2, void* op3) {
  * proceso Kernel.
  **/
 void funcOUTC(void* op1, void* op2, void* op3) {
-	Tcb* tcb = getCurrentTcb();
+	StcMspCpu* smc = NULL;
 	StrCpuKer* sck = getSCK();
-	Boolean segFault = FALSE;
-	sck->log = intSToStr(number);
-	sck->logLen = sizeof(Int32S);
-	sck->action = STD_OUTPUT;
+	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-	sck->tcb->P += 4;
+	Boolean segFault = FALSE;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_READ, NULL, 0, tcb->pid);
-	if (sendRequestMsp(scm, segFault)) { //TODO que pasa si hay seg fault?
-		//TODO que pasa si es exitoso?
+	if (sendRequestMsp(scm, &smc &segFault)) { 
+		sck->log = smc->data;
+		sck->logLen = smc->dataLen;
+		sck->action = STD_OUTPUT;
+		sck->tcb->P += 4;
 	} else if (segFault) {
-		//TODO que pasa si segFault?
+		sck->action = SEG_FAULT;
 	} else {
-		//TODO que pasa si falla la conexion	
+		sck->action = PROC_ABORT;
 	}
 	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
@@ -624,49 +645,67 @@ void funcCREA(void* op1, void* op2, void* op3) {
  * Kernel.
  **/
 void funcJOIN(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tid = sck->tcb->A;
+	sck->action = JOIN_THREADS;
+	sck->tcb->P += 4;
 }
 
 /**
- * De tener una base de stack en 100, y un cursor en 130 (S-X=30). Al crear un nuevo stack, la dirección de este
- * podría ser 500, por lo que el cursor tendrá que ser 530 (S-X=30).
- * 26Bloquea el programa que ejecutó la llamada al sistema hasta que el recurso apuntado por B se
+ * Bloquea el programa que ejecutó la llamada al sistema hasta que el recurso apuntado por B se
  * libere.
  * La evaluación y decisión de si el recurso está libre o no es hecha por la llamada al sistema WAIT
  * pre-compilada.
  **/
 void funcBLOK(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = BLOCK_THREAD;
+	sck->resource = sck-tcb->B;
+	sck->tcb->P += 4;
 }
 
 /**
  * Desbloquea al primer programa bloqueado por el recurso apuntado por B.
  * La evaluación y decisión de si el recurso está libre o no es hecha por la llamada al sistema
  * SIGNAL pre-compilada.
- * Notar que las instrucciones son de tamaño variable tanto por la cantidad de parámetros que reciben
- * como por el tamaño de cada uno de los mismos. Sin embargo, interpretando los primeros 4 bytes de
- * cada una es posible conocer de qué instrucción se trata, y, por lo tanto, cual es el tamaño de la misma.
  **/
 void funcWAKE(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	sck->tcb = *tcb;
+	sck->action = WAKE_THREAD;
+	sck->resource = sck-tcb->B;
+	sck->tcb->P += 4;
 }
 
-Boolean sendRequestMsp(StrCpuMsp* scm, Boolean* segFault) {
-	//TODO switchear si es read o write y obtener response
+Boolean sendRequestMsp(StrCpuMsp* scm, StrMspCpu** smc, Boolean* segFault) {
 	SocketBuffer* sb = serializeCpuMsp(scm);
-	//Envio el socketBuffer
 	if(!socketSend(mspClient->ptrSocketServer, sb)) {
 		printf("No se pudo enviar el Stream a la MSP. \n");
 		return FALSE;
 	}
 	free(sb);
+	
+	Boolean response = recieveResponseMsp(smc);
 
-	switch () {
-		case DELETE_SEG: break;
-		case CREATE_SEG: break;
-		case MEM_WRITE: break;
-		case MEM_READ: break;
+	if (smc->action == SEG_FAULT) {
+		*segFault = TRUE;
 	}
+
+	return response;
+}
+
+Boolean recieveResponseMsp(StrMspCpu** smc) {
+	// Recibo la respuesta de la msp y deserializo
+	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
+		printf("No se pudo recibir el Stream de la MSP. \n");
+		return FALSE;
+	}
+
+	smc = unserializeMspCpu((Stream) sb->data);
 
 	return TRUE;
 }

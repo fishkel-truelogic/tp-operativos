@@ -243,6 +243,10 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		ptrData += sizeof(sck->tcb.csLenght);
 		break;
 	case JOIN_THREADS:
+		ptrByte = (Byte*) &sck->tcb.pid;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+		ptrData += sizeof(sck->tcb.pid);
+
 		ptrByte = (Byte*) &sck->tcb.tid;
 		memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
 		ptrData += sizeof(sck->tcb.tid);
@@ -264,6 +268,12 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		ptrByte = (Byte*) &sck->resource;
 		memcpy(ptrData, ptrByte, sizeof(sck->resource));
 		ptrData += sizeof(sck->resource);
+		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		ptrByte = (Byte*) &sck->tcb.pid;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+		ptrData += sizeof(sck->tcb.pid);
 		break;
 	default:
 		break;
@@ -810,6 +820,9 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		ptrByte += sizeof(tcb.csLenght);
 		break;
 	case JOIN_THREADS:
+		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.pid);
+
 		memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
 		ptrByte += sizeof(tcb.tid);
 
@@ -826,6 +839,12 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 	case WAKE_THREAD:
 		memcpy(&resource, ptrByte, sizeof(resource));
 		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.pid);
+		break;
+	default:
 	default:
 		break;
 	}
@@ -1226,6 +1245,7 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 		size += sizeof(sck->tcb.tid);
 		break;
 	case JOIN_THREADS:
+		size += sizeof(sck->tcb.pid);
 		size += sizeof(sck->tcb.tid);
 		size += sizeof(sck->tid);
 		break;
@@ -1235,6 +1255,10 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 		break;
 	case WAKE_THREAD:
 		size += sizeof(sck->resource);
+		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		size += sizeof(sck->tcb.pid);
 		break;
 	default:
 		break;

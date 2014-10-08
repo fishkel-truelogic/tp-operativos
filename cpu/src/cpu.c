@@ -243,7 +243,69 @@ Boolean mspRequest() {
 	//Serializo y armo el socketBuffer
 	SocketBuffer* sb = serializeCpuMsp(scm);
 
+
+	//Envio el socketBuffer
+	if(!socketSend(mspClient->ptrSocketServer, sb)) {
+		printf("No se pudo enviar el Stream a la MSP. \n");
+		return FALSE;
+	}
+	free(sb);
+
+	// Recibo la respuesta de la msp y deserializo
+	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
+		printf("No se pudo recibir el Stream de la MSP. \n");
+		return FALSE;
+	}
+
+	smc = unserializeMspCpu((Stream) sb->data);
+
+	return TRUE;
+}
+ 
+ /**
+  * Se fija cual es el registro que vino como parametro en la instruccion y lo devuelve
+  * luego incrementa el valor del puntero a la instruccion BESO 
+  */
+void* setRegisterOperator(Byte* ptrData) {
+	void* ptr = NULL;
+	if ((Char) *ptrData == 'A') {
+		ptr = &currentTcb->A;
+	} else if ((Char) *ptrData == 'B') {
+		ptr = &currentTcb->B;
+	} else if ((Char) *ptrData == 'C') {
+		ptr = &currentTcb->C;
+	} else if ((Char) *ptrData == 'D') {
+		ptr = &currentTcb->D;
+	} else if ((Char) *ptrData == 'E') {
+		ptr = &currentTcb->E;
+	} else if ((Char) *ptrData == 'F') {
+		ptr = &currentTcb->F;
+	}
+	return ptr;
+
+}
+
 /**
+ * Ejecuta la funcion correspondiente segun el nombre de la instruccion
+ **/
+void execute(Instruction* instruction) {
+	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
+	iop->func(instruction->op[0], instruction->op[1], instruction->op3[2]);
+}
+
+Tcb* getCurrentTcb() {
+	return currentTcb;
+}
+
+StrCpuKer* getSCK() {
+	return sck;
+}
+
+StrKerCpu* getSKC() {
+	return skc;
+}
+
+**
  * Carga las variables de configuracion externa
  */
 Boolean loadConfig() {
@@ -307,65 +369,4 @@ Boolean loadConfig() {
 		printf("El archivo config.txt no tiene todos los campos.\n");
 		return FALSE;
 	}
-}
-
-	//Envio el socketBuffer
-	if(!socketSend(mspClient->ptrSocketServer, sb)) {
-		printf("No se pudo enviar el Stream a la MSP. \n");
-		return FALSE;
-	}
-	free(sb);
-
-	// Recibo la respuesta de la msp y deserializo
-	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
-		printf("No se pudo recibir el Stream de la MSP. \n");
-		return FALSE;
-	}
-
-	smc = unserializeMspCpu((Stream) sb->data);
-
-	return TRUE;
-}
- 
- /**
-  * Se fija cual es el registro que vino como parametro en la instruccion y lo devuelve
-  * luego incrementa el valor del puntero a la instruccion BESO 
-  */
-void* setRegisterOperator(Byte* ptrData) {
-	void* ptr = NULL;
-	if ((Char) *ptrData == 'A') {
-		ptr = &currentTcb->A;
-	} else if ((Char) *ptrData == 'B') {
-		ptr = &currentTcb->B;
-	} else if ((Char) *ptrData == 'C') {
-		ptr = &currentTcb->C;
-	} else if ((Char) *ptrData == 'D') {
-		ptr = &currentTcb->D;
-	} else if ((Char) *ptrData == 'E') {
-		ptr = &currentTcb->E;
-	} else if ((Char) *ptrData == 'F') {
-		ptr = &currentTcb->F;
-	}
-	return ptr;
-
-}
-
-/**
- * Ejecuta la funcion correspondiente segun el nombre de la instruccion
- **/
-void execute(Instruction* instruction) {
-	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
-	iop->func(instruction->op[0], instruction->op[1], instruction->op3[2]);
-}
-
-Tcb* getCurrentTcb() {
-	return currentTcb;
-}
-
-StrCpuKer* getSCK() {
-	return sck;
-}
-
-StrKerCpu* getSKC() {
-	return skc;
 }
