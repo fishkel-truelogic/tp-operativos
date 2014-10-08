@@ -625,6 +625,12 @@ void funcOUTC(void* op1, void* op2, void* op3) {
 }
 
 /**
+
+Crear Hilo. Recibe una estructura TCB. Crea un nuevo hilo con el TCB recibido y lo envía a
+planificar normalmente. Se le debe crear un nuevo segmento de stack en la MSP pero no un
+nuevo segmento de código ya que este es igual para todos los hilos de un mismo programa.
+
+
  * Crea un hilo, hijo del TCB que ejecutó la llamada al sistema correspondiente. El nuevo hilo
  * tendrá su Program Counter apuntado al número almacenado en el registro B. El identificador del
  * nuevo hilo se almacena en el registro A.
@@ -636,7 +642,11 @@ void funcOUTC(void* op1, void* op2, void* op3) {
  * correspondiente en el proceso Kernel con el TCB recién generado.
  **/
 void funcCREA(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = NEW_THREAD;
+	sck->tcb->P += 4;
 }
 
 /**
