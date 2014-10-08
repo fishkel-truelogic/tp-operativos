@@ -82,6 +82,11 @@ void serviceJoinThread(Int32U, Int32U);
 void serviceBlock(Tcb *, Int32U);
 void serviceWake(Int32U);
 
+//SERVICIOS GENERALES
+void nextTcbHandler(Tcb);
+void joinThreadsHandler(StrCpuKer *);
+void procEndHandler(StrCpuKer *);
+
 //HILOS
 void *thrSchedulerHandler(void *);
 

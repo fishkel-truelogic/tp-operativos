@@ -57,10 +57,37 @@ sem_t semCpuList;
 //==========================================================================
 //ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
 //PARA QUE ME COMPILE EL PROGRAMA
-void *schedulerSysCalls(void *sck){}
-void *moveToNew(void *tcb){}
-void *moveToBlock(void *tcb){}
+void *schedulerSysCalls(void *sck)	{return NULL;}
+void *moveToReady(void *tcb)		{return NULL;}
+void *moveToNew(void *tcb)			{return NULL;}
+void *moveToBlock(void *tcb)		{return NULL;}
+void *moveToExit(void *tcb)			{return NULL;}
+void *kernelModeReturn(void *sck)	{return NULL;}
 //==========================================================================
+
+void nextTcbHandler(Tcb tcb) {
+	pthread_t thr;
+	Int32U createResult;
+	createResult = pthread_create(&thr, NULL, moveToReady, (void*) &tcb);
+}
+void joinThreadsHandler(StrCpuKer *sck) {
+	pthread_t thr;
+	Int32U createResult;
+	createResult = pthread_create(&thr, NULL, kernelModeReturn, (void*) sck);
+}
+void procEndHandler(StrCpuKer *sck) {
+	//ME FIJO SI ES KM LEVANTO EL QUE VUELVE DEL KM
+	//SINO ES EL FIN DEL PROGRAMA Y LEVANTO EL HILO QUE FINALIZA
+	if (sck->tcb.kernelMode == TRUE) {
+		pthread_t thr;
+		Int32U createResult;
+		createResult = pthread_create(&thr, NULL, kernelModeReturn,(void*) sck);
+	} else {
+		pthread_t thr;
+		Int32U createResult;
+		createResult = pthread_create(&thr, NULL, moveToExit, (void*) &sck->tcb);
+	}
+}
 
 Tcb* cloneTcb(Tcb *tcbParent) {
 	Tcb* tcb = malloc(sizeof(Tcb));
@@ -91,38 +118,27 @@ void cpuClientHandler(Socket *cpuClient, Stream data){
 		serviceInterrupt(sck);
 		break;
 	case NEXT_TCB:
-
-		//LANZAR HILO DE MANDAR A READY . PASO COMO PARAMETRO EL TCB
+		nextTcbHandler(sck->tcb);
 		break;
-
-
-
 	case STD_INPUT:
 		serviceStdInput(sck->tcb.pid, sck->inputType);
 		break;
 	case STD_OUTPUT:
 		serviceStdOutput(sck->tcb.pid, sck->log);
 		break;
-
 	case NEW_THREAD:
 		serviceCreateThread(&sck->tcb);
 		break;
-	case JOIN_THREADS:break;
-
-		//LANZAR HILO MANEJO VUELTA DE TCB KERNEL MODE
-		//CON STREAM COMO PARAMETRO
-
-	case BLOCK_THREAD:break;
-
-
-
-	case WAKE_THREAD:break;
-
-	case PROC_END:break;
-
-	//ME FIJO SI ES KM LEVANTO EL QUE VUELVE DEL KM
-	//SINO ES EL FIN DEL PROGRAMA Y LEVANTO EL HILO QUE FINALIZA
-
+	case JOIN_THREADS:
+		joinThreadsHandler(sck);
+		break;
+	case BLOCK_THREAD:
+		break;
+	case WAKE_THREAD:
+		break;
+	case PROC_END:
+		procEndHandler(sck);
+		break;
 
 	default:
 		break;
@@ -349,7 +365,9 @@ Boolean initTcbKM(){
 	}
 
 	//ENCOLA EL HILO EN BLOCK
-	moveToBlock(tcbKm);
+	pthread_t thr;
+	Int32U createResult;
+	createResult= pthread_create(&thr, NULL, moveToBlock, (void*)tcbKm);
 
 	return TRUE;
 }
@@ -567,7 +585,10 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 			tcb->S = ssDir;
 
 			//MUEVO EL NUEVO TCB A LA COLA DE NEW
-			moveToNew(tcb);
+			pthread_t thr;
+			Int32U createResult;
+			createResult = pthread_create(&thr, NULL, moveToNew, (void*) tcb);
+
 
 			//CARGO LA CONSOLA INGRESADA JUNTO CON EL TCB QUE
 			//TRAJO A LA LISTA DE CONSOLAS QUE VOY A USAR PARA GESTIONAR
