@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "fereTcb.h"
+#include "fereSockets.h"
 #include "fereStream.h"
 #include "fereSockets.h"
 
@@ -163,6 +164,10 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
 		ptrData += sizeof(sck->tcb.pid);
 
+		ptrByte = (Byte*) &sck->tcb.B;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.B));
+		ptrData += sizeof(sck->tcb.B);
+
 		ptrByte = (Byte*) &sck->inputType;
 		memcpy(ptrData, ptrByte, sizeof(sck->inputType));
 		ptrData += sizeof(sck->inputType);
@@ -238,6 +243,10 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		ptrData += sizeof(sck->tcb.csLenght);
 		break;
 	case JOIN_THREADS:
+		ptrByte = (Byte*) &sck->tcb.pid;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+		ptrData += sizeof(sck->tcb.pid);
+
 		ptrByte = (Byte*) &sck->tcb.tid;
 		memcpy(ptrData, ptrByte, sizeof(sck->tcb.tid));
 		ptrData += sizeof(sck->tcb.tid);
@@ -259,6 +268,12 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 		ptrByte = (Byte*) &sck->resource;
 		memcpy(ptrData, ptrByte, sizeof(sck->resource));
 		ptrData += sizeof(sck->resource);
+		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		ptrByte = (Byte*) &sck->tcb.pid;
+		memcpy(ptrData, ptrByte, sizeof(sck->tcb.pid));
+		ptrData += sizeof(sck->tcb.pid);
 		break;
 	default:
 		break;
@@ -757,6 +772,9 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
 		ptrByte += sizeof(tcb.pid);
 
+		memcpy(&tcb.B, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.B);
+
 		memcpy(&inputType, ptrByte, sizeof(inputType));
 		ptrByte += sizeof(inputType);
 		break;
@@ -802,6 +820,9 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		ptrByte += sizeof(tcb.csLenght);
 		break;
 	case JOIN_THREADS:
+		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.pid);
+
 		memcpy(&tcb.tid, ptrByte, sizeof(tcb.tid));
 		ptrByte += sizeof(tcb.tid);
 
@@ -817,6 +838,11 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		break;
 	case WAKE_THREAD:
 		memcpy(&resource, ptrByte, sizeof(resource));
+		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		memcpy(&tcb.pid, ptrByte, sizeof(tcb.pid));
+		ptrByte += sizeof(tcb.pid);
 		break;
 	default:
 		break;
@@ -1194,6 +1220,7 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 	case STD_INPUT:
 		size += sizeof(sck->inputType);
 		size += sizeof(sck->tcb.pid);
+		size += sizeof(sck->tcb.B);
 		break;
 	case STD_OUTPUT:
 		size += sizeof(sck->logLen);
@@ -1217,6 +1244,7 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 		size += sizeof(sck->tcb.tid);
 		break;
 	case JOIN_THREADS:
+		size += sizeof(sck->tcb.pid);
 		size += sizeof(sck->tcb.tid);
 		size += sizeof(sck->tid);
 		break;
@@ -1226,6 +1254,10 @@ Int16U getSizeStrCpuKer(StrCpuKer* sck) {
 		break;
 	case WAKE_THREAD:
 		size += sizeof(sck->resource);
+		break;
+	case SEG_FAULT:
+	case PROC_ABORT:
+		size += sizeof(sck->tcb.pid);
 		break;
 	default:
 		break;
@@ -1380,16 +1412,16 @@ Char getStreamId(Stream dataSerialized) {
  * bitarrayToSocketBuffer
  */
 
- SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray){
+SocketBuffer* bitarrayToSocketBuffer(t_bitarray* barray) {
 
 	SocketBuffer* sb = malloc(sizeof(SocketBuffer));
 	Byte* ptrByte = (Byte*) barray->bitarray;
 
 	Int32U i;
- 	for (i = 0; i < barray->size; i++){
- 		sb->data[i] = *ptrByte;
- 		ptrByte++;
- 	}
- 	sb->size = barray->size;
- 	return sb;
- }
+	for (i = 0; i < barray->size; i++) {
+		sb->data[i] = *ptrByte;
+		ptrByte++;
+	}
+	sb->size = barray->size;
+	return sb;
+}

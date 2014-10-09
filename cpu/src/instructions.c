@@ -8,6 +8,7 @@
 //=================================================================	
 // DEPENDENCIES
 //=================================================================
+#include <math.h>
 #include <src/commons/collections/dictionary.h>
 #include <src/fereTypes.h>
 #include <src/fereStream.h>
@@ -134,14 +135,14 @@ Boolean loadInstructionDictionary(t_dictionary* instructionsOperators) {
 	dictionary_put(instructionsOperators, "GOTO", iopGOTO);
 
 	InstructionOperators* iopJMPZ = malloc(sizeof(InstructionOperators));
-	iopJMPZ->op[0] = NUMBER;
+	iopJMPZ->op[0] = ADDRESS;
 	iopJMPZ->op[1] = NONE;
 	iopJMPZ->op[2] = NONE;
 	iopJMPZ->func = funcJMPZ;
 	dictionary_put(instructionsOperators, "JMPZ", iopJMPZ);
 
 	InstructionOperators* iopJPNZ = malloc(sizeof(InstructionOperators));
-	iopJPNZ->op[0] = NUMBER;
+	iopJPNZ->op[0] = ADDRESS;
 	iopJPNZ->op[1] = NONE;
 	iopJPNZ->op[2] = NONE;
 	iopJPNZ->func = funcJPNZ;
@@ -288,70 +289,127 @@ Boolean operatorIsRegister(t_dictionary* iopDic, String name, Int8U index) {
 /**
  * Carga en el registro, el número dado.
  */
-void funcLOAD(void* op1, void* op2, void* op3){
-	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
-	*(*op1) = *op2; //para mi esto es *op1 = *op2;   lean!
+void funcLOAD(void* op1, void* op2, void* op3) {
+	*op1 = *op2;
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = -1;
+	tcb->P += 9;
 }
 
 /**
  * Obtiene el valor de memoria apuntado por el segundo registro. El valor obtenido lo asigna en el
  * primer registro.
  */
-void funcGETM(void* op1, void* op2, void* op3){
-	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
-	*(*op1) = *op2; // esto es *op1 = op2; lean!
+void funcGETM(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
+	// TODO definir el tamaño de lectura por ahora es 4 bytes
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, *op2, MEM_READ, NULL, 4, tcb->pid);
+	if (sendRequestMsp(scm, &smc, &segFault)) { 
+		memcpy(op1, smc->data, 4); 
+		sck->tcb.P += 6;
+		sck->action = -1;
+	} else if (segFault) {
+		sck->action = SEG_FAULT;
+	} else {
+		sck->action = PROC_ABORT;
+	}
+	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 /**
  * Pone tantos bytes desde el segundo registro, hacia la memoria apuntada por el primer registro
  */
-void funcSETM(void* op1, void* op2, void* op3){
-	//me parece que aca hay que implementar una funcion que llame a la MSP...by Lean
-	memcpy(op1, op2,(int)op1); //memcpy(dest, source, len)
+void funcSETM(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, *op2, MEM_WRITE, op3, *op1, tcb->pid);
+	if (sendRequestMsp(scm, &smc, &segFault)) { 
+		sck->tcb.P += 10;
+		sck->action = -1;
+	} else if (segFault) {
+		sck->action = SEG_FAULT;
+	} else {
+		sck->action = PROC_ABORT;
+	}
+	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
  * Copia el valor del segundo registro hacia el primero
  */
-void funcMOVR(void* op1, void* op2, void* op3){
-	*(*op1) = *(*op2);
+void funcMOVR(void* op1, void* op2, void* op3) {
+	*op1 = *op2;
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
 }
 
 /**
  * Suma el primer registro con el segundo registro. El resultado de la operación se almacena en el
  * registro A.
  */
-void funcADDR(void* op1, void* op2, void* op3){
-	//la solucion para acceder al registro A, es hacer un #include cpu.c, y hacer un getCurrentTcb()
-	//que devuelva el tcb actual de la cpu y ahi le seteas el valor
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = *(*op1) + *(*op2);
+void funcADDR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	tcb->A = *op1 + *op2;
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;	
 }
 
 /**
  * Resta el primer registro con el segundo registro. El resultado de la operación se almacena en el
  * registro A.
  */
-void funcSUBR(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = *(*op1) - *(*op2);
+void funcSUBR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	tcb->A = *op1 - *op2;
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
 }
 
 /**
  * Multiplica el primer registro con el segundo registro. El resultado de la operación se almacena
  * en el registro A.
  */
-void funcMULR(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (*(*op1)) * (*(*op2)); //creo que no hacen falta los (), pero por las dudas los puse
+void funcMULR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	tcb->A = *op1 * *op2;
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
 }
 
 /**
  * 	Obtiene el resto de la división del primer registro con el segundo registro. El resultado de la
  * operación se almacena en el registro A.
  */
-void funcMODR(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (*(*op1)) % (*(*op2));
+void funcMODR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	tcb->A = *op1 % *op2;
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
 }
 
 /**
@@ -359,71 +417,133 @@ void funcMODR(void* op1, void* op2, void* op3){
  * registro A; a menos que el segundo operando sea 0, en cuyo caso se asigna el flag de ZERO_DIV
  * y no se hace la operación.
  **/
-void funcDIVR(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (op2 == 0) ? ZERO_DIV : (*(*op1)) / (*(*op2));
+void funcDIVR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	if (*op2 != 0) {
+		tcb->A = *op1 / *op2;
+	}
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
 }
 
 /**
  *Incrementar una unidad al registro.
  **/
-void funcINCR(void* op1, void* op2, void* op3){
-	*(*op1) = *(*op1) + 1;
+void funcINCR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	*op1 += 1;
+	sck->tcb.P += 5;
+	sck->action = -1;
 }
 
 /**
  *Decrementa una unidad al registro.
  **/
-void funcDECR(void* op1, void* op2, void* op3){
-	*(*op1) = *(*op1) - 1;
+void funcDECR(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	*op1 -= 1;
+	sck->tcb.P += 5;
+	sck->action = -1;
 }
 
 /**
  * Compara si el primer registro es igual al segundo. De ser verdadero, se almacena el valor 1. De lo
  * contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCOMP(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (*(*op1) = *(*op2)) ? TRUE : FALSE;	
+void funcCOMP(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
+	sck-tcb->A = 0;
+	if (*op1 == *op2) {
+		sck-tcb->A = 1;
+	} 	
 }
 
 /**
  * Compara si el primer registro es mayor o igual al segundo. De ser verdadero, se almacena el
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCGEQ(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (*(*op1) >= *(*op2)) ? TRUE : FALSE;
+void funcCGEQ(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
+	sck-tcb->A = 0;
+	if (*op1 >= *op2) {
+		sck-tcb->A = 1;
+	}
 }
 
 /**
  * Compara si el primer registro es menor o igual al segundo. De ser verdadero, se almacena el
  * valor 1. De lo contrario el valor 0. El resultado de la operación se almacena en el registro A.
  **/
-void funcCLEQ(void* op1, void* op2, void* op3){
-	Tcb* currentTcb = getCurrentTcb();
-	*currentTcb->A = (*(*op1) <= *(*op2)) ? TRUE : FALSE;	
+void funcCLEQ(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tcb.P += 6;
+	sck->action = -1;
+	sck-tcb->A = 0;
+	if (*op1 <= *op2) {
+		sck-tcb->A = 1;
+	}
 }
 
 /**
  * Altera el flujo de ejecución para ejecutar la instrucción apuntada por el registro. El valor es el
  * desplazamiento desde el inicio del programa.
  **/
-void funcGOTO(void* op1, void* op2, void* op3){
+void funcGOTO(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tcb.P = sck->tcb.M + *op1;
+	sck->action = -1;
 }
 
 /**
- * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
- * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
+ * JMPZ [Dirección] Altera el flujo de ejecución sólo si el valor del registro A es cero, 
+ * para ejecutar la instrucción apuntada por la Dirección. 
+ * El valor es el desplazamiento desde el inicio del programa.
  **/
-void funcJMPZ(void* op1, void* op2, void* op3){
+void funcJMPZ(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	if (sck-tcb->A  == 0) {
+		sck->tcb.P = *op1;
+	} else {
+		sck->tcb.P += 8;
+	}
+	sck->action = -1;
 }
 
 /**
- * Altera el flujo de ejecución, solo si el valor del registro A es cero, para ejecutar la instrucción
- * apuntada por el registro. El valor es el desplazamiento desde el inicio del programa.
+ * JPNZ [Dirección] Altera el flujo de ejecución sólo si el valor del registro A no es cero, 
+ * para ejecutar la instrucción apuntada por la Dirección. 
+ * El valor es el desplazamiento desde el inicio del programa.
  **/
-void funcJPNZ(void* op1, void* op2, void* op3){
+void funcJPNZ(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	if (sck-tcb->A  != 0) {
+		sck->tcb.P = *op1;
+	} else {
+		sck->tcb.P += 8;
+	}
+	sck->action = -1;
 }
 
 /**
@@ -440,41 +560,62 @@ void funcINTE(void* op1, void* op2, void* op3) {
 	sck->tcb = *tcb;
 	sck->address = (Int32U) *op1;
 	sck->action = INTE;
-	sck->tcb.P++;
+	sck->tcb.P += 8;
 }
 
 /**
- * Desplaza 12 los bits del registro, tantas veces como se indique en el Número. De ser
+ * Desplaza los bits del registro, tantas veces como se indique en el Número. De ser
  * desplazamiento positivo, se considera hacia la derecha. De lo contrario hacia la izquierda.
  **/
 void funcSHIF(void* op1, void* op2, void* op3){
-	
+	Int32U* reg = (Int32U*) op2;
+	Int32S* num = (Int32S*) op1;
+	if (*num > 0) {
+		*reg >>= *num;
+	} else if (*op1 < 0) {
+		*reg <<= abs(*num);
+	}
+
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = -1;
+	sck->tcb.P += 9;
 }
 
 /**
  * Consume un ciclo del CPU sin hacer nada
  **/
-void funcNOPP(void* op1, void* op2, void* op3){
+void funcNOPP(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = -1;
+	sck->tcb.P += 4;
 }
 
 /**
  * Apila los primeros bytes, indicado por el número, del registro hacia el stack. Modifica el valor del
  * registro cursor de stack de forma acorde.
  **/
-void funcPUSH(void* op1, void* op2, void* op3){
+void funcPUSH(void* op1, void* op2, void* op3) {
 }
 
 /**
  * Desapila los primeros bytes, indicado por el número, del stack hacia el registro. Modifica el valor
  * del registro de stack de forma acorde.
  **/
-void funcTAKE(void* op1, void* op2, void* op3){
+void funcTAKE(void* op1, void* op2, void* op3) {
 }
 
 /**
  * Finaliza la ejecución.
  **/
- void funcXXXX(void* op1, void* op2, void* op3)){
+ void funcXXXX(void* op1, void* op2, void* op3) {
+ 	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = PROC_END;
 }
 
 /**
@@ -483,7 +624,23 @@ void funcTAKE(void* op1, void* op2, void* op3){
  * al programa en ejecución.
  **/
 void funcMALC(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, 0, CREATE_SEG, NULL, tcb->A, tcb->pid);
+	if (sendRequestMsp(scm, &smc, &segFault)) { 
+		sck->tcb.P += 4;
+	} else if (segFault) {
+		sck->action = SEG_FAULT;
+	} else {
+		sck->action = PROC_ABORT;
+	}
+	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
@@ -491,7 +648,23 @@ void funcMALC(void* op1, void* op2, void* op3) {
  * instrucción de MALC. Destruye en la MSP el segmento indicado en el registro A.
  **/
 void funcFREE(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, DELETE_SEG, NULL, 0, tcb->pid);
+	if (sendRequestMsp(scm, &smc, &segFault)) {
+		sck->tcb.P += 4;
+	} else if (segFault) {
+		sck->action = SEG_FAULT;
+	} else {
+		sck->action = PROC_ABORT;
+	}
+	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
@@ -500,7 +673,18 @@ void funcFREE(void* op1, void* op2, void* op3) {
  * el proceso Kernel.
  **/
 void funcINNN(void* op1, void* op2, void* op3) {
-
+	StrKerCpu* skc = getSKC();
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	if (skc->bufferWriter == NULL) {
+		sck->action = STD_INPUT;
+		sck->inputType = NUMBER_INPUT;
+	} else {
+		sck->action = -1;
+		sck->tcb.A = *((Int32S*) skc->bufferWriter);
+	 	sck->tcb.P += 4;
+	}
 }
 
 /**
@@ -509,7 +693,30 @@ void funcINNN(void* op1, void* op2, void* op3) {
  * invoca al servicio correspondiente en el proceso Kernel.
  **/
 void funcINNC(void* op1, void* op2, void* op3) {
-
+	StrMspCpu* smc = NULL;
+	StrKerCpu* skc = getSKC();
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	if (skc->bufferWriter == NULL) {
+		 sck->action = STD_INPUT;
+		 sck->inputType = TEXT_INPUT;
+	} else {
+		StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_WRITE, skc->bufferWriter, tcb->B, tcb->pid);
+		if (sendRequestMsp(scm, &smc, &segFault)) { 
+			sck->action = -1;
+			sck->tcb.P += 4;
+		} else if (segFault) {
+			sck->action = SEG_FAULT;
+		} else {
+			sck->action = PROC_ABORT;
+		}
+		free(scm);
+		if (smc != NULL) {
+			free(smc);
+		}
+	}
 }
 
 /**
@@ -517,8 +724,15 @@ void funcINNC(void* op1, void* op2, void* op3) {
  * servicio correspondiente en el proceso Kernel.
  **/
 void funcOUTN(void* op1, void* op2, void* op3) {
-
-}
+	Tcb* tcb = getCurrentTcb();
+	StrCpuKer* sck = getSCK();
+	sck->tcb = *tcb;
+	Int32S number = (Int32S) tcb->A;
+	sck->log = intSToStr(number);
+	sck->logLen = sizeof(Int32S);
+	sck->action = STD_OUTPUT;
+	sck->tcb.P += 4;
+}	
 
 /**
  * Imprime por consola del programa una cadena de tamaño indicado por el registro B que se
@@ -526,10 +740,35 @@ void funcOUTN(void* op1, void* op2, void* op3) {
  * proceso Kernel.
  **/
 void funcOUTC(void* op1, void* op2, void* op3) {
-
+	StrMspCpu* smc = NULL;
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	Boolean segFault = FALSE;
+	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, MEM_READ, NULL, 0, tcb->pid);
+	if (sendRequestMsp(scm, &smc &segFault)) { 
+		sck->log = smc->data;
+		sck->logLen = smc->dataLen;
+		sck->action = STD_OUTPUT;
+		sck->tcb.P += 4;
+	} else if (segFault) {
+		sck->action = SEG_FAULT;
+	} else {
+		sck->action = PROC_ABORT;
+	}
+	free(scm);
+	if (smc != NULL) {
+		free(smc);
+	}
 }
 
 /**
+
+Crear Hilo. Recibe una estructura TCB. Crea un nuevo hilo con el TCB recibido y lo envía a
+planificar normalmente. Se le debe crear un nuevo segmento de stack en la MSP pero no un
+nuevo segmento de código ya que este es igual para todos los hilos de un mismo programa.
+
+
  * Crea un hilo, hijo del TCB que ejecutó la llamada al sistema correspondiente. El nuevo hilo
  * tendrá su Program Counter apuntado al número almacenado en el registro B. El identificador del
  * nuevo hilo se almacena en el registro A.
@@ -541,7 +780,11 @@ void funcOUTC(void* op1, void* op2, void* op3) {
  * correspondiente en el proceso Kernel con el TCB recién generado.
  **/
 void funcCREA(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = NEW_THREAD;
+	sck->tcb.P += 4;
 }
 
 /**
@@ -550,29 +793,78 @@ void funcCREA(void* op1, void* op2, void* op3) {
  * Kernel.
  **/
 void funcJOIN(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->tid = sck->tcb.A;
+	sck->action = JOIN_THREADS;
+	sck->tcb.P += 4;
 }
 
 /**
- * De tener una base de stack en 100, y un cursor en 130 (S-X=30). Al crear un nuevo stack, la dirección de este
- * podría ser 500, por lo que el cursor tendrá que ser 530 (S-X=30).
- * 26Bloquea el programa que ejecutó la llamada al sistema hasta que el recurso apuntado por B se
+ * Bloquea el programa que ejecutó la llamada al sistema hasta que el recurso apuntado por B se
  * libere.
  * La evaluación y decisión de si el recurso está libre o no es hecha por la llamada al sistema WAIT
  * pre-compilada.
  **/
 void funcBLOK(void* op1, void* op2, void* op3) {
-
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = BLOCK_THREAD;
+	sck->resource = sck-tcb->B;
+	sck->tcb.P += 4;
 }
 
 /**
  * Desbloquea al primer programa bloqueado por el recurso apuntado por B.
  * La evaluación y decisión de si el recurso está libre o no es hecha por la llamada al sistema
  * SIGNAL pre-compilada.
- * Notar que las instrucciones son de tamaño variable tanto por la cantidad de parámetros que reciben
- * como por el tamaño de cada uno de los mismos. Sin embargo, interpretando los primeros 4 bytes de
- * cada una es posible conocer de qué instrucción se trata, y, por lo tanto, cual es el tamaño de la misma.
  **/
 void funcWAKE(void* op1, void* op2, void* op3) {
+	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
+	sck->tcb = *tcb;
+	sck->action = WAKE_THREAD;
+	sck->resource = sck->tcb.B;
+	sck->tcb.P += 4;
+}
 
+Boolean sendRequestMsp(StrCpuMsp* scm, StrMspCpu** smc, Boolean* segFault) {
+	SocketBuffer* sb = serializeCpuMsp(scm);
+	if(!socketSend(mspClient->ptrSocketServer, sb)) {
+		printf("No se pudo enviar el Stream a la MSP. \n");
+		return FALSE;
+	}
+	free(sb);
+	
+	Boolean response = recieveResponseMsp(smc);
+
+	if (smc->action == SEG_FAULT) {
+		*segFault = TRUE;
+	}
+
+	return response;
+}
+
+Boolean recieveResponseMsp(StrMspCpu** smc) {
+	// Recibo la respuesta de la msp y deserializo
+	SocketBuffer* sb;
+	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
+		printf("No se pudo recibir el Stream de la MSP. \n");
+		return FALSE;
+	}
+
+	smc = unserializeMspCpu((Stream) sb->data);
+
+	return TRUE;
+}
+
+/**
+ * Convierte un int en un String
+ */
+String intSToStr(Int32S integer) {
+	String result = malloc(sizeof(Byte) * 10);
+	sprintf(result, "%d", integer);
+	return result;
 }

@@ -20,8 +20,8 @@
  * Constants
  */
 
-#define CONFIG_FILE = "config.txt"
-#define PARAM_LENGTH = 5
+#define CONFIG_FILE "config.txt"
+#define PARAM_LENGTH 5
 #define KERNEL_PORT "KERNEL_PORT"
 #define MSP_PORT "MSP_PORT"
 #define KERNEL_IP "KERNEL_IP"
@@ -69,7 +69,6 @@ void execute(Instruction*);
 Boolean mspRequest();
 Instruction* getInstruction();
 void* setRegisterOperator(Byte*);
-
 
 int main() {
 	// Cargo las variables de configuracion y me conecto al kernel y msp
@@ -124,7 +123,6 @@ Boolean socketConnection() {
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  */
 Boolean getNextTcb() {
-	int i;
 	if (sck == NULL) {
 		currentTcb = newEmptyTcb();
 		sck = newStrCpuKer(CPU_ID, *currentTcb, FIRST_TCB, 0, NULL, 0, 0, 0, 0);
@@ -144,9 +142,11 @@ Boolean getNextTcb() {
 		printf("No se pudo recibir el Stream del kernel. \n");
 		return FALSE;
 	}
-
+	if (skc != NULL) {
+		free(skc);
+	}
 	skc = unserializeKerCpu((Stream) sb->data);
-	currentTcb = skc->tcb;
+	*currentTcb = skc->tcb;
 	return TRUE;
 }
 
@@ -159,7 +159,8 @@ Boolean processTcb() {
 	Int8U quantum = skc->quantum;
 	Boolean inte = FALSE;
 	while (currentTcb->kernelMode || quantum > 0) {
-		if ((instruction = getInstruction()) == NULL) {
+		instruction = getInstruction();
+		if (instruction == NULL) {
 			printf("No se pudo obtener la siguiente instruccion\n");
 			return FALSE;
 		}
@@ -178,8 +179,7 @@ Boolean processTcb() {
 			default: 
 				quantum--;
 				if (quantum == 0) {
-					sck->tcb = currentTcb;
-					sck->tcb = NEXT_TCB;
+					sck->action = NEXT_TCB;
 				}
 				break;
 		}
@@ -190,72 +190,6 @@ Boolean processTcb() {
 	}
 
 	return TRUE;
-}
-
-/**
- * Carga las variables de configuracion externa
- */
-Boolean loadConfig() {
-
-	//Gennero tabla de configuracion
-	t_config* tConfig = config_create(CONFIG_FILE);
-	if (tConfig == NULL){
-		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
-		return FALSE;
-	}
-	//Verifico consistencia, tiene que haber 5 campos
-	if (config_keys_amount(tConfig) == PARAM_LENGTH) {
-
-		//Verifico que los parametros tengan sus valores OK-> PORT=12456 | NOK->PORT=
-		if (config_has_property(tConfig, MSP_PORT)) {
-			mspPort = config_get_int_value(tConfig, MSP_PORT);
-		} else {
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, KERNEL_PORT)) {
-			kernelPort = config_get_int_value(tConfig, KERNEL_PORT);
-		} else{
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, KERNEL_IP)) {
-			kernelIp = config_get_string_value(tConfig, KERNEL_IP);
-		} else {
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, MSP_IP)) {
-			mspIp = config_get_string_value(tConfig, MSP_IP);
-		} else {
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		if (config_has_property(tConfig, SLEEP_IN_MILLIS)) {
-			sleepInMillis = config_get_string_value(tConfig, SLEEP_IN_MILLIS);
-		} else {
-			printf("ERROR: Falta un parametro.\n");
-			return FALSE;
-		}
-
-		//Libero tabla config
-		config_destroy(tConfig);
-		if (DEBUG == 1){
-			printf("Archivo de config MSP leído\n===========\n");
-			printf("MSP Port: %d\nKernel Port: %d\nMsp IP: %s\nKernel IP: %s\n",
-					mspPort, kernelPort, mspIp, kernelIp);
-		}
-
-		return TRUE;
-
-	} else {
-		printf("El archivo config.txt no tiene todos los campos.\n");
-		return FALSE;
-	}
 }
 
 /**
@@ -281,7 +215,7 @@ Instruction* getInstruction() {
 				instruction->op[i] = setRegisterOperator(ptrData);
 				ptrData++;
 			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
-				memcpy(instruction->op[i], ptrData, 4));
+				memcpy(instruction->op[i], ptrData, 4);
 				ptrData += 4;
 			}
 		}
@@ -300,7 +234,6 @@ Instruction* getInstruction() {
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  **/
 Boolean mspRequest() {
-	int i;
 	if (scm != NULL) {
 		free(scm);
 	}
@@ -308,6 +241,7 @@ Boolean mspRequest() {
 
 	//Serializo y armo el socketBuffer
 	SocketBuffer* sb = serializeCpuMsp(scm);
+
 
 	//Envio el socketBuffer
 	if(!socketSend(mspClient->ptrSocketServer, sb)) {
@@ -355,7 +289,7 @@ void* setRegisterOperator(Byte* ptrData) {
  **/
 void execute(Instruction* instruction) {
 	InstructionOperators* iop = dictionary_get(instructionOperators, instruction->name);
-	iop->func(instruction->op[0], instruction->op[1], instruction->op3[2]);
+	iop->func(instruction->op[0], instruction->op[1], instruction->op[2]);
 }
 
 Tcb* getCurrentTcb() {
@@ -368,4 +302,66 @@ StrCpuKer* getSCK() {
 
 StrKerCpu* getSKC() {
 	return skc;
+}
+
+/**
+ * Carga las variables de configuracion externa
+ */
+Boolean loadConfig() {
+
+	t_config* tConfig = config_create(CONFIG_FILE);
+
+	if (tConfig == NULL){
+		printf("ERROR: No se encuentra o falta el archivo de configuracion.\n");
+		return FALSE;
+	}
+	if (config_keys_amount(tConfig) == PARAM_LENGTH) {
+
+		//Verifico que los parametros tengan sus valores OK-> PORT=12456 | NOK->PORT=
+		if (config_has_property(tConfig, MSP_PORT)) {
+			mspPort = config_get_int_value(tConfig, MSP_PORT);
+		} else {
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, KERNEL_PORT)) {
+			kernelPort = config_get_int_value(tConfig, KERNEL_PORT);
+		} else{
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, KERNEL_IP)) {
+			kernelIp = config_get_string_value(tConfig, KERNEL_IP);
+		} else {
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, MSP_IP)) {
+			mspIp = config_get_string_value(tConfig, MSP_IP);
+		} else {
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		if (config_has_property(tConfig, SLEEP_IN_MILLIS)) {
+			sleepInMillis = config_get_int_value(tConfig, SLEEP_IN_MILLIS);
+		} else {
+			printf("ERROR: Falta un parametro.\n");
+			return FALSE;
+		}
+
+		//Libero tabla config
+		config_destroy(tConfig);
+
+		return TRUE;
+
+	} else {
+		printf("El archivo config.txt no tiene todos los campos.\n");
+		return FALSE;
+	}
+
+	return TRUE;
 }

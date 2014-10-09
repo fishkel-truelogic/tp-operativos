@@ -60,8 +60,8 @@ void printPages(String, void*);
 void printFrame(void*);
 void printSegment(String, void*);
 void printSegments(String, void*);
-void manageCpuRequest(StrCpuMsp*);
-void manageKernelRequest(StrKerMsp*);
+void manageCpuRequest(Socket*, StrCpuMsp*);
+void manageKernelRequest(Socket*, StrKerMsp*);
 void destroy(void*);
 void initMemory();
 void printDate();
@@ -105,6 +105,7 @@ void manageSocketConnections() {
 
 void* manageSocketConnection(void* param) {
 	Socket* socket = (Socket*) param;
+	// TODO que pasa si recibe null?
 	SocketBuffer* sb = socketReceive(socket);
 	Char id = getStreamId((Stream) sb->data);
 	StrKerMsp* skm = NULL;

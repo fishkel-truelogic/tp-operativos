@@ -226,7 +226,6 @@ Boolean getAndSendBESO(String path) {
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  */
 Boolean sendStream() {
-	Int16U i;
 	if(sck == NULL) {
 		printf("Error al tratar de enviar stream sin inicializar ---- Terminando \n");
 		return FALSE;
