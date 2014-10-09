@@ -24,13 +24,15 @@ typedef struct instruction {
 
 typedef struct intructionOperators {
 	Char op[3];
-	void  (*func)(Int8U*, void*, void*, void*);
+	void  (*func)(void*, void*, void*);
 } InstructionOperators;
 
 Boolean loadInstructionDictionary(t_dictionary*);
 Int8U getInstructionOperatorsTotal(t_dictionary*, String);
 Boolean operatorIsRegister(t_dictionary*, String name, Int8U index);
-
+Boolean recieveResponseMsp(StrMspCpu**);
+Boolean sendRequestMsp(StrCpuMsp*, StrMspCpu**, Boolean*);
+String intSToStr(Int32S);
 //=================================================================
 //FUNCIONES DE LAS INSTRUCCIONES BESO
 //=================================================================
@@ -260,44 +262,6 @@ void funcBLOK(void* op1, void* op2, void* op3);
  * cada una es posible conocer de qué instrucción se trata, y, por lo tanto, cual es el tamaño de la misma.
  **/
 void funcWAKE(void* op1, void* op2, void* op3);
-
-String intSToStr(Int32S);
-
-Boolean sendRequestMsp(StrCpuMsp* scm);
-
-/*
-27Anexo II: Especificación de las llamadas al sistema
-Como se explicó antes, el sistema cuenta con algunas llamadas al sistema (system calls) que son
-ejecutadas luego de pedir por ellas con la operación de INTErrupción. Muchas de estas son simplemente
-una operación codificada en ESO junto con algunas operaciones para consumir algunos ciclos.
-MALLOC();
-Ejecuta la operación de MALC.
-2. FREE
-Ejecuta la operación de FREE.
-3. INN
-Ejecuta la operación de INNN.
-4. INC
-Ejecuta la operación de INNC.
-5. OUTN
-Ejecuta la operación de OUTN.
-6. OUTC
-Ejecuta la operación de OUTC.
-7. CREATE_THREAD
-Ejecuta la operación de CREA.
-8. JOIN_THREAD
-Ejecuta la operación de JOIN.
-9. WAIT
-Toma el valor apuntado por el registro B, resta una unidad, guarda en la memoria
-correspondiente el nuevo valor y evalúa si este contador es negativo o cero. De serlo, invoca a la
-operación de BLOK; de lo contrario no. Altera el registro A por uso interno.
-10. SIGNAL
-Toma el valor apuntado por el registro B, suma una unidad, guarda en la memoria
-correspondiente el nuevo valor y evalúa si este contador es negativo o cero. De serlo, invoca a la
-operación de WAKE; de lo contrario no. Altera el registro A por uso interno.
-11. SETSEM
-Fija el valor del recurso apuntado por el registro B al valor del registro D. Altera el registro A por
-uso interno.*/
-
 
 
 //=================================================================

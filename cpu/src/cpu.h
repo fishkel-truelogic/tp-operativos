@@ -1,7 +1,6 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include <src/fereTypes.h>
 #include <src/fereStream.h>
 #include <src/fereTcb.h>
 

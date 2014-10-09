@@ -845,7 +845,6 @@ StrCpuKer* unserializeCpuKer(Stream data) {
 		ptrByte += sizeof(tcb.pid);
 		break;
 	default:
-	default:
 		break;
 	}
 

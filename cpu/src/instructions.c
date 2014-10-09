@@ -306,8 +306,8 @@ void funcGETM(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-
-	StcMspCpu* smc = NULL;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
 	// TODO definir el tamaño de lectura por ahora es 4 bytes
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, *op2, MEM_READ, NULL, 4, tcb->pid);
 	if (sendRequestMsp(scm, &smc, &segFault)) { 
@@ -331,8 +331,8 @@ void funcSETM(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-
-	StcMspCpu* smc = NULL;
+	Boolean segFault = FALSE;
+	StrMspCpu* smc = NULL;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, *op2, MEM_WRITE, op3, *op1, tcb->pid);
 	if (sendRequestMsp(scm, &smc, &segFault)) { 
 		sck->tcb.P += 10;
@@ -435,7 +435,7 @@ void funcINCR(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-	*op1++;
+	*op1 += 1;
 	sck->tcb.P += 5;
 	sck->action = -1;
 }
@@ -447,7 +447,7 @@ void funcDECR(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-	*op1--;
+	*op1 -= 1;
 	sck->tcb.P += 5;
 	sck->action = -1;
 }
@@ -568,10 +568,12 @@ void funcINTE(void* op1, void* op2, void* op3) {
  * desplazamiento positivo, se considera hacia la derecha. De lo contrario hacia la izquierda.
  **/
 void funcSHIF(void* op1, void* op2, void* op3){
-	if (*op1 > 0) {
-		*op2 >> *op1;
+	Int32U* reg = (Int32U*) op2;
+	Int32S* num = (Int32S*) op1;
+	if (*num > 0) {
+		*reg >>= *num;
 	} else if (*op1 < 0) {
-		*op2 << abs(*op1);
+		*reg <<= abs(*num);
 	}
 
 	StrCpuKer* sck = getSCK();
@@ -609,7 +611,7 @@ void funcTAKE(void* op1, void* op2, void* op3) {
 /**
  * Finaliza la ejecución.
  **/
- void funcXXXX(void* op1, void* op2, void* op3)) {
+ void funcXXXX(void* op1, void* op2, void* op3) {
  	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
@@ -626,7 +628,7 @@ void funcMALC(void* op1, void* op2, void* op3) {
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
 	Boolean segFault = FALSE;
-	StcMspCpu* smc = NULL;
+	StrMspCpu* smc = NULL;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, 0, CREATE_SEG, NULL, tcb->A, tcb->pid);
 	if (sendRequestMsp(scm, &smc, &segFault)) { 
 		sck->tcb.P += 4;
@@ -650,7 +652,7 @@ void funcFREE(void* op1, void* op2, void* op3) {
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
 	Boolean segFault = FALSE;
-	StcMspCpu* smc = NULL;
+	StrMspCpu* smc = NULL;
 	StrCpuMsp* scm = newStrCpuMsp(CPU_ID, tcb->A, DELETE_SEG, NULL, 0, tcb->pid);
 	if (sendRequestMsp(scm, &smc, &segFault)) {
 		sck->tcb.P += 4;
@@ -691,7 +693,7 @@ void funcINNN(void* op1, void* op2, void* op3) {
  * invoca al servicio correspondiente en el proceso Kernel.
  **/
 void funcINNC(void* op1, void* op2, void* op3) {
-	StcMspCpu* smc = NULL;
+	StrMspCpu* smc = NULL;
 	StrKerCpu* skc = getSKC();
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
@@ -738,7 +740,7 @@ void funcOUTN(void* op1, void* op2, void* op3) {
  * proceso Kernel.
  **/
 void funcOUTC(void* op1, void* op2, void* op3) {
-	StcMspCpu* smc = NULL;
+	StrMspCpu* smc = NULL;
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
@@ -821,9 +823,10 @@ void funcBLOK(void* op1, void* op2, void* op3) {
  **/
 void funcWAKE(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
+	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
 	sck->action = WAKE_THREAD;
-	sck->resource = sck-tcb->B;
+	sck->resource = sck->tcb.B;
 	sck->tcb.P += 4;
 }
 
@@ -846,6 +849,7 @@ Boolean sendRequestMsp(StrCpuMsp* scm, StrMspCpu** smc, Boolean* segFault) {
 
 Boolean recieveResponseMsp(StrMspCpu** smc) {
 	// Recibo la respuesta de la msp y deserializo
+	SocketBuffer* sb;
 	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
 		printf("No se pudo recibir el Stream de la MSP. \n");
 		return FALSE;

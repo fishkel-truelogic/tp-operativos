@@ -74,7 +74,7 @@ typedef struct strConKer {
 typedef struct strKerCpu { 
 	Tcb tcb;
 	Int8U quantum;
-	Byte *bufferWriter;
+	Byte* bufferWriter;
 	Char action;
 	Char inputType;
 } StrKerCpu;
