@@ -305,7 +305,7 @@ StrKerCpu* getSKC() {
 	return skc;
 }
 
-**
+/**
  * Carga las variables de configuracion externa
  */
 Boolean loadConfig() {
