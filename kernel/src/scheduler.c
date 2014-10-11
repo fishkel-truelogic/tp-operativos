@@ -18,9 +18,10 @@
 //==========================================================================
 t_list *newList; //newList
 t_list *readyList;
-t_list *execList;
+t_dictionary *execDic;
 t_list *blockList;
 t_list *exitList;
+t_queue *syscallQueue
 //==========================================================================
 
 //FUNCIONES
@@ -33,8 +34,19 @@ void *readyProcessesHandlerThread(void *ptr);
 //==========================================================================
 
 
+//HILO ENCARGADO DE INGRESAR NUEVOS TCB A NEW
+void *newProcessesHandlerThread (void *ptr){
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	//PRODUCTOR NEWLIST
+	//MUTEX NEWLIST
+	list_add(newList, tcb);
+	//END MUTEX
+	return NULL;
+}
+
 //HILO ENCARGADO DE PASAR TODOS LOS PROCESO/HILOS DE LA LISTA DE NUEVOS A READY
-void *newProcessesHandlerThread(void *ptr) {
+void *newToReadyProcessesHandlerThread(void *ptr) {
 
 	while (TRUE) {
 		//CONSUMIDOR NEWLIST
@@ -54,39 +66,43 @@ void *newProcessesHandlerThread(void *ptr) {
 }
 
 //FUNCION PARA SABER SI UN TCB ES KERNEL MODE
-Boolean isTCBKernelMode(void *ptr){
+bool isTCBKernelMode(void *ptr){
 
 	Tcb *tcb;
 	tcb = (Tcb *) ptr;
 	return tcb->kernelMode;
 }
 
+
+
+
 //HILO ENCARGADO DE PASAR TODOS LOS PROCESO/HILOS DE LA LISTA DE READY A EXEC
 //DISPATCHER
-void *readyProcessesHandlerThread(void *ptr) {
+void *readyToExecProcessesHandlerThread(void *ptr) {
 
 	while (TRUE) {
 		//CONSUMIDOR READYLIST
 		//SEMAFORO CANTIDAD DE CPUS LIBRES
 		//tener en cuenta bajar lo antes posible la cantidad de cpu disponible
-		//PRODUCTOR  EXECLIST
+		//PRODUCTOR  EXCECDIC
 		//MUTEX READYLIST
 
-		/*Tcb tcbToExec = NULL;
-
+		Tcb tcbToExec = NULL;
+		//VERIFICO SI DENTRO DE LA LISTA DE READY ESTA EL TCB KERNEL
+		//SI ESTA ENVIO ESE A EJECUTAR
 		if(list_any_satisfy(readyList, isTCBKernelMode)){
 
 			tcbToExec = list_remove_by_condition(readyList , isTCBKernelMode);
 		}else{
-
+			//SI NO ESTA EL TCB KERNEL TOMO EL PRIMERO DE LA LISTA Y LO ENVIO A EJECUTAR
 			tcbToExec = list_remove(readyList,0);
 		}
 		//END MUTEX READYLIST
 
-		//MUTEX EXCECLIST
-		list_add(execList, tcbToExec);
-		//END MUTEX EXECLIST
-		sendTcbToAFreeCPU(tcbToExec);*/
+		//MUTEX EXCECDIC
+		dictionary_put(execDic, tcbToExec->pid, tcbToExec);
+		//END MUTEX EXCECDIC
+		sendTcbToAFreeCPU(tcbToExec);
 
 	}
 
