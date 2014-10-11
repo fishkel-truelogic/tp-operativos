@@ -21,13 +21,13 @@ t_list *readyList;
 t_dictionary *execDic;
 t_list *blockList;
 t_list *exitList;
-t_queue *syscallQueue
+t_queue *syscallQueue;
 //==========================================================================
 
 //FUNCIONES
 //==========================================================================
 void *newProcessesHandlerThread(void *ptr);
-Boolean isTCBKernelMode(void *ptr);
+bool isTCBKernelMode(void *ptr);
 void *readyProcessesHandlerThread(void *ptr);
 //void *thrSchedulerHandler(void *ptr);
 
@@ -110,6 +110,23 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 
 	return NULL ;
 
+}
+
+void *execToReadyProcessesHandlerThread (void *ptr){
+
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	//CONSUMIDOR EXECDIC
+	//PRODUCTOR READYLIST
+	//AUMENTAR SEMAFORO DE CPU DISPONIBLES
+	//MUTEX EXECDIC
+	dictionary_remove(execDic, tcb->pid);
+	//END MUTEX
+
+	//MUTEX READYLIST
+	list_add(readyList, tcb);
+	//END MUTEX
+	return NULL;
 }
 
 /*void *thrSchedulerHandler(void *ptr) {
