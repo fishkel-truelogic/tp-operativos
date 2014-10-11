@@ -102,6 +102,9 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 		//MUTEX EXCECDIC
 		dictionary_put(execDic, tcbToExec->pid, tcbToExec);
 		//END MUTEX EXCECDIC
+
+
+		//TODO AVISAR A CESAR PARA QUE IMPLEMENTE ESTA FUNCION
 		sendTcbToAFreeCPU(tcbToExec);
 
 	}
@@ -112,6 +115,9 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 
 }
 
+//HILO ENCARGADO DE ENVIAR UN TCB QUE FINALIZO SU QUANTUM
+//PERO DEBE SEGUIR EJECUTANDOSE
+// EXEC A READY
 void *execToReadyProcessesHandlerThread (void *ptr){
 
 	Tcb *tcb;
@@ -125,6 +131,24 @@ void *execToReadyProcessesHandlerThread (void *ptr){
 
 	//MUTEX READYLIST
 	list_add(readyList, tcb);
+	//END MUTEX
+	return NULL;
+}
+
+//HILO ENCARGADO DE ENVIAR A EXIT UN PROCESO QUE FINALIZO
+//SE PUEDE USAR PARA CUANDO CONSOLA O CPU ENVIAN FALLO
+//EXEC A EXIT
+void *execToExitProcessesHandlerThread (void *ptr){
+
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	//CONSUMIDOR EXECDIC
+	//MUTEX EXECDIC
+	dictionary_remove(execDic, tcb->pid);
+	//END MUTEX
+
+	//MUTEX EXITLIST
+	list_add(exitList, tcb);
 	//END MUTEX
 	return NULL;
 }
