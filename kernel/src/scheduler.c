@@ -153,6 +153,25 @@ void *execToExitProcessesHandlerThread (void *ptr){
 	return NULL;
 }
 
+//HILO ENCARGADO DE ENVIAR A BLOCK UN TCB POR OTRO MOTIVO DISTINTO A SYSCALL
+//EXEC A NORMAL BLOCK
+void *execToNormalBlockProcessesHandlerThread (void *ptr){
+
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	//CONSUMIDOR EXECDIC
+	//PRODUCTOR BLOCKLIST
+	//AUMENTAR SEMAFORO DE CPU DISPONIBLES
+	//MUTEX EXECDIC
+	dictionary_remove(execDic, tcb->pid);
+	//END MUTEX
+
+	//MUTEX BLOCKLIST
+	list_add(blockList, tcb);
+	//END MUTEX
+	return NULL;
+}
+
 /*void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
 	return NULL ;
