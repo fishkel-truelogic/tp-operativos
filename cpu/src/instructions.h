@@ -29,7 +29,8 @@ typedef struct intructionOperators {
 
 Boolean loadInstructionDictionary(t_dictionary*);
 Int8U getInstructionOperatorsTotal(t_dictionary*, String);
-Boolean operatorIsRegister(t_dictionary*, String name, Int8U index);
+Int8U getInstructionOperatorsSize(t_dictionary*, String);
+Boolean operatorIsRegister(t_dictionary*, String, Int8U);
 Boolean recieveResponseMsp(StrMspCpu**);
 Boolean sendRequestMsp(StrCpuMsp*, StrMspCpu**, Boolean*);
 String intSToStr(Int32S);

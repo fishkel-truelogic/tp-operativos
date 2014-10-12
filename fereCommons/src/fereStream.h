@@ -31,11 +31,11 @@
 #define JOIN_THREADS 6      // syscall para bloquear proceso hasta que termine su fork
 #define BLOCK_THREAD 7      // syscall para bloquear thread
 #define WAKE_THREAD 8       // syscall para despertar thread bloqueado
-#define NEXT_INSTRUCTION 9  // cpu le pide instruccion a la msp
+#define OK 9
 #define BESO_FILE 10        // cuando la consola le manda el contenido del archivo BESO
 #define MEM_READ 11			// cuando la CPU lee la MSP
 #define MEM_WRITE 12 		// cuadno la CPU escribe en la MSP
-#define MEM_ALLOC 13 		// cuadno el Kernel solicita memoria de la MSP
+#define MEM_FULL 13
 #define SEG_FAULT 14		// cuadno ocurre segmentation fault en la MSP
 #define CREATE_SEG 15 		// la MSP debe crear un segmento
 #define DELETE_SEG 16		// la MSP debe destruir un segmento
@@ -117,8 +117,9 @@ typedef struct strMspKer {
 
 typedef struct strMspCpu {
 	Char action;
+	Int32U address;
 	Int16U dataLen;
-	Byte * data;
+	Byte* data;
 } StrMspCpu;
 
 
@@ -126,7 +127,7 @@ typedef struct strKerCon {
 	Char action;
 	Char inputType; 
 	Int32U logLen;
-	Byte *log;
+	Byte* log;
 } StrKerCon;
 
 //==============================================//
@@ -143,7 +144,7 @@ StrKerCpu* newStrKerCpu(Tcb, Int8U,Byte*,Char,Char);
 StrKerMsp* newStrKerMsp(Char, Byte*, Char, Int16U, Int32U, Int32U);
 StrKerCon* newStrKerCon(Int32U, Byte*, Char, Char);
 
-StrMspCpu* newStrMspCpu(Int16U, Byte*, Char);
+StrMspCpu* newStrMspCpu(Int16U, Byte*, Char, Int32U);
 StrMspKer* newStrMspKer(Char, Int32U, Char);
 
 
@@ -193,6 +194,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm);
 Int16U getSizeStrConKer(StrConKer* sck);
 
 Int16U getSizeStrMspCpu(StrMspCpu* smp);
+Int16U getSizeStrMspKer(StrMspKer* smk);
 
 Int16U getSizeStrKerMsp(StrKerMsp* skm);
 Int16U getSizeStrKerCon(StrKerCon* skc);

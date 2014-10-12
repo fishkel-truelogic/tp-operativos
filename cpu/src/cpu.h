@@ -7,6 +7,7 @@
 Tcb* getCurrentTcb();
 StrCpuKer* getSCK();
 StrKerCpu* getSKC();
+SocketClient* getMspClient();
 
 
 #endif /* CPU_H_ */

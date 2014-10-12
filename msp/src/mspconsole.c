@@ -83,24 +83,27 @@ int clean_stdin()
 void consoleCreateSegment() {
 	Int32U pid = 0;
 	Int32U size = 0;
-    
+    Int32U address = 0;
+    Boolean memFull = FALSE;
     printf("\nPID:");
     scanf("%d", &pid);
 
 	printf("\nSIZE(bytes):");
 	scanf("%d", &size);
 	
-	if (createSegment(pid, size)) {
+	if ((address = createSegment(pid, size, &memFull)) != 0) {
 		printf(
-				"Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes con exito.\n\n",
-				pid, size);
-		waitForEnter();
+				"Creo un nuevo segmento en el espacio de direcciones del PID: %d de tamaño %d bytes en la direccion: 0x%08x\n con exito.\n\n",
+					pid, size, address);
 	} else {
-		printf(
-				"Ocurrio un error al intentar crear un segmento para el PID: %d de tamaño %d bytes.\n\n",
-				pid, size);
-		waitForEnter();
+		if (memFull) {
+			printf(
+					"Ocurrio un error de memoria llena al intentar crear un segmento para el PID: %d de tamaño %d bytes.\n\n",
+					pid, size);
+			
+		}
 	}
+	waitForEnter();
 }
 
 /**
