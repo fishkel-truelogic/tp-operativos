@@ -45,7 +45,7 @@ Boolean createSegment(Int32U, Int32U);
 Boolean destroySegment(Int32U, Int32U);
 
 Boolean writeMemory(Int32U, Int32U, Int32U, Byte*);
-Boolean readMemory(Int32U, Int32U, Int32U);
+Byte* readMemory(Int32U, Int32U, Int32U);
 //las usa destroy segment de la consolaMSP
 Int32U getSegment(Int32U);
 Int32U getPage(Int32U);

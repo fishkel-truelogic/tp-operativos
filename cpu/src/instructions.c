@@ -265,6 +265,24 @@ Boolean loadInstructionDictionary(t_dictionary* instructionsOperators) {
 	return TRUE;
 }
 
+Int8U getInstructionOperatorsSize(t_dictionary* iopDic, String name) {
+	Int8U size = 0:
+	for (i = 0; i < 3; i++) {
+		switch (iop->op[i]) {
+			case NUMBER:
+			case ADDRESS:
+				size += 4;
+				break;
+			case REGISTER:
+				size += 1;
+				break;
+			case NONE:
+			default:
+				break;
+		}
+	}
+	return size;
+}
 
 Int8U getInstructionOperatorsTotal(t_dictionary* iopDic, String name) {
 	Int8U i;

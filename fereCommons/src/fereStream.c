@@ -412,6 +412,10 @@ SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 
 	switch (scm->action) {
 	case MEM_READ:
+		ptrByte = (Byte*) &scm->dataLen;
+		memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
+		ptrData += sizeof(scm->dataLen);
+
 		ptrByte = (Byte*) &scm->address;
 		memcpy(ptrData, ptrByte, sizeof(scm->address));
 		break;
@@ -429,14 +433,10 @@ SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 		memcpy(ptrData, ptrByte, scm->dataLen);
 		break;
 
-	case MEM_ALLOC:
+	case CREATE_SEG:
 		ptrByte = (Byte*) &scm->pid;
 		memcpy(ptrData, ptrByte, sizeof(scm->pid));
 		ptrData += sizeof(scm->pid);
-
-		ptrByte = (Byte*) &scm->address;
-		memcpy(ptrData, ptrByte, sizeof(scm->address));
-		ptrData += sizeof(scm->address);
 
 		ptrByte = (Byte*) &scm->dataLen;
 		memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
@@ -659,6 +659,9 @@ StrCpuMsp* unserializeCpuMsp(Stream data) {
 
 	switch (action) {
 	case MEM_READ:
+		memcpy(&dataLen, ptrByte, sizeof(dataLen));
+		ptrByte += sizeof(dataLen);
+
 		memcpy(&address, ptrByte, sizeof(address));
 		break;
 	case MEM_WRITE:
@@ -670,15 +673,11 @@ StrCpuMsp* unserializeCpuMsp(Stream data) {
 		writeData = malloc(dataLen);
 		memcpy(writeData, ptrByte, dataLen);
 		break;
-	case MEM_ALLOC:
+	case CREATE_SEG:
 		memcpy(&pid, ptrByte, sizeof(pid));
 		ptrByte += sizeof(pid);
 
-		memcpy(&address, ptrByte, sizeof(address));
-		ptrByte += sizeof(address);
-
 		memcpy(&dataLen, ptrByte, sizeof(dataLen));
-		ptrByte += sizeof(dataLen);
 		break;
 	default:
 		break;
@@ -1329,6 +1328,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 	size += sizeof(scm->action);
 	switch (scm->action) {
 	case MEM_READ:
+		size += sizeof(scm->dataLen);
 		size += sizeof(scm->address);
 		break;
 	case MEM_WRITE:
@@ -1336,9 +1336,8 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 		size += sizeof(scm->dataLen);
 		size += scm->dataLen;
 		break;
-	case MEM_ALLOC:
+	case CREATE_SEG:
 		size += sizeof(scm->pid);
-		size += sizeof(scm->address);
 		size += sizeof(scm->dataLen);
 		break;
 	default:

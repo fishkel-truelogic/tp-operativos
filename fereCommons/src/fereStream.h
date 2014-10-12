@@ -31,11 +31,10 @@
 #define JOIN_THREADS 6      // syscall para bloquear proceso hasta que termine su fork
 #define BLOCK_THREAD 7      // syscall para bloquear thread
 #define WAKE_THREAD 8       // syscall para despertar thread bloqueado
-#define NEXT_INSTRUCTION 9  // cpu le pide instruccion a la msp
+#define OK 9
 #define BESO_FILE 10        // cuando la consola le manda el contenido del archivo BESO
 #define MEM_READ 11			// cuando la CPU lee la MSP
 #define MEM_WRITE 12 		// cuadno la CPU escribe en la MSP
-#define MEM_ALLOC 13 		// cuadno el Kernel solicita memoria de la MSP
 #define SEG_FAULT 14		// cuadno ocurre segmentation fault en la MSP
 #define CREATE_SEG 15 		// la MSP debe crear un segmento
 #define DELETE_SEG 16		// la MSP debe destruir un segmento

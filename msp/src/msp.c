@@ -47,28 +47,37 @@ t_list* socketConnections = NULL;
 //==========================================//
 Int32U getPagesCountBySize(Int32U, Int32U);
 Int16U getCurrentTime();
+String intToStr(Int32U);
+
 bool notUsed(void*);
 bool used(void*);
 bool swapped(void*);
-void setFrameNotUsed(void*);
+void destroy(void*);
+
+
+void initMemory();
 Boolean loadConfig();
+
+void setFrameNotUsed(void*);
 Boolean nextPage(Page**, Int32U, Int32U, Int32U, Int32U);
 Boolean checkSegFault(Int32U, Int32U, Int32U);
 Segment getSegmentBy(Int32U, Int32U);
 Segment reservePages(Int32U);
+
 void printPages(String, void*);
 void printFrame(void*);
 void printSegment(String, void*);
 void printSegments(String, void*);
-void manageCpuRequest(Socket*, StrCpuMsp*);
-void manageKernelRequest(Socket*, StrKerMsp*);
-void destroy(void*);
-void initMemory();
 void printDate();
-void manageSocketConnections();
+
+
 void* mspConsoleThread(void*);
+void manageSocketConnections();
 void* manageSocketConnection(void*);
-String intToStr(Int32U);
+Boolean manageCpuRequest(Socket*, StrCpuMsp*);
+Boolean manageKernelRequest(Socket*, StrKerMsp*);
+Boolean sendResponse(Char, void*, socket*);
+
 
 //==========================================//
 //******************************************//
@@ -92,9 +101,9 @@ int main() {
 void manageSocketConnections() {
 	socketConnections = list_create();
 	Socket* s = socketCreateServer(mspPort);
-	while(TRUE) {
+	while (TRUE) {
 		pthread_t socketConnection;
-		if(socketListen(s)) {
+		if (socketListen(s)) {
 			Socket* socketClient = socketAcceptClient(s);
 			void* (*manageSocketConnectionFunc)(void*) = manageSocketConnection;
 			pthread_create(&socketConnection, NULL, manageSocketConnectionFunc, (void*) socketClient);
@@ -105,36 +114,54 @@ void manageSocketConnections() {
 
 void* manageSocketConnection(void* param) {
 	Socket* socket = (Socket*) param;
-	// TODO que pasa si recibe null?
-	SocketBuffer* sb = socketReceive(socket);
-	Char id = getStreamId((Stream) sb->data);
-	StrKerMsp* skm = NULL;
-	StrCpuMsp* scm = NULL;
-	switch (id) {
-		case KERNEL_ID:
-			skm = unserializeKerMsp((Stream) sb->data);
-			manageKernelRequest(socket, skm);
-			break;
-		case CPU_ID:
-			scm = unserializeCpuMsp((Stream) sb->data);
-			manageCpuRequest(socket, scm);
-			break;
+	Boolean connected = TRUE;
+	while (connected) {
+		SocketBuffer* sb = socketReceive(socket);
+		if (sb != NULL) {
+			Char id = getStreamId((Stream) sb->data);
+			StrKerMsp* skm = NULL;
+			StrCpuMsp* scm = NULL;
+			switch (id) {
+				case KERNEL_ID:
+					skm = unserializeKerMsp((Stream) sb->data);
+					connected = manageKernelRequest(socket, skm);
+					free(skm);
+					break;
+				case CPU_ID:
+					scm = unserializeCpuMsp((Stream) sb->data);
+					connected = manageCpuRequest(socket, scm);
+					free(scm);
+					break;
+				default:
+					connected = FALSE;
+					break;
+			}
+
+		} else {
+			connected = FALSE;
+		}
 	}
+	
 	return NULL;
 }
 
-void manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
-	//TODO implementar bien modificando las cosas y poder hacer el response
+Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
+	byte* data = NULL;
+	Boolean segFault;
+	StrMspCpu* smc = NULL;
+	Char action;
 	switch (scm->action) {
 		case MEM_READ:
-			break;
+			data = readMemory(scm->address, scm->dataLen, &segFault);
+			action = (segFautl) ? SEG_FAULT : OK;
+			smc = newStrMspCpu(scm->dataLen, data, action);
+			return sendResponse(CPU_ID, smc, socket);
 		case MEM_WRITE:
+			writeMemory()
+			break;
+		default:
+			break;
 
-			break;
-		case NEXT_INSTRUCTION:
-			readMemory(scm->pid, scm->address, scm->dataLen);
-			break;
-	}
 }
 
 void manageKernelRequest(Socket* socket, StrKerMsp* skm) {
@@ -156,6 +183,33 @@ void* mspConsoleThread(void* param) {
 		puts("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 	}
 	return NULL;
+}
+
+Boolean sendResponse(Char target, void* stream, socket* socket) {
+	
+	SocketBuffer* sb = NULL;
+
+	//Serializo 
+	switch (target) {
+		case CPU_ID:
+			sb = serializeMspCpu((StrMspCpu*) stream);
+			break;
+		case KERNEL_ID:
+			sb = serializeMspKer((StrMspKer*) stream);
+			break;
+		default:
+			return FALSE;
+	}
+
+	//Envio response
+	if(!socketSend(socket, sb)) {
+		printf("No se pudo enviar el Stream. \n");
+		free(sb);
+		return FALSE;
+	}
+	free(sb);
+
+	return TRUE;
 }
 
 /**
@@ -198,6 +252,9 @@ void initMemory() {
 
 
 /**
+ * TODO devolver el address virtual en donde se creo
+ * TODO chequear seg fault y devolver el estado
+ * 
  * Se crea el segmento paginado segun el size
  * Si el pid no tiene tabla de segmentos se crea
  */
@@ -205,6 +262,7 @@ Boolean createSegment(Int32U pid, Int32U size) {
 	SegmentsTable* segments;
 	String pidStr = intToStr(pid);
 	
+
 	//me fijo si en la processSegments tengo una entrada por ese PID
 	if (!dictionary_has_key(processSegments, pidStr)){
 		segments = malloc(sizeof(SegmentsTable));
@@ -269,7 +327,6 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 
 	Segment segment = dictionary_get(segments->table, segmentStr);
 
-	//fpointer
 	bool (*fptrSwapped)(void*) = swapped;
 	while (list_any_satisfy(segment, fptrSwapped)) {
 		// TODO SWAPPING 
@@ -294,25 +351,50 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 * intente solicitar datos desde una posición de memoria inválida o que el mismo exceda los límites 
 * del segmento, retornará el correspondiente error de Violación de Segmento (Segmentation Fault).
 */
-Boolean readMemory(Int32U pid, Int32U address, Int32U size){
+Byte* readMemory(Int32U pid, Int32U address, Int32U size, Boolean* segFault){
 	if (checkSegFault(size, address, pid)) {
+		*segFault = TRUE;
 		printf("Ocurrio un segmentation fault al tratar de leer en la direccion %d\n", address);
-		return FALSE;
+		return NULL;
 	}
-	/*Int32U rOffset = getOffset(address);
-	Int32U rSegment = getSegment(address);
-	Int32U rPage = getPage(address);
-	Page* page = NULL;*/
-	
-	//reservo lo que voy a leer
+	Page* page = NULL;
+	Int32U offset = getOffset(address);
+	Int32U segmentOffset = 0;
+	Boolean firstPage = TRUE;
+	Int32U pagesCount = getPagesCountBySize(size, offset);
+
 	Byte* read = malloc(sizeof(Byte) * size);
+	Byte* ptrRead = read;
+	Byte* readLocation;
+	while (nextPage(&page, pagesCount, segmentOffset, address, pid)) {
+		if (page->frame == NULL) {
+			if (page->swapped) {
+				//swapping(page);
+			} else {
+				ptrRead += FRAME_SIZE;
+				continue;
+			}
+		}
+		if (firstPage) {  										// first page
+			readLocation = page->frame->address + offset;
+			readSize = (size >= FRAME_SIZE - offset) ? FRAME_SIZE - offset : size;
+		} else if (pagesCount == segmentOffset + 1) { 			// last page
+			readLocation = page->frame->address;
+			readSize = size - FRAME_SIZE * (pagesCount - 1);
+		} else { 												// middle page
+			readLocation = page->frame->address;
+			readSize = (size >= FRAME_SIZE) ? FRAME_SIZE : size;
+		}
+		memcpy(ptrRead, readLocation, readSize);
+		ptrRead += readSize;
 
+		page->timestamp = getCurrentTime();
+		page->clock = TRUE;
 
-
-
-	//enviar(read);
-	free (read);
-	return TRUE;
+		firstPage = FALSE;
+		segmentOffset++;
+	}
+	return read;
 }
 
 /**
@@ -332,7 +414,6 @@ Boolean writeMemory(Int32U pid, Int32U address, Int32U size, Byte* content) {
 	Boolean firstPage = TRUE;
 	Byte* ptrContent = content;
 	Int32U pagesCount = getPagesCountBySize(size, offset);
-	//fpointer
 	bool (*fptrUsed)(void*) = used;
 	bool (*fptrNotUsed)(void*) = notUsed;
 

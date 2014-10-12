@@ -198,29 +198,42 @@ Boolean processTcb() {
  * 	Completa la instruccion
  */
 Instruction* getInstruction() {
-	Int8U i, operatorsTotal;
+	Int8U i, operatorsTotal, size;
 	String instructionName = malloc(sizeof(Char) * 4);
 	Instruction* instruction = malloc(sizeof(instruction));
-	if (mspRequest()) {
+	
+	size = 4;
+	if (mspRequest(size)) {
 		Byte* ptrData = smc->data;
-		for (i = 0; i < 4; i++) {
+		for (i = 0; i < size; i++) {
 			memcpy(instructionName, ptrData, sizeof(Char));
 			ptrData++;
 		}
 		instruction->name = instructionName;
-
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
-		for (i = 0; i < operatorsTotal; i++) {
-			if (operatorIsRegister(instructionOperators, instructionName, i)) {
-				instruction->op[i] = setRegisterOperator(ptrData);
-				ptrData++;
-			} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
-				memcpy(instruction->op[i], ptrData, 4);
-				ptrData += 4;
-			}
+		size = getInstructionOperatorsSize(instructionOperators, instructionName);
+		
+		if (operatorsTotal == 0 && size == 0) {
+			instruction->op[0] = NULL;
+			instruction->op[1] = NULL;
+			instruction->op[2] = NULL;
+			return instruction;
 		}
-		free(ptrData);
-		return instruction;
+
+		if (mspRequest(size)) {
+			ptrData = smc->data;
+			for (i = 0; i < operatorsTotal; i++) {
+				if (operatorIsRegister(instructionOperators, instructionName, i)) {
+					instruction->op[i] = setRegisterOperator(ptrData);
+					ptrData++;
+				} else { //si no es un registro entonces es un numero o una direccion siezof(Int32) = 4
+					memcpy(instruction->op[i], ptrData, 4);
+					ptrData += 4;
+				}
+			}
+			free(ptrData);
+			return instruction;
+		}
 	}
 	return NULL;
 }
@@ -233,29 +246,37 @@ Instruction* getInstruction() {
  *	SocketBuffer *socketReceive(Socket *emisor);
  *	Boolean socketSend(Socket *ptrDestination, SocketBuffer *ptrBuffer);
  **/
-Boolean mspRequest() {
+Boolean mspRequest(Int32U size) {
 	if (scm != NULL) {
 		free(scm);
 	}
-	scm = newStrCpuMsp(CPU_ID, currentTcb->P, NEXT_INSTRUCTION, NULL, 0, currentTcb->pid);
 
-	//Serializo y armo el socketBuffer
+	scm = newStrCpuMsp(CPU_ID, currentTcb->P, MEM_READ, NULL, size, currentTcb->pid);
+
+	//Serializo 
 	SocketBuffer* sb = serializeCpuMsp(scm);
 
 
-	//Envio el socketBuffer
+	//Envio request
 	if(!socketSend(mspClient->ptrSocketServer, sb)) {
 		printf("No se pudo enviar el Stream a la MSP. \n");
 		return FALSE;
 	}
 	free(sb);
 
-	// Recibo la respuesta de la msp y deserializo
-	if ((sb = socketReceive(mspClient->ptrSocket)) == NULL) {
+	// Recibo response de la msp 
+	sb = socketReceive(mspClient->ptrSocket);
+
+	if (sb == NULL) {
 		printf("No se pudo recibir el Stream de la MSP. \n");
 		return FALSE;
 	}
 
+	if (smc != NULL) {
+		free(smc);
+	}
+
+	// deserializo
 	smc = unserializeMspCpu((Stream) sb->data);
 
 	return TRUE;
