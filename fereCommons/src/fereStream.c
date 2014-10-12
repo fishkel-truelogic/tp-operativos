@@ -294,14 +294,24 @@ SocketBuffer* serializeMspCpu(StrMspCpu* smp) {
 	memcpy(ptrData, ptrByte, sizeof(smp->action));
 	ptrData += sizeof(smp->action);
 
-	switch (smp->action) {
-	case SEG_FAULT:
-		break;
-	default:
+switch (smc->action) {
+	case MEM_READ:
+		ptrByte = (Byte*) &smp->dataLen;
 		memcpy(ptrData, ptrByte, sizeof(smp->dataLen));
 		ptrData += sizeof(smp->dataLen);
+		
 		ptrByte = smp->data;
 		memcpy(ptrData, ptrByte, smp->dataLen);
+		break;
+	case CREATE_SEG:
+		ptrByte = (Byte*) &smp->address;
+		memcpy(ptrData, ptrByte, sizeof(smp->address));
+		break;
+	case SEG_FAULT:
+	case MEM_FULL:
+	case MEM_WRITE:
+	case DELETE_SEG:
+	default:
 		break;
 	}
 
@@ -451,7 +461,7 @@ SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 }
 
 SocketBuffer* serializeMspKer(StrMspKer* smk) {
-	Int16U size = sizeof(StrMspKer);
+	Int16U size = getSizeStrMspKer(smk);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 
@@ -464,19 +474,17 @@ SocketBuffer* serializeMspKer(StrMspKer* smk) {
 	ptrData += sizeof(smk->action);
 
 	switch (smk->action) {
-	case SEG_FAULT:
-		break;
-	case CREATE_SEG:
-		ptrByte = (Byte*) &smk->address;
-		memcpy(ptrData, ptrByte, sizeof(smk->address));
-		ptrData += sizeof(smk->address);
-		break;
-	case DELETE_SEG:
-		break;
-	case MEM_WRITE:
-		break;
-	default:
-		break;
+		case CREATE_SEG:
+			ptrByte = (Byte*) &smk->address;
+			memcpy(ptrData, ptrByte, sizeof(smk->address));
+			ptrData += sizeof(smk->address);
+			break;
+		case SEG_FAULT:
+		case DELETE_SEG:
+		case MEM_WRITE:
+		case MEM_FULL:
+		default:
+			break;
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
@@ -619,28 +627,33 @@ SocketBuffer* serializeKerCon(StrKerCon* skc) {
 StrMspCpu* unserializeMspCpu(Stream dataStream) {
 	Stream ptrByte = dataStream;
 
-	Int16U dataLen;
+	Int32U dataLen, address;
 	Byte * data = NULL;
 	Char action;
 
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch (action) {
-	case SEG_FAULT:
-		break;
-	default:
+	switch (smc->action) {
+	case MEM_READ:
 		memcpy(&dataLen, ptrByte, sizeof(dataLen));
 		ptrByte += sizeof(dataLen);
 
 		data = malloc(dataLen);
 		memcpy(data, ptrByte, dataLen);
-		ptrByte += dataLen;
+		break;
+	case CREATE_SEG:
+		memcpy(&address, ptrByte, sizeof(address));
+		break;
+	case SEG_FAULT:
+	case MEM_FULL:
+	case MEM_WRITE:
+	case DELETE_SEG:
+	default:
 		break;
 	}
 
-	free(dataStream);
-	return newStrMspCpu(dataLen, data, action);
+	return newStrMspCpu(dataLen, data, action, address);
 }
 
 StrCpuMsp* unserializeCpuMsp(Stream data) {
@@ -979,18 +992,16 @@ StrMspKer* unserializeMspKer(Stream dataStream) {
 	ptrByte += sizeof(action);
 
 	switch (action) {
-	case SEG_FAULT:
-		break;
-	case CREATE_SEG:
-		memcpy(&address, ptrByte, sizeof(Int32U));
-		break;
-	case DELETE_SEG:
-		break;
-	case MEM_WRITE:
-		break;
-	default:
-		break;
-	}
+		case CREATE_SEG:
+			memcpy(&address, ptrByte, sizeof(Int32U));
+			break;
+		case SEG_FAULT:
+		case DELETE_SEG:
+		case MEM_WRITE:
+		case MEM_FULL:
+		default:
+			break;
+		}
 	free(dataStream);
 	return newStrMspKer(id, address, action);
 }
@@ -1133,11 +1144,12 @@ StrConKer* newStrConKer(Char id, Byte* fileContent, Byte* bufferWriter,
 	return sconk;
 }
 
-StrMspCpu* newStrMspCpu(Int16U dataLen, Byte* data, Char action) {
+StrMspCpu* newStrMspCpu(Int16U dataLen, Byte* data, Char action, Int32U address) {
 	StrMspCpu* smc = malloc(sizeof(StrMspCpu));
 	smc->dataLen = dataLen;
 	smc->data = data;
 	smc->action = action;
+	smc->address = address;
 	return smc;
 }
 
@@ -1283,15 +1295,20 @@ Int16U getSizeStrConKer(StrConKer* sck) {
 	return size;
 }
 
-Int16U getSizeStrMspCpu(StrMspCpu* smp) {
+
+Int16U getSizeStrMspKer(StrMspKer* smk) {
 	Int16U size = 0;
-	size += sizeof(smp->action);
-	switch (smp->action) {
-	case SEG_FAULT:
+	size += sizeof(sck->id);
+	size += sizeof(sck->action);
+	switch (sck->action) {
+	case CREATE_SEG:
+		size += sizeof(smk->address);
 		break;
+	case MEM_WRITE:
+	case SEG_FAULT:
+	case MEM_FULL:
+	case DELETE_SEG:
 	default:
-		size += sizeof(smp->dataLen);
-		size += smp->dataLen;
 		break;
 	}
 	return size;
@@ -1340,6 +1357,27 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 		size += sizeof(scm->pid);
 		size += sizeof(scm->dataLen);
 		break;
+	default:
+		break;
+	}
+	return size;
+}
+
+Int16U getSizeStrMspCpu(StrMspCpu* smc) {
+	Int16U size = 0;
+	size += sizeof(scm->action);
+	switch (smc->action) {
+	case MEM_READ:
+		size += sizeof(smc->dataLen);
+		size += smc->dataLen;
+		break;
+	case CREATE_SEG:
+		size += sizeof(smc->address);
+		break;
+	case SEG_FAULT:
+	case MEM_FULL:
+	case MEM_WRITE:
+	case DELETE_SEG:
 	default:
 		break;
 	}

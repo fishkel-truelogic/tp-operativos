@@ -117,6 +117,7 @@ typedef struct strMspKer {
 
 typedef struct strMspCpu {
 	Char action;
+	Int32U address;
 	Int16U dataLen;
 	Byte * data;
 } StrMspCpu;
@@ -143,7 +144,7 @@ StrKerCpu* newStrKerCpu(Tcb, Int8U,Byte*,Char,Char);
 StrKerMsp* newStrKerMsp(Char, Byte*, Char, Int16U, Int32U, Int32U);
 StrKerCon* newStrKerCon(Int32U, Byte*, Char, Char);
 
-StrMspCpu* newStrMspCpu(Int16U, Byte*, Char);
+StrMspCpu* newStrMspCpu(Int16U, Byte*, Char, Int32U);
 StrMspKer* newStrMspKer(Char, Int32U, Char);
 
 
