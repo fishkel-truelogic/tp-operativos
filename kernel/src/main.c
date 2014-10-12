@@ -930,6 +930,9 @@ void clientHandler(Int32U clientDescriptor) {
 		printf("Ha ocurrido un error al intentar recibir de %d\n",
 				clientDescriptor);
 
+		//REALIZO EL PROCEDIMIENTO DE CAIDA DE UN CLIENTE
+		clientDown(clientDescriptor);
+
 		//ELIMINO EL DESCRIPTOR DEL CONJUNTO
 		FD_CLR(clientDescriptor, &master);
 
