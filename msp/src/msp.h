@@ -41,17 +41,17 @@
 // Prototypes								//	
 //******************************************//
 //==========================================//
-Boolean createSegment(Int32U, Int32U); 
+Int32U createSegment(Int32U, Int32U, Boolean*);
 Boolean destroySegment(Int32U, Int32U);
 
 Boolean writeMemory(Int32U, Int32U, Int32U, Byte*);
-Byte* readMemory(Int32U, Int32U, Int32U);
-//las usa destroy segment de la consolaMSP
+Byte* readMemory(Int32U, Int32U, Int32U, Boolean*);
+
 Int32U getSegment(Int32U);
 Int32U getPage(Int32U);
 Int32U getOffset(Int32U);
-Boolean showPages(Int32U);
 
+Boolean showPages(Int32U);
 void showFrames();
 void showSegments();
 

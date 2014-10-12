@@ -147,20 +147,32 @@ void* manageSocketConnection(void* param) {
 
 Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
 	byte* data = NULL;
-	Boolean segFault;
+	Boolean segFault, memFull;
 	StrMspCpu* smc = NULL;
+	Int32U address;
 	Char action;
 	switch (scm->action) {
 		case MEM_READ:
-			data = readMemory(scm->address, scm->dataLen, &segFault);
-			action = (segFautl) ? SEG_FAULT : OK;
-			smc = newStrMspCpu(scm->dataLen, data, action);
-			return sendResponse(CPU_ID, smc, socket);
+			data = readMemory(scm->pid, scm->address, scm->dataLen, &segFault);
+			break;
 		case MEM_WRITE:
-			writeMemory()
+			segFault = writeMemory(scm->pid, scm->address, scm->dataLen, scm->data);
+			break;
+		case CREATE_SEG:
+			address = createSegment(scm->pid, scm->dataLen, Boolean* memFull);
 			break;
 		default:
 			break;
+	}
+	if (segFault) {
+		action = SEG_FAULT;	
+	} else if (memFull) {
+		action = MEM_FULL;
+	} else {
+		action = OK;
+	}
+	smc = newStrMspCpu(scm->dataLen, data, action);
+	return sendResponse(CPU_ID, smc, socket);
 
 }
 
@@ -258,11 +270,11 @@ void initMemory() {
  * Se crea el segmento paginado segun el size
  * Si el pid no tiene tabla de segmentos se crea
  */
-Boolean createSegment(Int32U pid, Int32U size) {
+Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 	SegmentsTable* segments;
 	String pidStr = intToStr(pid);
-	
-
+	//TODO validar el tamaño de la memoria libre tanto en memory como en swap y devolver error de memoria llena
+	*memFull = FALSE;
 	//me fijo si en la processSegments tengo una entrada por ese PID
 	if (!dictionary_has_key(processSegments, pidStr)){
 		segments = malloc(sizeof(SegmentsTable));
@@ -279,9 +291,8 @@ Boolean createSegment(Int32U pid, Int32U size) {
 	
 	dictionary_put(segments->table, segmentId, segment);
 	
-	free(segmentId);
 	free(pidStr);
-	return TRUE;
+	return getAddress(segments->lastId - 1, 0, 0);
 }
 
 /**
@@ -670,6 +681,16 @@ Int32U getSegment(Int32U address) {
 	mask = mask & address;
 	segment = mask >> 20;
 	return segment;
+}
+
+Int32U getAddress(Int32U segmentNumber, Int32U pageNumber, Int32U offset) {
+	Int32U address = 0;
+	segmentNumber <<= 20;
+	address += segmentNumber;
+	pageNumber <<= 8;
+	address += pageNumber;
+	address += offset;
+	return address; 
 }
 
 /**
