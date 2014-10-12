@@ -48,6 +48,7 @@ t_list* socketConnections = NULL;
 Int32U getPagesCountBySize(Int16U, Int32U);
 Int16U getCurrentTime();
 String intToStr(Int32U);
+Int32U getAddress(Int32U, Int32U, Int32U);
 
 bool notUsed(void*);
 bool used(void*);
@@ -76,7 +77,7 @@ void manageSocketConnections();
 void* manageSocketConnection(void*);
 Boolean manageCpuRequest(Socket*, StrCpuMsp*);
 Boolean manageKernelRequest(Socket*, StrKerMsp*);
-Boolean sendResponse(Char, void*, socket*);
+Boolean sendResponse(Char, void*, Socket*);
 
 
 //==========================================//
@@ -146,7 +147,7 @@ void* manageSocketConnection(void* param) {
 }
 
 Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
-	byte* data = NULL;
+	Byte* data = NULL;
 	Boolean segFault = FALSE;
 	Boolean memFull = FALSE;
 	Int32U address;
@@ -159,7 +160,7 @@ Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
 			segFault = writeMemory(scm->pid, scm->address, scm->dataLen, scm->data);
 			break;
 		case CREATE_SEG:
-			address = createSegment(scm->pid, scm->dataLen, Boolean* memFull);
+			address = createSegment(scm->pid, scm->dataLen, &memFull);
 			break;
 		case DELETE_SEG:
 			segFault = destroySegment(scm->pid, getSegment(scm->address));
@@ -184,7 +185,7 @@ Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
 
 }
 
-void manageKernelRequest(Socket* socket, StrKerMsp* skm) {
+Boolean manageKernelRequest(Socket* socket, StrKerMsp* skm) {
 	Boolean segFault = FALSE;
 	Boolean memFull = FALSE;
 	Int32U address;
@@ -194,7 +195,7 @@ void manageKernelRequest(Socket* socket, StrKerMsp* skm) {
 			segFault = writeMemory(skm->pid, skm->address, skm->size, skm->data);
 			break;
 		case CREATE_SEG:
-			address = createSegment(skm->pid, skm->size, Boolean* memFull);
+			address = createSegment(skm->pid, skm->size, &memFull);
 			break;
 		case DELETE_SEG:
 			segFault = destroySegment(skm->pid, getSegment(skm->address));
@@ -225,7 +226,7 @@ void* mspConsoleThread(void* param) {
 	return NULL;
 }
 
-Boolean sendResponse(Char target, void* stream, socket* socket) {
+Boolean sendResponse(Char target, void* stream, Socket* socket) {
 	
 	SocketBuffer* sb = NULL;
 
@@ -390,7 +391,7 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 * intente solicitar datos desde una posición de memoria inválida o que el mismo exceda los límites 
 * del segmento, retornará el correspondiente error de Violación de Segmento (Segmentation Fault).
 */
-Byte* readMemory(Int32U pid, Int32U address, Int16U size, Boolean* segFault){
+Byte* readMemory(Int32U pid, Int32U address, Int16U size, Boolean* segFault) {
 	if (checkSegFault(size, address, pid)) {
 		*segFault = TRUE;
 		printf("Ocurrio un segmentation fault al tratar de leer en la direccion %d\n", address);

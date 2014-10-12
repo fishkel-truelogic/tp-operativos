@@ -119,7 +119,7 @@ typedef struct strMspCpu {
 	Char action;
 	Int32U address;
 	Int16U dataLen;
-	Byte * data;
+	Byte* data;
 } StrMspCpu;
 
 
@@ -127,7 +127,7 @@ typedef struct strKerCon {
 	Char action;
 	Char inputType; 
 	Int32U logLen;
-	Byte *log;
+	Byte* log;
 } StrKerCon;
 
 //==============================================//
@@ -194,6 +194,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm);
 Int16U getSizeStrConKer(StrConKer* sck);
 
 Int16U getSizeStrMspCpu(StrMspCpu* smp);
+Int16U getSizeStrMspKer(StrMspKer* smk);
 
 Int16U getSizeStrKerMsp(StrKerMsp* skm);
 Int16U getSizeStrKerCon(StrKerCon* skc);

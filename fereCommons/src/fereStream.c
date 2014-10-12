@@ -285,34 +285,34 @@ SocketBuffer* serializeCpuKer(StrCpuKer* sck) {
 
 }
 
-SocketBuffer* serializeMspCpu(StrMspCpu* smp) {
-	Int16U size = getSizeStrMspCpu(smp);
+SocketBuffer* serializeMspCpu(StrMspCpu* smc) {
+	Int16U size = getSizeStrMspCpu(smc);
 	Stream data = malloc(size);
 	Stream ptrData = data;
 
-	Byte* ptrByte = (Byte*) &smp->action;
-	memcpy(ptrData, ptrByte, sizeof(smp->action));
-	ptrData += sizeof(smp->action);
+	Byte* ptrByte = (Byte*) &smc->action;
+	memcpy(ptrData, ptrByte, sizeof(smc->action));
+	ptrData += sizeof(smc->action);
 
-switch (smc->action) {
-	case MEM_READ:
-		ptrByte = (Byte*) &smp->dataLen;
-		memcpy(ptrData, ptrByte, sizeof(smp->dataLen));
-		ptrData += sizeof(smp->dataLen);
-		
-		ptrByte = smp->data;
-		memcpy(ptrData, ptrByte, smp->dataLen);
-		break;
-	case CREATE_SEG:
-		ptrByte = (Byte*) &smp->address;
-		memcpy(ptrData, ptrByte, sizeof(smp->address));
-		break;
-	case SEG_FAULT:
-	case MEM_FULL:
-	case MEM_WRITE:
-	case DELETE_SEG:
-	default:
-		break;
+	switch (smc->action) {
+		case MEM_READ:
+			ptrByte = (Byte*) &smc->dataLen;
+			memcpy(ptrData, ptrByte, sizeof(smc->dataLen));
+			ptrData += sizeof(smc->dataLen);
+
+			ptrByte = smc->data;
+			memcpy(ptrData, ptrByte, smc->dataLen);
+			break;
+		case CREATE_SEG:
+			ptrByte = (Byte*) &smc->address;
+			memcpy(ptrData, ptrByte, sizeof(smc->address));
+			break;
+		case SEG_FAULT:
+		case MEM_FULL:
+		case MEM_WRITE:
+		case DELETE_SEG:
+		default:
+			break;
 	}
 
 	t_bitarray* barray = bitarray_create((char*) data, size);
@@ -634,7 +634,7 @@ StrMspCpu* unserializeMspCpu(Stream dataStream) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
-	switch (smc->action) {
+	switch (action) {
 	case MEM_READ:
 		memcpy(&dataLen, ptrByte, sizeof(dataLen));
 		ptrByte += sizeof(dataLen);
@@ -1298,9 +1298,9 @@ Int16U getSizeStrConKer(StrConKer* sck) {
 
 Int16U getSizeStrMspKer(StrMspKer* smk) {
 	Int16U size = 0;
-	size += sizeof(sck->id);
-	size += sizeof(sck->action);
-	switch (sck->action) {
+	size += sizeof(smk->id);
+	size += sizeof(smk->action);
+	switch (smk->action) {
 	case CREATE_SEG:
 		size += sizeof(smk->address);
 		break;
@@ -1365,7 +1365,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 
 Int16U getSizeStrMspCpu(StrMspCpu* smc) {
 	Int16U size = 0;
-	size += sizeof(scm->action);
+	size += sizeof(smc->action);
 	switch (smc->action) {
 	case MEM_READ:
 		size += sizeof(smc->dataLen);

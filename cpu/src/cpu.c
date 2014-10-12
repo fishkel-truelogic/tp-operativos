@@ -325,6 +325,10 @@ StrKerCpu* getSKC() {
 	return skc;
 }
 
+SocketClient* getMspClient() {
+	return mspClient;
+}
+
 /**
  * Carga las variables de configuracion externa
  */

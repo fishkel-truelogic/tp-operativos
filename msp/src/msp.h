@@ -44,8 +44,8 @@
 Int32U createSegment(Int32U, Int32U, Boolean*);
 Boolean destroySegment(Int32U, Int32U);
 
-Boolean writeMemory(Int32U, Int32U, Int32U, Byte*);
-Byte* readMemory(Int32U, Int32U, Int32U, Boolean*);
+Boolean writeMemory(Int32U, Int32U, Int16U, Byte*);
+Byte* readMemory(Int32U, Int32U, Int16U, Boolean*);
 
 Int32U getSegment(Int32U);
 Int32U getPage(Int32U);
