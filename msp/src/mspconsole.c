@@ -196,13 +196,13 @@ void consoleReadMemory() {
 	printf("VIRTUAL ADDRESS:");
 	scanf("%d", &address);
 	printf("SIZE:");
-	scanf("%d", &size);
+	scanf("%hd", &size);
 
 	Byte* readBuffer = NULL;
 
 	if (pid >= 0 && pid <= 65535) {
-		printf("Imprimo %d bytes de memoria del PID: %d comenzando en %d.\n\n",
-				size, pid, virAddress);
+		printf("Imprimo %hd bytes de memoria del PID: %d comenzando en %d.\n\n",
+				size, pid, address);
 		readBuffer = readMemory(pid, address, size, &segFault);
 		if (segFault) {
 			printf("Ocurio un segmentation fault");
