@@ -21,7 +21,7 @@ t_list *readyList;
 t_list *execList;
 t_list *blockList;
 t_list *exitList;
-t_queue *syscallQueue;
+t_list *syscallList;
 //==========================================================================
 
 //FUNCIONES
@@ -116,7 +116,7 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 
 }
 
-Boolean removeFromExecList(Tcb* tcb, t_list* execList) {
+Boolean removeFromExecList(Tcb* tcb) {
 	//MUTEX EXECLIST
 	Boolean tcbFound = FALSE;
 	Int16U i;
@@ -198,6 +198,40 @@ void *execToNormalBlockProcessesHandlerThread (void *ptr){
 	return NULL;
 }
 
+//*****************************************************************************
+
+Boolean removeTcbsFromList(Tcb* tcb, t_list* listToSeekAndRemove) {
+	Boolean tcbFound = FALSE;
+	Int16U i;
+	for (i = 0; i < list_size(listToSeekAndRemove); i++) {
+		Tcb* temp = list_get(listToSeekAndRemove, i);
+		if (temp->pid == tcb->pid) {
+			tcbFound = TRUE;
+			list_add(exitList,(list_remove(listToSeekAndRemove, i)));
+			break;
+		}
+	}
+	return tcbFound;
+}
+
+void *seekAndDestroyPid(void *ptr){
+
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+	//MUTEX TODAS LAS COLAS
+	removeTcbsFromList(tcb, execList);
+	//END MUTEX EXEC
+	removeTcbsFromList(tcb, readyList);
+	//END MUTEX READY
+	removeTcbsFromList(tcb, syscallList);
+	//END MUTEX SYSCALL
+	removeTcbsFromList(tcb, blockList);
+	//END MUTEX BLOCK
+	removeTcbsFromList(tcb, newList);
+	//END MUTEX NEW
+
+	return NULL;
+}
 
 /*void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
