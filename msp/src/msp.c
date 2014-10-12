@@ -556,7 +556,6 @@ Boolean checkSegFault(Int16U size, Int32U address, Int32U pid) {
 
 	Segment segment = getSegmentBy(address, pid);
 	if (segment == NULL) {
-		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", getSegment(address), pidStr);
 		free(pidStr);
 		return TRUE;
 	}

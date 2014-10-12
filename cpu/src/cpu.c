@@ -162,6 +162,7 @@ Boolean processTcb() {
 		instruction = getInstruction();
 		if (instruction == NULL) {
 			printf("No se pudo obtener la siguiente instruccion\n");
+			//TODO devolver proc_abort a kernel
 			return FALSE;
 		}
 		execute(instruction);
@@ -205,10 +206,7 @@ Instruction* getInstruction() {
 	size = 4;
 	if (mspRequest(size)) {
 		Byte* ptrData = smc->data;
-		for (i = 0; i < size; i++) {
-			memcpy(instructionName, ptrData, sizeof(Char));
-			ptrData++;
-		}
+		memcpy(instructionName, ptrData, size);
 		instruction->name = instructionName;
 		operatorsTotal = getInstructionOperatorsTotal(instructionOperators, instructionName);
 		size = getInstructionOperatorsSize(instructionOperators, instructionName);

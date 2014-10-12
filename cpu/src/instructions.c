@@ -320,7 +320,7 @@ void funcLOAD(void* op1, void* op2, void* op3) {
 	StrCpuKer* sck = getSCK();
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
-	sck->action = -1;
+	sck->action = OK;
 	tcb->P += 9;
 }
 
@@ -573,7 +573,7 @@ void funcJMPZ(void* op1, void* op2, void* op3) {
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
 	if (sck-tcb->A  == 0) {
-		sck->tcb.P = *addr;
+		sck->tcb.P = sck->tcb.M + *addr;
 	} else {
 		sck->tcb.P += 8;
 	}
@@ -591,7 +591,7 @@ void funcJPNZ(void* op1, void* op2, void* op3) {
 	Tcb* tcb = getCurrentTcb();
 	sck->tcb = *tcb;
 	if (sck-tcb->A  != 0) {
-		sck->tcb.P = *addr;
+		sck->tcb.P = sck->tcb.M + *addr;
 	} else {
 		sck->tcb.P += 8;
 	}
