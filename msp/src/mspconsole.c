@@ -187,33 +187,32 @@ void consoleWriteMemory() {
  */
 void consoleReadMemory() {
 	Int32U pid;
-	Int32U virAddress;
-	Int32U size;
-
+	Int32U address;
+	Int16U size;
+	Boolean segFault = FALSE;
 	//LEO PID/VIRTUAL ADDRESS/SIZE
 	printf("PID:");
 	scanf("%d", &pid);
 	printf("VIRTUAL ADDRESS:");
-	scanf("%d", &virAddress);
+	scanf("%d", &address);
 	printf("SIZE:");
-	scanf("%d", &size);
+	scanf("%hd", &size);
 
-	//SI ESTA DENTRO DEL RANGO IMPRIMO --->IMPLEMENTAR UN int FETCHPID() a futuro
-	/*
-	 if (!fetchPid(pid))
-	 printf("Muestro la tabla de paginas del proceso %d.\n\n", pid);
-	 else
-	 printf("Error: No existe el PID: %d\n\n", pid);
-	 */
-	if (pid >= 0 && pid <= 65535){
-		printf("Imprimo %d bytes de memoria del PID: %d comenzando en %d.\n\n",
-				size, pid, virAddress);
-		waitForEnter();
-	}
-	else{
+	Byte* readBuffer = NULL;
+
+	if (pid >= 0 && pid <= 65535) {
+		printf("Imprimo %hd bytes de memoria del PID: %d comenzando en %d.\n\n",
+				size, pid, address);
+		readBuffer = readMemory(pid, address, size, &segFault);
+		if (segFault) {
+			printf("Ocurio un segmentation fault");
+		} else {
+			printf("%s", (char*) readBuffer);
+		}
+	} else{
 		printf("Error\n\n");
-		waitForEnter();
 	}
+	waitForEnter();
 }
 
 /** 

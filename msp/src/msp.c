@@ -103,7 +103,7 @@ void manageSocketConnections() {
 	socketConnections = list_create();
 	Socket* s = socketCreateServer(mspPort);
 	while (TRUE) {
-		pthread_t socketConnection*;
+		pthread_t* socketConnection = NULL;
 		if (socketListen(s)) {
 			Socket* socketClient = socketAcceptClient(s);
 			void* (*manageSocketConnectionFunc)(void*) = manageSocketConnection;
