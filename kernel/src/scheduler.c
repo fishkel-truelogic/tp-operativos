@@ -18,7 +18,7 @@
 //==========================================================================
 t_list *newList; //newList
 t_list *readyList;
-t_dictionary *execDic;
+t_list *execList;
 t_list *blockList;
 t_list *exitList;
 t_queue *syscallQueue;
@@ -100,7 +100,8 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 		//END MUTEX READYLIST
 
 		//MUTEX EXCECDIC
-		dictionary_put(execDic, tcbToExec->pid, tcbToExec);
+
+		list_add(execList, tcbToExec);
 		//END MUTEX EXCECDIC
 
 
@@ -115,6 +116,21 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 
 }
 
+Boolean removeFromExecList(Tcb* tcb, t_list* execList) {
+	//MUTEX EXECLIST
+	Boolean tcbFound = FALSE;
+	Int16U i;
+	for (i = 0; i < list_size(execList); i++) {
+		Tcb* temp = list_get(execList, i);
+		if (temp->tid == tcb->tid) {
+			tcbFound = TRUE;
+			list_remove(execList, i);
+			break;
+		}
+	}
+	return tcbFound;
+}
+
 //HILO ENCARGADO DE ENVIAR UN TCB QUE FINALIZO SU QUANTUM
 //PERO DEBE SEGUIR EJECUTANDOSE
 // EXEC A READY
@@ -122,16 +138,19 @@ void *execToReadyProcessesHandlerThread (void *ptr){
 
 	Tcb *tcb;
 	tcb = (Tcb *) ptr;
-	//CONSUMIDOR EXECDIC
+	//CONSUMIDOR EXECLIST
 	//PRODUCTOR READYLIST
 	//AUMENTAR SEMAFORO DE CPU DISPONIBLES
-	//MUTEX EXECDIC
-	dictionary_remove(execDic, tcb->pid);
-	//END MUTEX
+	//MUTEX EXECLIST
+	if(removeFromExecList(tcb)){
+		//END MUTEX
 
-	//MUTEX READYLIST
-	list_add(readyList, tcb);
-	//END MUTEX
+		//MUTEX READYLIST
+		list_add(readyList, tcb);
+		//END MUTEX
+	} else {
+		list_add(exitList, tcb);
+	}
 	return NULL;
 }
 
@@ -142,14 +161,18 @@ void *execToExitProcessesHandlerThread (void *ptr){
 
 	Tcb *tcb;
 	tcb = (Tcb *) ptr;
-	//CONSUMIDOR EXECDIC
-	//MUTEX EXECDIC
-	dictionary_remove(execDic, tcb->pid);
-	//END MUTEX
+	//CONSUMIDOR EXECLIST
+	//MUTEX EXECLIST
+	if(removeFromExecList(tcb)){
+		//END MUTEX
 
-	//MUTEX EXITLIST
-	list_add(exitList, tcb);
-	//END MUTEX
+		//MUTEX EXITLIST
+		list_add(exitList, tcb);
+
+		//END MUTEX
+	}else {
+		list_add(exitList, tcb);
+	}
 	return NULL;
 }
 
@@ -159,18 +182,22 @@ void *execToNormalBlockProcessesHandlerThread (void *ptr){
 
 	Tcb *tcb;
 	tcb = (Tcb *) ptr;
-	//CONSUMIDOR EXECDIC
+	//CONSUMIDOR EXECLIST
 	//PRODUCTOR BLOCKLIST
 	//AUMENTAR SEMAFORO DE CPU DISPONIBLES
-	//MUTEX EXECDIC
-	dictionary_remove(execDic, tcb->pid);
-	//END MUTEX
+	//MUTEX EXECLIST
+	if(removeFromExecList(tcb)){
+		//END MUTEX
 
-	//MUTEX BLOCKLIST
-	list_add(blockList, tcb);
-	//END MUTEX
+		//MUTEX BLOCKLIST
+		list_add(blockList, tcb);
+		//END MUTEX
+	}else {
+		list_add(exitList, tcb);
+	}
 	return NULL;
 }
+
 
 /*void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
