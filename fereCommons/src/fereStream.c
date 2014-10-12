@@ -420,6 +420,10 @@ SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 	memcpy(ptrData, ptrByte, sizeof(scm->action));
 	ptrData += sizeof(scm->action);
 
+	ptrByte = (Byte*) &scm->pid;
+	memcpy(ptrData, ptrByte, sizeof(scm->pid));
+	ptrData += sizeof(scm->pid);
+
 	switch (scm->action) {
 	case MEM_READ:
 		ptrByte = (Byte*) &scm->dataLen;
@@ -444,13 +448,12 @@ SocketBuffer* serializeCpuMsp(StrCpuMsp* scm) {
 		break;
 
 	case CREATE_SEG:
-		ptrByte = (Byte*) &scm->pid;
-		memcpy(ptrData, ptrByte, sizeof(scm->pid));
-		ptrData += sizeof(scm->pid);
-
 		ptrByte = (Byte*) &scm->dataLen;
 		memcpy(ptrData, ptrByte, sizeof(scm->dataLen));
-		ptrData += sizeof(scm->dataLen);
+		break;
+	case DELETE_SEG:
+		ptrByte = (Byte*) &scm->address;
+		memcpy(ptrData, ptrByte, sizeof(scm->address));
 		break;
 	default:
 		break;
@@ -670,6 +673,8 @@ StrCpuMsp* unserializeCpuMsp(Stream data) {
 	memcpy(&action, ptrByte, sizeof(action));
 	ptrByte += sizeof(action);
 
+	memcpy(&pid, ptrByte, sizeof(pid));
+	ptrByte += sizeof(pid);
 	switch (action) {
 	case MEM_READ:
 		memcpy(&dataLen, ptrByte, sizeof(dataLen));
@@ -687,10 +692,10 @@ StrCpuMsp* unserializeCpuMsp(Stream data) {
 		memcpy(writeData, ptrByte, dataLen);
 		break;
 	case CREATE_SEG:
-		memcpy(&pid, ptrByte, sizeof(pid));
-		ptrByte += sizeof(pid);
-
 		memcpy(&dataLen, ptrByte, sizeof(dataLen));
+		break;
+	case DELETE_SEG:
+		memcpy(&address, ptrByte, sizeof(address));
 		break;
 	default:
 		break;
@@ -1343,6 +1348,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 	Int16U size = 0;
 	size += sizeof(scm->id);
 	size += sizeof(scm->action);
+	size += sizeof(scm->pid);
 	switch (scm->action) {
 	case MEM_READ:
 		size += sizeof(scm->dataLen);
@@ -1354,9 +1360,10 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 		size += scm->dataLen;
 		break;
 	case CREATE_SEG:
-		size += sizeof(scm->pid);
 		size += sizeof(scm->dataLen);
 		break;
+	case DELETE_SEG:
+		size += sizeof(scm->address);
 	default:
 		break;
 	}
