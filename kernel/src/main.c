@@ -51,6 +51,8 @@ pthread_mutex_t mtxCpuList;
 pthread_mutex_t mtxConsoleList;
 sem_t semCpuList;
 
+
+
 //FUNCIONES
 //==========================================================================
 
@@ -63,7 +65,197 @@ void *moveToNew(void *tcb)			{return NULL;}
 void *moveToBlock(void *tcb)		{return NULL;}
 void *moveToExit(void *tcb)			{return NULL;}
 void *kernelModeReturn(void *sck)	{return NULL;}
+void *seekAndDestroyPid(void *tcb)  {return NULL;}
 //==========================================================================
+/**
+ * @NAME: consoleCpuDown
+ * @DESC: Notifica a una consola, que la cpu donde se estaba ejecutando el TCB
+ * 		: enviado, se desconecto
+ */
+void consoleCpuDown(Console *console){
+	StrKerCon *skc = malloc(sizeof(StrKerCon));
+
+	skc->action = STD_OUTPUT;
+	skc->log = (Byte *) "El programa enviado debera ser abortado por problemas en la conexion\n";
+	skc->logLen = strlen((char *) skc->log) + 1;
+
+	//ENVIO A MSP
+	SocketBuffer *sb = serializeKerCon(skc);
+	socketSend(console->consoleClient, sb);
+}
+/**
+ * @NAME: consoleDown
+ * @DESC: Proceso que se llama cuando una Consola se desconecta. Le notifca al planificador
+ * 		: para que mueva ese tcb a exit
+ * @PARAMS:
+ * console	: Estructura con la consola que se desconecto
+ */
+void consoleDown(Console *console){
+
+	//LLAMO AL SEEK AND DESTROY
+	pthread_t thr;
+	pthread_create(&thr,NULL, seekAndDestroyPid,(void *)console->tcb);
+	pthread_join(thr,NULL);
+
+	//ELIMINO LA CONSOLA DE LA LISTA
+	//CLAVAR MUTEX ACA
+	Int32S i;
+	for(i = 0; i < list_size(consoleList);i++){
+		Console *temp = list_get(consoleList,i);
+		if(temp->consoleClient->descriptor == console->consoleClient->descriptor){
+			break;
+		}
+	}
+	list_remove(consoleList,i);
+	//Y ACA...
+
+}
+/**
+ * @NAME: cpuDown
+ * @DESC: Proceso que se llama cuando una CPU se desconecta. Si la cpu que se desconecto
+ * 		: tenia un tcb en ejecucion, le notifca al planificador para que mueva ese
+ * 		: tcb a exit. Ademas notifica a la consola que envio ese tcb a ejecutar
+ * @PARAMS:
+ * 	cpu	: Estructura con los datos de esa cpu que se callo
+ */
+void cpuDown(Cpu *cpu){
+
+	if(cpu->tcb != NULL){
+		//TIENE TCB EN EJECUCION
+		//MUEVO ESE TCB A EXIT
+		pthread_t thr;
+		pthread_create(&thr,NULL, seekAndDestroyPid,(void *)cpu->tcb);
+		pthread_join(thr,NULL);
+
+		//NOTIFICO A LA CONSOLA QUE MANDO ESTE TCB
+		Console *console = getConsoleByPid(cpu->tcb->pid);
+		consoleCpuDown(console);
+	}else{
+		//JUSTO ESA CPU ESTABA LIBRE
+		//BAJO EL SEMAFORO DE CPUS DISPONIBLES
+		semWait(&cpuList);
+	}
+
+
+	//ELIMINO A ESTA CPU DE LA LISTA DE CPUS
+	Int32S i;
+	for(i = 0; i < list_size(cpuList);i++){
+		Cpu *temp = list_get(cpuList,i);
+		if(temp->cpuClient->descriptor == cpu->cpuClient->descriptor){
+			break;
+		}
+	}
+	list_remove(cpuList,i);
+
+
+}
+/**
+ * @NAME: getConsoleByPid
+ * @DESC: Devuelve un elemento de la lista de consolas en funcion del pid
+ * 		: La lista de Consolas es una lista donde se guarda, el socket de
+ * 		: la consola cliente y el tcb que esta envio
+ * @PARAM:
+ * 	pid	: El pid por el que se desea filtrar la lista
+ */
+Console *getConsoleByPid(Int32U pid){
+
+	Console *consoleClient = NULL;
+
+	Int16U i;
+	for(i = 0; i < list_size(consoleList); i++){
+
+		mtxLock(&mtxConsoleList);
+		Console *temp = list_get(consoleList,i);
+		if(temp->tcb->pid == pid){
+			consoleClient = temp;
+			mtxUnlock(&mtxConsoleList);
+			break;
+		}
+		mtxUnlock(&mtxConsoleList);
+	}
+
+	return consoleClient;
+
+}
+/**
+ * @NAME: getConsoleByDescriptor
+ * @DESC: Devuelve un elemento de la lista de consolas en funcion del descriptor
+ * 		: La lista de Consolas es una lista donde se guarda, el socket de
+ * 		: la consola cliente y el tcb que esta envio
+ * @PARAM:
+ * 	descriptor	: El descriptor por el que se desea filtrar la lista
+ */
+Console *getConsoleByDescriptor(Int32U descriptor){
+
+	Console *consoleClient = NULL;
+
+	Int16U i;
+	for (i = 0; i < list_size(consoleList); i++) {
+
+		mtxLock(&mtxConsoleList);
+		Console *temp = list_get(consoleList, i);
+		if (temp->consoleClient->descriptor == descriptor) {
+			consoleClient = temp;
+			mtxUnlock(&mtxConsoleList);
+			break;
+		}
+		mtxUnlock(&mtxConsoleList);
+	}
+
+	return consoleClient;
+
+}
+/**
+ * @NAME: getCpuByDescriptor
+ * @DESC: Devuelve un elemento de la lista de cpus en funcion del descriptor
+ * 		: La lista de Cpus es una lista donde se guarda, el socket de
+ * 		: la Cpu cliente y el tcb que esta ejecutando
+ * @PARAM:
+ * 	descriptor	: El descriptor por el que se desea filtrar la lista
+ */
+Cpu *getCpuByDescriptor(Int32U descriptor){
+
+	Cpu *cpuClient = NULL;
+
+	Int16U i;
+	for (i = 0; i < list_size(cpuList); i++) {
+
+		mtxLock(&mtxConsoleList);
+		Cpu *temp = list_get(cpuList, i);
+		if (temp->cpuClient->descriptor == descriptor) {
+			cpuClient = temp;
+			mtxUnlock(&mtxConsoleList);
+			break;
+		}
+		mtxUnlock(&mtxConsoleList);
+	}
+
+	return cpuClient;
+
+}
+/**
+ * @NAME: clientDown
+ * @DESC: Determina que cliente fue el que se desconecto del sistema.
+ * 		: Ademas de determinarlo, tambien realiza el proceso correspondiente
+ * @PARAMS:
+ *  clientDescriptor	: El descriptor de esa conexion
+ */
+void clientDown(Int32U clientDescriptor){
+
+	//DETERMINAR QUE CLIENTE ES (CONSOLA O CPU)
+	Console *consoleTemp = getConsoleByDescriptor(clientDescriptor);
+	if(consoleTemp == NULL){
+		//ES CPU
+		Cpu *cpuTemp = getCpuByDescriptor(clientDescriptor);
+		cpuDown(cpuTemp);
+
+	}else
+	{
+		//ES CONSOLA
+		consoleDown(consoleTemp);
+	}
+}
+
 
 void nextTcbHandler(Tcb tcb) {
 	pthread_t thr;
@@ -168,34 +360,6 @@ void consoleClientHandler(Socket *consoleClient, Stream data){
 		break;
 
 	}
-
-}
-/**
- * @NAME: getConsoleByPid
- * @DESC: Devuelve un elemento de la lista de consolas en funcion del pid
- * 		: La lista de Consolas es una lista donde se guarda, el socket de
- * 		: la consola cliente y el tcb que esta envio
- * @PARAM:
- * 	pid	: El pid por el que se desea filtrar la lista
- */
-Console *getConsoleByPid(Int32U pid){
-
-	Console *consoleClient = NULL;
-
-	Int16U i;
-	for(i = 0; i < list_size(cpuList); i++){
-
-		mtxLock(&mtxConsoleList);
-		Console *temp = list_get(consoleList,i);
-		if(temp->tcb->pid == pid){
-			consoleClient = temp;
-			mtxUnlock(&mtxConsoleList);
-			break;
-		}
-		mtxUnlock(&mtxConsoleList);
-	}
-
-	return consoleClient;
 
 }
 
@@ -427,9 +591,15 @@ void newCpuClient(Socket *cpuClient,Stream dataSerialized){
 	if(sck->action == FIRST_TCB){
 
 		//AGREGARLO A LA LISTA DE DESCRIPTORES DE CPU  DEL PLANIFICADOR
+		Cpu *cpu = malloc(sizeof(Cpu));
+		cpu->cpuClient = cpuClient;
+		cpu->tcb = NULL;
+
 		mtxLock(&mtxCpuList);
-		list_add(cpuList,cpuClient);
+		list_add(cpuList,cpu);
 		mtxUnlock(&mtxCpuList);
+
+		//ACTIVO LA LISTA DE CPUS PARA EL PLANIFICADOR
 		semSignal(&semCpuList);
 
 
@@ -584,11 +754,6 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 			tcb->X = ssDir;
 			tcb->S = ssDir;
 
-			//MUEVO EL NUEVO TCB A LA COLA DE NEW
-			pthread_t thr;
-			Int32U createResult;
-			createResult = pthread_create(&thr, NULL, moveToNew, (void*) tcb);
-
 
 			//CARGO LA CONSOLA INGRESADA JUNTO CON EL TCB QUE
 			//TRAJO A LA LISTA DE CONSOLAS QUE VOY A USAR PARA GESTIONAR
@@ -598,7 +763,16 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 			clientConsole->consoleClient = consoleClient;
 			clientConsole->tcb = tcb;
 
+			//CALZAR UN MUTEX ACA
 			list_add(consoleList,clientConsole);
+			//Y ACA...
+
+			//MUEVO EL NUEVO TCB A LA COLA DE NEW
+			pthread_t thr;
+			Int32U createResult;
+			createResult = pthread_create(&thr, NULL, newProcessesHandlerThread,(void*) tcb);
+			pthread_join(thr, NULL);
+
 
 		}
 		else{

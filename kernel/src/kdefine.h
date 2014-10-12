@@ -44,6 +44,12 @@ typedef struct console {
 	Tcb *tcb;
 } Console;
 
+typedef struct cpu{
+
+	Socket *cpuClient;
+	Tcb *tcb;
+}Cpu;
+
 //PROTOTIPOS
 //==========================================================================
 
@@ -72,8 +78,16 @@ void clientHandler(Int32U);
 void cpuClientHandler(Socket *, Stream);
 void consoleClientHandler(Socket *, Stream);
 
-//SERVICIOS EXPUESTOS A CPU
+//MANEJO DE CLIENTES
 Console *getConsoleByPid(Int32U);
+Console *getConsoleByDescriptor(Int32U);
+Cpu *getCpuByDescriptor(Int32U);
+void cpuDown(Cpu *);
+void consoleDown(Console *);
+void clientDown(Int32U);
+void consoleCpuDown(Console*);
+
+//SERVICIOS EXPUESTOS A CPU
 void serviceInterrupt(StrCpuKer *sck);
 void serviceStdInput(Int32U, Char);
 void serviceStdOutput(Int32U, String);
