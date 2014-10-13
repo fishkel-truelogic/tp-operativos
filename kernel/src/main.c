@@ -82,11 +82,41 @@ Cpu *getFreeCpu(){
 
 	return cpuClient;
 }
+/**
+ *@NAME	: releaseResourceThread
+ *@DESC	: Envia a la Msp la orden de destruir el segmento de Stack de un
+ *		: proceso determinado.
+ *@PARAM:
+ * tcb	: El tcb del que se quiere hacer la liberacion de recursos
+ */
 void releaseResourceThread(Tcb *tcb){
-	//MANDAR ACCIO DESTRUIR SEGMENTO DE STACK A MEMORIA
+
+	StrKerMsp *skm = malloc(sizeof(StrKerMsp));
+
+	skm->action = DELETE_SEG;
+	skm->pid = tcb->pid;
+	skm->address = tcb->X;
+
+	SocketBuffer *sb = serializeKerMsp(skm);
+	socketSend(socketMsp->ptrSocket, sb);
 }
+/**
+ *@NAME	: releaseResourceProcess
+ *@DESC	: Envia a la Msp la orden de destruir el segmento de Codigo de un
+ *		: proceso determinado.
+ *@PARAM:
+ * tcb	: El tcb del que se quiere hacer la liberacion de recursos
+ */
 void releaseResourceProcess(Tcb *tcb){
-	//MANDAR ACCIO DESTRUIR SEGMENTO DDE CODIGO A MEMORIA
+
+	StrKerMsp *skm = malloc(sizeof(StrKerMsp));
+
+	skm->action = DELETE_SEG;
+	skm->pid = tcb->pid;
+	skm->address = tcb->M;
+
+	SocketBuffer *sb = serializeKerMsp(skm);
+	socketSend(socketMsp->ptrSocket, sb);
 }
 /**
  * @NAME: sendTcbToFreeCpu
@@ -109,7 +139,7 @@ void sendTcbToFreeCpu(Tcb *tcb){
 	skc->quantum = config->quantum;
 	skc->action = NEXT_TCB;
 
-	SocketBuffer *sb = serializeKerCon(skc);
+	SocketBuffer *sb = serializeKerCpu(skc);
 	socketSend(freeCpu->cpuClient, sb);
 
 }
