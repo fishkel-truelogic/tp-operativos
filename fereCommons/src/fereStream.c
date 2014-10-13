@@ -1364,6 +1364,7 @@ Int16U getSizeStrCpuMsp(StrCpuMsp* scm) {
 		break;
 	case DELETE_SEG:
 		size += sizeof(scm->address);
+		break;
 	default:
 		break;
 	}
