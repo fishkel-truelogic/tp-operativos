@@ -17,23 +17,16 @@
 #include <src/fereSemaphore.h>
 
 #include "kdefine.h"
-
+#include "scheduler.h"
 
 //VARIABLES GLOBALES
 //==========================================================================
-t_list *newList; //newList
-t_list *readyList;
-t_list *execList;
-t_list *blockList;
-t_list *exitList;
 
 KernelConfig *config;
 Socket *serverSocket;
 SocketClient *socketMsp;
 
 Int32U lastPid;
-Tcb *tcbKm;
-
 pthread_t thrScheduler;
 
 //CONJUNTO MAESTRO DE DESCRIPTORES
@@ -55,22 +48,17 @@ sem_t semCpuList;
 
 //FUNCIONES
 //==========================================================================
-
-//==========================================================================
-//ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
-//PARA QUE ME COMPILE EL PROGRAMA
-void *newProcessesHandlerThread(void *tcb) 					{return NULL;}
-void *sysCallsHandlerThread(void *sck)						{return NULL;}
-void *execToReadyProcessesHandlerThread(void *tcb)			{return NULL;}
-void *blockTcbByJoin(void *sck)								{return NULL;}
-void *blockTcbByResource(void *sck)							{return NULL;}
-void *wakeTcbByResource(void *sck)							{return NULL;}
-void *execToNormalBlockProcessesHandlerThread(void *tcb)	{return NULL;}
-void *seekAndDestroyPid(void *tcb)  						{return NULL;}
-void *execToExitProcessesHandlerThread(void *sck)			{return NULL;}
-void *insertTcbKernelModeInBlock(void *tcb)					{return NULL;}
-//==========================================================================
-
+void releaseResourceThread(Tcb *tcb){
+	//MANDAR ACCIO DESTRUIR SEGMENTO DE STACK A MEMORIA
+}
+void releaseResourceProcess(Tcb *tcb){
+	//MANDAR ACCIO DESTRUIR SEGMENTO DDE CODIGO A MEMORIA
+}
+void sendTcbToFreeCpu(Tcb *tcb){
+	//DE LA LISTA DE CPUS, ME FIJO
+	//CUAL ESTA LIBRE Y LE MANDO ESE TCB
+	//SI NO ME DEJA ENVIAR, LLAMO A CPUDOWN...
+}
 /**
  * @NAME: consoleCpuDown
  * @DESC: Notifica a una consola, que la cpu donde se estaba ejecutando el TCB
@@ -266,12 +254,6 @@ void nextTcbHandler(Tcb tcb) {
 	pthread_create(&thr, NULL, execToReadyProcessesHandlerThread, (void*) &tcb);
 	pthread_join(thr,NULL);
 }
-/*void joinThreadsHandler(StrCpuKer *sck) {
-	pthread_t thr;
-	Int32U createResult;
-	createResult = pthread_create(&thr, NULL, blockTcbByJoin, (void*) sck);
-	pthread_join(thr,NULL);
-}*/
 void procEndHandler(StrCpuKer *sck) {
 	pthread_t thr;
 	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) sck);
@@ -384,12 +366,6 @@ void init()
 	lastPid = 2; //PORQUE PID 1 ES EL TCB KERNEL MODE
 	config = malloc(sizeof(KernelConfig));
 
-	newList = list_create();
-	readyList = list_create();
-	execList = list_create();
-	blockList = list_create();
-	exitList = list_create();
-
 	cpuList = list_create();
 	consoleList = list_create();
 
@@ -484,6 +460,7 @@ Boolean loadConfig() {
 Boolean initTcbKM(){
 
 	//CREA E INICIALIZA EL TCB KM
+	Tcb *tcbKm;
 	tcbKm = createNewTcbKM();
 
 	//CARGA EL ARCHIVO DE SYSCALLS

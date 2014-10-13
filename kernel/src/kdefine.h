@@ -98,7 +98,9 @@ void serviceWake(StrCpuKer *);
 
 //SERVICIOS GENERALES
 void nextTcbHandler(Tcb);
-//void joinThreadsHandler(StrCpuKer *); PARA ELIMINAR
+void sendTcbToFreeCpu(Tcb *);
+void releaseResourceProcess(Tcb *);
+void releaseResourceThread(Tcb *);
 void procEndHandler(StrCpuKer *);
 
 //HILOS

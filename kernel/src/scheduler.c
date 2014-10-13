@@ -14,8 +14,9 @@
 #include <src/fereStream.h>
 #include <src/fereTypes.h>
 
+#include "kdefine.h"
 #include "scheduler.h"
-#incl
+
 
 //VARIABLES GLOBALES
 //==========================================================================
@@ -93,7 +94,7 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 		//PRODUCTOR  EXCECDIC
 		//MUTEX READYLIST
 
-		Tcb tcbToExec;
+		Tcb *tcbToExec;
 		//VERIFICO SI DENTRO DE LA LISTA DE READY ESTA EL TCB KERNEL
 		//SI ESTA ENVIO ESE A EJECUTAR
 		if(list_any_satisfy(readyList, isTCBKernelMode)){
@@ -112,7 +113,7 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 
 
 		//TODO AVISAR A CESAR PARA QUE IMPLEMENTE ESTA FUNCION
-		sendTcbToAFreeCPU(tcbToExec);
+		sendTcbToFreeCpu(tcbToExec);
 
 	}
 
@@ -248,7 +249,7 @@ void *seekAndDestroyPid(void *ptr){
 //CUANDO ME TIRARON SYSCAL Y LO TENGO QUE BLOQUIAR Y USAR LA ADRESS PARA SYSCALL
 void *sysCallsHandlerThread (void *ptr){
 	StrCpuKer *strCpuKer;
-	strCpuKer = (strCpuKer *) ptr;
+	strCpuKer = (StrCpuKer *) ptr;
 	Tcb tcb = strCpuKer->tcb;
 	Int32U address = strCpuKer->address; //interruption
 
@@ -258,7 +259,7 @@ void *sysCallsHandlerThread (void *ptr){
 //PARA CUANDO SE HACE UN JOIN
 void *blockTcbByJoin (void *ptr){
 	StrCpuKer *strCpuKer;
-	strCpuKer = (strCpuKer *) ptr;
+	strCpuKer = (StrCpuKer *) ptr;
 	Tcb tcb = strCpuKer->tcb;
 	Int32U tid = strCpuKer->tid; //es el que tengo que esperar que termine
 	//HACER DICCIONARIO CON LA KEY: TID
@@ -270,7 +271,7 @@ void *blockTcbByJoin (void *ptr){
 //PARA CUANDO SE HACE BLOQUE ALGO POR RECURSO
 void *blockTcbByResource (void *ptr){
 	StrCpuKer *strCpuKer;
-	strCpuKer = (strCpuKer *) ptr;
+	strCpuKer = (StrCpuKer *) ptr;
 	Tcb tcb = strCpuKer->tcb;
 	Int32U tid = strCpuKer->resource; //es el que tengo que esperar que se liber
 	//HACER DICCIONARIO CON LA KEY: resource
@@ -291,7 +292,7 @@ void wakeTcbByJoin (Int32U tid){
 //PARA CUANDO SE LIBER RECURSO MANDAR A READY
 void *wakeTcbByResource (void *ptr){
 	StrCpuKer *strCpuKer;
-	strCpuKer = (strCpuKer *) ptr;
+	strCpuKer = (StrCpuKer *) ptr;
 	Tcb tcb = strCpuKer->tcb;
 	Int32U tid = strCpuKer->resource; //es el que tengo que esperar que se liber
 	//BUSCAR EN EL DICCIONARIO EL PRIMER TCB ASOCIADO A ESE RESOURCE
