@@ -14,6 +14,9 @@
 #include <src/fereStream.h>
 #include <src/fereTypes.h>
 
+#include "scheduler.h"
+#incl
+
 //VARIABLES GLOBALES
 //==========================================================================
 t_list *newList; //newList
