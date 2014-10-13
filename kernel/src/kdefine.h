@@ -103,8 +103,6 @@ void releaseResourceProcess(Tcb *);
 void releaseResourceThread(Tcb *);
 void procEndHandler(StrCpuKer *);
 
-//HILOS
-void *thrSchedulerHandler(void *);
 
 
 Tcb* cloneTcb(Tcb *);

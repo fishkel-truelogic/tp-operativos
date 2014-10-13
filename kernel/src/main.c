@@ -939,34 +939,6 @@ void clientHandler(Int32U clientDescriptor) {
 	}
 
 }
-
-void *thrSchedulerHandler(void *ptr) {
-
-	printf("Planificador BPRR iniciado\n");
-
-	while(TRUE)
-	{
-		//PRIMERO TOMO CUALQUIER PROCESO DE LA COLA NEW, Y LO AGREGO A LA COLA DE READY
-
-		//PLANIFICO EL PROXIMO PROCESO A EJECUTAR
-	}
-
-	/*char *message;
-	message = (char *) ptr;
-
-	int i = 0;
-	for (i = 0; i < 1000; i++) {
-
-		p = p + 1;
-
-		printf("%s : %d\n", message, p);
-		sleep(1);
-	}*/
-	//PARA QUE NO HINCHE LAS PELOTAS CUANDO COMPILO
-	return NULL;
-}
-
-
 //SERVICIOS EXPUESTOS A LA CPU
 //==========================================================================
 /**
