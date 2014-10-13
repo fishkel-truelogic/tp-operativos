@@ -22,6 +22,8 @@ t_list *execList;
 t_list *blockList;
 t_list *exitList;
 t_list *syscallList;
+t_dictionary *tcbsWaitingForTid;
+t_dictionary *tcbsWaitingForResource;
 //==========================================================================
 
 //FUNCIONES
@@ -87,7 +89,7 @@ void *readyToExecProcessesHandlerThread(void *ptr) {
 		//PRODUCTOR  EXCECDIC
 		//MUTEX READYLIST
 
-		Tcb tcbToExec = NULL;
+		Tcb tcbToExec;
 		//VERIFICO SI DENTRO DE LA LISTA DE READY ESTA EL TCB KERNEL
 		//SI ESTA ENVIO ESE A EJECUTAR
 		if(list_any_satisfy(readyList, isTCBKernelMode)){
@@ -232,6 +234,71 @@ void *seekAndDestroyPid(void *ptr){
 
 	return NULL;
 }
+
+//CUANDO ME TIRARON SYSCAL Y LO TENGO QUE BLOQUIAR Y USAR LA ADRESS PARA SYSCALL
+void *sysCallsHandlerThread (void *ptr){
+	StrCpuKer *strCpuKer;
+	strCpuKer = (strCpuKer *) ptr;
+	Tcb tcb = strCpuKer->tcb;
+	Int32U address = strCpuKer->address; //interruption
+
+	return NULL;
+}
+
+//PARA CUANDO SE HACE UN JOIN
+void *blockTcbByJoin (void *ptr){
+	StrCpuKer *strCpuKer;
+	strCpuKer = (strCpuKer *) ptr;
+	Tcb tcb = strCpuKer->tcb;
+	Int32U tid = strCpuKer->tid; //es el que tengo que esperar que termine
+	//HACER DICCIONARIO CON LA KEY: TID
+	// VALUE: TCB
+	//EL TCB LO BLOQUEO Y SE DESBLOQUEA CUANDO EL TID LLEGA A LA COLA DE EXIT
+	return NULL;
+}
+
+//PARA CUANDO SE HACE BLOQUE ALGO POR RECURSO
+void *blockTcbByResource (void *ptr){
+	StrCpuKer *strCpuKer;
+	strCpuKer = (strCpuKer *) ptr;
+	Tcb tcb = strCpuKer->tcb;
+	Int32U tid = strCpuKer->resource; //es el que tengo que esperar que se liber
+	//HACER DICCIONARIO CON LA KEY: resource
+	// VALUE: LISTADO DE TCBS
+	//EL TCB LO BLOQUEO Y SE DESBLOQUEA CUANDO EL RESOURCE SE LIBERA
+	return NULL;
+}
+
+//PARA CUANDO SE HACE UN JOIN MANDAR A READY
+void wakeTcbByJoin (Int32U tid){
+	//USO EL TID PARA BUSCAR SI HAY UN TCB QUE DESBLOQUEAR Y MANDAR A READY
+	//RELACIONADO CON EL TID QUE TERMINO.
+	//USAR DICCIONARIO CON LA KEY: TID
+	// VALUE: TCB
+
+}
+
+//PARA CUANDO SE LIBER RECURSO MANDAR A READY
+void *wakeTcbByResource (void *ptr){
+	StrCpuKer *strCpuKer;
+	strCpuKer = (strCpuKer *) ptr;
+	Tcb tcb = strCpuKer->tcb;
+	Int32U tid = strCpuKer->resource; //es el que tengo que esperar que se liber
+	//BUSCAR EN EL DICCIONARIO EL PRIMER TCB ASOCIADO A ESE RESOURCE
+	// PASAR EL TCB DE BLOCK A READY
+	return NULL;
+}
+
+
+//INGRESA POR PRIMERA VEZ EL TCB KERNEL MODE EN LA LISTA DE BLOCK
+void *insertTcbKernelModeInBlock (void *ptr){
+	Tcb *tcb;
+	tcb = (Tcb *) ptr;
+
+	return NULL;
+}
+
+
 
 /*void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
