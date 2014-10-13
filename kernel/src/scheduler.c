@@ -24,6 +24,7 @@ t_list *exitList;
 t_list *syscallList;
 t_dictionary *tcbsWaitingForTidDic;
 t_dictionary *tcbsWaitingForResourceDic;
+t_dictionary *amountOfTidForPidDic;
 //==========================================================================
 
 //FUNCIONES
@@ -170,6 +171,12 @@ void *execToExitProcessesHandlerThread (void *ptr){
 
 		//MUTEX EXITLIST
 		list_add(exitList, tcb);
+
+		//TODO if (cant de tid por pid > 1){
+		//	releaseResourceThread(tcb);
+		//} else {
+		//releaseResourceProcess(tcb);
+		//}
 
 		//END MUTEX
 	}else {
