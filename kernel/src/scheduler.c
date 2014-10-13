@@ -22,8 +22,8 @@ t_list *execList;
 t_list *blockList;
 t_list *exitList;
 t_list *syscallList;
-t_dictionary *tcbsWaitingForTid;
-t_dictionary *tcbsWaitingForResource;
+t_dictionary *tcbsWaitingForTidDic;
+t_dictionary *tcbsWaitingForResourceDic;
 //==========================================================================
 
 //FUNCIONES
