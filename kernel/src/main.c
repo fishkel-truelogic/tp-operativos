@@ -357,7 +357,7 @@ void nextTcbHandler(Tcb tcb) {
  */
 void procEndHandler(StrCpuKer *sck) {
 	pthread_t thr;
-	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) sck->tcb);
+	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) &sck->tcb);
 	pthread_join(thr,NULL);
 }
 /**
@@ -439,23 +439,10 @@ void consoleClientHandler(Socket *consoleClient, Stream data){
 
 	StrConKer *sck = unserializeConKer(data);
 
-	switch(sck->action){
-
-	//vUELVE DE UNA LLAMADA AL SERVICIO ENTRADA ESTANDAR
-	case STD_INPUT:
-
-		//COMO SE A QUE CPU TENGO QUE ENVIARSELO???
-		//StrKerCpu *skc = malloc(sizeof(StrKerCpu));
-
-		//MODIFICAR LAS FERECOMMONS PARA QUE EL STREAM SOPORTE
-
-
-		break;
-
-	default:
-		break;
+	if(sck->action == STD_INPUT){
 
 	}
+
 
 }
 /**
