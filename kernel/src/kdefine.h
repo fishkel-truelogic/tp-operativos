@@ -71,6 +71,7 @@ void creationError(Socket *);
 //MANEJO DE TCBS
 Tcb *createNewTcb(StrConKer *);
 Tcb *createNewTcbKM();
+Tcb *cloneTcb(Tcb *);
 
 //SERVER
 void checkConections();
@@ -102,10 +103,6 @@ void sendTcbToFreeCpu(Tcb *);
 void releaseResourceProcess(Tcb *);
 void releaseResourceThread(Tcb *);
 void procEndHandler(StrCpuKer *);
-
-
-
-Tcb* cloneTcb(Tcb *);
-
+Cpu *getFreeCpu();
 
 #endif /* KDEFINE_H_ */

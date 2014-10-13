@@ -2,7 +2,9 @@
  * main.c
  *
  *  Created on: 16/09/2014
- *      Author: cesarcappetto
+ *      Author: cesarcappetto, ignaciodoring
+ *
+ *	Programa Kernel
  */
 
 #include <stdio.h>
@@ -22,17 +24,27 @@
 //VARIABLES GLOBALES
 //==========================================================================
 
+//CONFIGURACION DEL PROYECTO
 KernelConfig *config;
-Socket *serverSocket;
-SocketClient *socketMsp;
 
+//PID GLOBAL
 Int32U lastPid;
+
+//HILO PLANIFICADOR (GENERAL)
 pthread_t thrScheduler;
+
+//SOCKET DE ESCUCHA
+Socket *serverSocket;
+
+//SOCKET CLIENTE DE LA MSP
+SocketClient *socketMsp;
 
 //CONJUNTO MAESTRO DE DESCRIPTORES
 fd_set master;
+
 //CONJUNTO TEMPORAL DE DESCRIPTORES
 fd_set read_fds;
+
 //MAXIMO DESCRIPTOR A MONITOREAR
 Int32U fdmax;
 
@@ -40,24 +52,66 @@ Int32U fdmax;
 t_list *cpuList;
 t_list *consoleList;
 
+//SEMAFOROS MUTEX PARA LISTA DE CPU Y DE CONSOLA
 pthread_mutex_t mtxCpuList;
 pthread_mutex_t mtxConsoleList;
+
+//SEMAFORO CONTADOR DE CPUS DISPONIBLES
 sem_t semCpuList;
 
 
 
 //FUNCIONES
 //==========================================================================
+Cpu *getFreeCpu(){
+
+	Cpu *cpuClient = NULL;
+
+	Int16U i;
+	for (i = 0; i < list_size(cpuList); i++) {
+
+		mtxLock(&mtxCpuList);
+		Cpu *temp = list_get(cpuList, i);
+		if (temp->tcb == NULL) {
+			cpuClient = temp;
+			mtxUnlock(&mtxCpuList);
+			break;
+		}
+		mtxUnlock(&mtxCpuList);
+	}
+
+	return cpuClient;
+}
 void releaseResourceThread(Tcb *tcb){
 	//MANDAR ACCIO DESTRUIR SEGMENTO DE STACK A MEMORIA
 }
 void releaseResourceProcess(Tcb *tcb){
 	//MANDAR ACCIO DESTRUIR SEGMENTO DDE CODIGO A MEMORIA
 }
+/**
+ * @NAME: sendTcbToFreeCpu
+ * @DESC: Toma de la lista de Cpus disponibles, la primera que este libre
+ * 		: y realiza el envio del Tcb recibido por parametro a esa CPU
+ * 		: Como existe un semaforo contador de Cpus Libres, al llamar esta
+ * 		: funcion siempre se garantiza que por lo menos, existe una Cpu libre
+ * 		: Esta funcion se llama desde el Planificador
+ * @PARAMS:
+ * 	tcb	: El tcb a enviar
+ */
 void sendTcbToFreeCpu(Tcb *tcb){
-	//DE LA LISTA DE CPUS, ME FIJO
-	//CUAL ESTA LIBRE Y LE MANDO ESE TCB
-	//SI NO ME DEJA ENVIAR, LLAMO A CPUDOWN...
+
+	Cpu *freeCpu = getFreeCpu();
+
+	//NO HACE FALTA CHEQUEAR QUE SEA DISTINTO DE NULL PORQUE
+	//SIEMPRE VA A HABER COMO MINIMO UNA CPU LIBRE (VER SEMAFORO CONTADOR)
+	StrKerCpu *skc = malloc(sizeof(StrKerCpu));
+	skc->tcb = *(freeCpu->tcb);
+	skc->quantum = config->quantum;
+	skc->action = NEXT_TCB;
+
+	SocketBuffer *sb = serializeKerCon(skc);
+	socketSend(freeCpu->cpuClient, sb);
+
 }
 /**
  * @NAME: consoleCpuDown
@@ -212,14 +266,14 @@ Cpu *getCpuByDescriptor(Int32U descriptor){
 	Int16U i;
 	for (i = 0; i < list_size(cpuList); i++) {
 
-		mtxLock(&mtxConsoleList);
+		mtxLock(&mtxCpuList);
 		Cpu *temp = list_get(cpuList, i);
 		if (temp->cpuClient->descriptor == descriptor) {
 			cpuClient = temp;
 			mtxUnlock(&mtxConsoleList);
 			break;
 		}
-		mtxUnlock(&mtxConsoleList);
+		mtxUnlock(&mtxCpuList);
 	}
 
 	return cpuClient;
