@@ -311,8 +311,9 @@ void *insertTcbKernelModeInBlock (void *ptr){
 
 
 
-/*void *thrSchedulerHandler(void *ptr) {
+void *thrSchedulerHandler(void *ptr) {
 	printf("Planificador BPRR iniciado\n");
 	return NULL ;
+//	TODO INICIALIZAR TODAS LAS LISTAS
 
-}*/
+}

@@ -18,6 +18,7 @@ void *execToNormalBlockProcessesHandlerThread(void *tcb);
 void *seekAndDestroyPid(void *tcb);
 void *execToExitProcessesHandlerThread(void *sck);
 void *insertTcbKernelModeInBlock(void *tcb);
+void *thrSchedulerHandler(void *ptr);
 
 
 #endif /* SCHEDULER_H_ */
