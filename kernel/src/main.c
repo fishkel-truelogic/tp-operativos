@@ -59,14 +59,18 @@ sem_t semCpuList;
 //==========================================================================
 //ESTA FUNCIONES SE ELIMINAN CUANDO TENGAMOS PLANIFICADOR, POR AHORA LA DEJO
 //PARA QUE ME COMPILE EL PROGRAMA
-void *schedulerSysCalls(void *sck)	{return NULL;}
-void *moveToReady(void *tcb)		{return NULL;}
-void *moveToNew(void *tcb)			{return NULL;}
-void *moveToBlock(void *tcb)		{return NULL;}
-void *moveToExit(void *tcb)			{return NULL;}
-void *kernelModeReturn(void *sck)	{return NULL;}
-void *seekAndDestroyPid(void *tcb)  {return NULL;}
+void *newProcessesHandlerThread(void *tcb) 					{return NULL;}
+void *sysCallsHandlerThread(void *sck)						{return NULL;}
+void *execToReadyProcessesHandlerThread(void *tcb)			{return NULL;}
+void *blockTcbByJoin(void *sck)								{return NULL;}
+void *blockTcbByResource(void *sck)							{return NULL;}
+void *wakeTcbByResource(void *sck)							{return NULL;}
+void *execToNormalBlockProcessesHandlerThread(void *tcb)	{return NULL;}
+void *seekAndDestroyPid(void *tcb)  						{return NULL;}
+void *execToExitProcessesHandlerThread(void *sck)			{return NULL;}
+void *insertTcbKernelModeInBlock(void *tcb)					{return NULL;}
 //==========================================================================
+
 /**
  * @NAME: consoleCpuDown
  * @DESC: Notifica a una consola, que la cpu donde se estaba ejecutando el TCB
@@ -133,7 +137,7 @@ void cpuDown(Cpu *cpu){
 	}else{
 		//JUSTO ESA CPU ESTABA LIBRE
 		//BAJO EL SEMAFORO DE CPUS DISPONIBLES
-		semWait(&cpuList);
+		semWait(&semCpuList);
 	}
 
 
@@ -259,26 +263,19 @@ void clientDown(Int32U clientDescriptor){
 
 void nextTcbHandler(Tcb tcb) {
 	pthread_t thr;
-	Int32U createResult;
-	createResult = pthread_create(&thr, NULL, moveToReady, (void*) &tcb);
+	pthread_create(&thr, NULL, execToReadyProcessesHandlerThread, (void*) &tcb);
+	pthread_join(thr,NULL);
 }
-void joinThreadsHandler(StrCpuKer *sck) {
+/*void joinThreadsHandler(StrCpuKer *sck) {
 	pthread_t thr;
 	Int32U createResult;
-	createResult = pthread_create(&thr, NULL, kernelModeReturn, (void*) sck);
-}
+	createResult = pthread_create(&thr, NULL, blockTcbByJoin, (void*) sck);
+	pthread_join(thr,NULL);
+}*/
 void procEndHandler(StrCpuKer *sck) {
-	//ME FIJO SI ES KM LEVANTO EL QUE VUELVE DEL KM
-	//SINO ES EL FIN DEL PROGRAMA Y LEVANTO EL HILO QUE FINALIZA
-	if (sck->tcb.kernelMode == TRUE) {
-		pthread_t thr;
-		Int32U createResult;
-		createResult = pthread_create(&thr, NULL, kernelModeReturn,(void*) sck);
-	} else {
-		pthread_t thr;
-		Int32U createResult;
-		createResult = pthread_create(&thr, NULL, moveToExit, (void*) &sck->tcb);
-	}
+	pthread_t thr;
+	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) sck);
+	pthread_join(thr,NULL);
 }
 
 Tcb* cloneTcb(Tcb *tcbParent) {
@@ -322,11 +319,13 @@ void cpuClientHandler(Socket *cpuClient, Stream data){
 		serviceCreateThread(&sck->tcb);
 		break;
 	case JOIN_THREADS:
-		joinThreadsHandler(sck);
+		serviceJoinThread(sck);
 		break;
 	case BLOCK_THREAD:
+		serviceBlock(sck);
 		break;
 	case WAKE_THREAD:
+		serviceWake(sck);
 		break;
 	case PROC_END:
 		procEndHandler(sck);
@@ -530,8 +529,8 @@ Boolean initTcbKM(){
 
 	//ENCOLA EL HILO EN BLOCK
 	pthread_t thr;
-	Int32U createResult;
-	createResult= pthread_create(&thr, NULL, moveToBlock, (void*)tcbKm);
+	pthread_create(&thr, NULL, insertTcbKernelModeInBlock, (void*)tcbKm);
+	pthread_join(thr,NULL);
 
 	return TRUE;
 }
@@ -769,8 +768,7 @@ void newConsoleClient(Socket *consoleClient, Stream dataSerialized){
 
 			//MUEVO EL NUEVO TCB A LA COLA DE NEW
 			pthread_t thr;
-			Int32U createResult;
-			createResult = pthread_create(&thr, NULL, newProcessesHandlerThread,(void*) tcb);
+			pthread_create(&thr, NULL, newProcessesHandlerThread,(void*) tcb);
 			pthread_join(thr, NULL);
 
 
@@ -1006,13 +1004,8 @@ void *thrSchedulerHandler(void *ptr) {
 void serviceInterrupt(StrCpuKer *sck){
 
 	pthread_t thr;
-	Int32U createResult;
-	createResult = pthread_create(&thr, NULL, schedulerSysCalls, (void*) sck);
-	if (createResult != 0) {
-		printf(
-				"No se ha podido iniciar Sub Hilo shcedulerSysCalls. El programa terminara\n");
-	}
-
+	pthread_create(&thr, NULL, sysCallsHandlerThread, (void*) sck);
+	pthread_join(thr,NULL);
 }
 /**
  * @NAME: serviceStdInput
@@ -1046,11 +1039,6 @@ void serviceStdInput(Int32U pid, Char type){
 		socketSend(consoleClient->consoleClient,sb);
 
 	}
-
-	//SI DEVUELVE NULL QUE HAGO????
-
-
-
 }
 /**
  * @NAME: serviceStdOutput
@@ -1105,29 +1093,30 @@ void serviceCreateThread(Tcb *tcbParent){
 
 	pthread_t thr;
 	Int32U createResult;
-	createResult = pthread_create(&thr, NULL, moveToNew, (void*) tcbChild);
+	createResult = pthread_create(&thr, NULL, newProcessesHandlerThread, (void*) tcbChild);
 	if (createResult != 0) {
-		printf(
-				"No se ha podido iniciar el Sub Hilo MoveToNew\n");
+		printf("No se ha podido iniciar el Sub Hilo MoveToNew\n");
 	}
+	pthread_join(thr,NULL);
 
 }
 
-void serviceJoinThread(Int32U callerTid, Int32U waitingTid){
-
-	//TODO: PREGUNTAR A NACHO COMO QUIERE MANEJAR ESTO
+void serviceJoinThread(StrCpuKer *sck){
+	pthread_t thr;
+	pthread_create(&thr, NULL, blockTcbByJoin, (void*) sck);
+	pthread_join(thr,NULL);
 }
 
-void serviceBlock(Tcb *tcb, Int32U resourceId){
-
-	//TODO: VER EL TEMA DE LOS RECURSOS CON NACHO
-
+void serviceBlock(StrCpuKer *sck){
+	pthread_t thr;
+	pthread_create(&thr, NULL, blockTcbByResource, (void*) sck);
+	pthread_join(thr,NULL);
 }
 
-void serviceWake(Int32U resourceId){
-
-	//TODO: VER EL TEMA DE LOS RECURSOS CON NACHO
-
+void serviceWake(StrCpuKer *sck){
+	pthread_t thr;
+	pthread_create(&thr, NULL, wakeTcbByResource, (void*) sck);
+	pthread_join(thr,NULL);
 }
 
 //PROGRAMA PRINCIPAL

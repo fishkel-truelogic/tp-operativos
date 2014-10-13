@@ -92,13 +92,13 @@ void serviceInterrupt(StrCpuKer *sck);
 void serviceStdInput(Int32U, Char);
 void serviceStdOutput(Int32U, String);
 void serviceCreateThread(Tcb *);
-void serviceJoinThread(Int32U, Int32U);
-void serviceBlock(Tcb *, Int32U);
-void serviceWake(Int32U);
+void serviceJoinThread(StrCpuKer *);
+void serviceBlock(StrCpuKer *);
+void serviceWake(StrCpuKer *);
 
 //SERVICIOS GENERALES
 void nextTcbHandler(Tcb);
-void joinThreadsHandler(StrCpuKer *);
+//void joinThreadsHandler(StrCpuKer *); PARA ELIMINAR
 void procEndHandler(StrCpuKer *);
 
 //HILOS
