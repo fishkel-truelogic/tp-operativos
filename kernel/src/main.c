@@ -63,6 +63,10 @@ sem_t semCpuList;
 
 //FUNCIONES
 //==========================================================================
+/**
+ *@NAME: getFreeCpu
+ *@DESC: Retorna una Cpu que no este ejecutando ningun tcb
+ */
 Cpu *getFreeCpu(){
 
 	Cpu *cpuClient = NULL;
@@ -331,19 +335,39 @@ void clientDown(Int32U clientDescriptor){
 		consoleDown(consoleTemp);
 	}
 }
-
-
+/**
+ *@NAME	: nextTcbHandler
+ *@DESC	: Funcion que lanza un hilo que toma el tcb que "vuelve"
+ *		: de la Cpu y lo pone en ready. El tcb que vuelve deberia
+ *		: volver porque se le acabo el quantum
+ *@PARAMS:
+ * tcb	: El tcb que "vuelve" de exec y que tiene que ir a ready
+ */
 void nextTcbHandler(Tcb tcb) {
 	pthread_t thr;
 	pthread_create(&thr, NULL, execToReadyProcessesHandlerThread, (void*) &tcb);
 	pthread_join(thr,NULL);
 }
+/**
+ *@NAME	: procEndHandler
+ *@DESC	: Funcion que lanza un hilo que realiza la finalizacion de
+ *		: un proceso
+ *@PARAMS:
+ * sck	: Estructura que contiene el Tcb a finalizar
+ */
 void procEndHandler(StrCpuKer *sck) {
 	pthread_t thr;
-	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) sck);
+	pthread_create(&thr, NULL, execToExitProcessesHandlerThread,(void*) sck->tcb);
 	pthread_join(thr,NULL);
 }
-
+/**
+ *@NAME: cloneTcb
+ *@DESC	: Retorna un Tcb igual, al ingresado
+ *		: Se utiliza para cuando el ESO tiene que crear un
+ *		: hijo
+ *@PARAMS:
+ * tcbParent	: El tcb a clonar
+ */
 Tcb* cloneTcb(Tcb *tcbParent) {
 	Tcb* tcb = malloc(sizeof(Tcb));
 	tcb->pid = tcbParent->pid;
@@ -362,7 +386,13 @@ Tcb* cloneTcb(Tcb *tcbParent) {
 	tcb->F = tcbParent->F;
 	return tcb;
 }
-
+/**
+ * @NAME: cpuClientHandler
+ * @DESC: Funcion que realiza la gestion de los clientes CPU
+ * @PARAMS:
+ *  cpuClient	: Socket del cliente
+ *  data		: Stream con los datos recibidos de ese cliente
+ */
 void cpuClientHandler(Socket *cpuClient, Stream data){
 
 	StrCpuKer *sck = unserializeCpuKer(data);
@@ -404,6 +434,7 @@ void cpuClientHandler(Socket *cpuClient, Stream data){
 
 
 }
+
 void consoleClientHandler(Socket *consoleClient, Stream data){
 
 	StrConKer *sck = unserializeConKer(data);
@@ -427,7 +458,6 @@ void consoleClientHandler(Socket *consoleClient, Stream data){
 	}
 
 }
-
 /**
  * @NAME: printHeader
  * @DESC: Imprime un pequeño encabezado por pantalla
@@ -1133,19 +1163,44 @@ void serviceCreateThread(Tcb *tcbParent){
 	pthread_join(thr,NULL);
 
 }
-
+/**
+ * @NAME: serviceJoinThread
+ * @DESC: Recibe un TID llamador y un TID a esperar.
+ * 		: Envia al hilo identificado por el Tid llamador recibido
+ * 		: al estado de Block hasta que el otro hilo del mismo
+ * 		: programa identificado por el TID a esperar finalice su ejecucion
+ * @PARAMS:
+ * 	sck	: Estructura StrCpuKer con la informacion necesaria
+ */
 void serviceJoinThread(StrCpuKer *sck){
 	pthread_t thr;
 	pthread_create(&thr, NULL, blockTcbByJoin, (void*) sck);
 	pthread_join(thr,NULL);
 }
-
+/**
+ * @NAME: serviceBlock
+ * @DESC: Recibe una estructura Tcb e identificador de recurso
+ * 		: Envia al estado BLOCK al hilo identificado en el TCB recibido
+ * 		: Ademas lo introduce al final de la cola de espera del recurso
+ *		: especificado en el identificador de Recurso recibido
+ * @PARAMS:
+ * 	sck	: Estructura StrCpuKer con la informacion necesaria
+ */
 void serviceBlock(StrCpuKer *sck){
 	pthread_t thr;
 	pthread_create(&thr, NULL, blockTcbByResource, (void*) sck);
 	pthread_join(thr,NULL);
 }
-
+/**
+ * @NAME: serviceWake
+ * @DESC: Recibe un identificador de recurso
+ * 		: Remueve el primer hilo de la cola de espera del recurso
+ * 		: especificado por el identificador de recurso, ademas lo remueve
+ *		: del estado BLOCK y lo coloca al final de la cola READY para que
+ *		: vuelva a ser palnificado
+ * @PARAMS:
+ * 	sck	: Estructura StrCpuKer con la informacion necesaria
+ */
 void serviceWake(StrCpuKer *sck){
 	pthread_t thr;
 	pthread_create(&thr, NULL, wakeTcbByResource, (void*) sck);
