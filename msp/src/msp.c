@@ -23,6 +23,7 @@
 #include <src/commons/collections/dictionary.h>
 #include <src/commons/collections/list.h>
 #include "msp.h"
+#include "swapping.h"
 
 
 //==========================================//
@@ -32,8 +33,10 @@
 //==========================================//
 Int16U mspPort = 0;
 Int16U memLengthKB = 0;
-Int16U swapLengthMB = 0;
+Int32U swapLengthMB = 0;
 String swapAlgorithm = "\0";
+
+Int32U swapCount = 0;
 
 Byte* memory;
 t_dictionary* processSegments = NULL;
@@ -47,12 +50,10 @@ t_list* socketConnections = NULL;
 //==========================================//
 Int32U getPagesCountBySize(Int16U, Int32U);
 Int16U getCurrentTime();
-String intToStr(Int32U);
 Int32U getAddress(Int32U, Int32U, Int32U);
 
 bool notUsed(void*);
 bool used(void*);
-bool swapped(void*);
 void destroy(void*);
 
 
@@ -63,7 +64,7 @@ void setFrameNotUsed(void*);
 Boolean nextPage(Page**, Int32U, Int32U, Int32U, Int32U);
 Boolean checkSegFault(Int16U, Int32U, Int32U);
 Segment getSegmentBy(Int32U, Int32U);
-Segment reservePages(Int32U);
+Segment reservePages(Int32U, Int32U, Int32U);
 
 void printPages(String, void*);
 void printFrame(void*);
@@ -293,9 +294,6 @@ void initMemory() {
 
 
 /**
- * TODO devolver el address virtual en donde se creo
- * TODO chequear seg fault y devolver el estado
- * 
  * Se crea el segmento paginado segun el size
  * Si el pid no tiene tabla de segmentos se crea
  */
@@ -311,11 +309,12 @@ Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 		segments->lastId = 0;
 		dictionary_put(processSegments, pidStr, segments);
 	}
-	// Se crea el segmento paginado
-	Segment segment = reservePages(size);
 
 	segments = dictionary_get(processSegments, pidStr);
 	String segmentId = intToStr(segments->lastId);
+	// Se crea el segmento paginado
+	Segment segment = reservePages(size, segments->lastId, pid);
+	
 	segments->lastId++;
 	
 	dictionary_put(segments->table, segmentId, segment);
@@ -327,7 +326,7 @@ Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 /**
  * Devuelve un segmento con la cantidad de paginas correspondientes al size
  */
-Segment reservePages(Int32U size) {
+Segment reservePages(Int32U size, Int32U segmentId, Int32U pid) {
 	Segment segment = list_create();
 	Int32U pageCount = getPagesCountBySize(size, 0); //cantidad paginas a crear
 	Int32U index;
@@ -338,7 +337,8 @@ Segment reservePages(Int32U size) {
 		page->timestamp = getCurrentTime();
 		page->clock = TRUE;
 		page->swapped = FALSE; 
-
+		page->address = getAddress(segmentId, index, 0);
+		page->pid = pid;
 		list_add_in_index(segment, index, page);
 	}
 	return segment;
@@ -369,9 +369,9 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 
 	bool (*fptrSwapped)(void*) = swapped;
 	while (list_any_satisfy(segment, fptrSwapped)) {
-		// TODO SWAPPING 
-		// Page* page = list_find(segment, swapped); 
-		// swappingDestroy(page);
+		Page* page = list_find(segment, fptrSwapped); 
+		swap(swapAlgorithm, processSegments, page);
+
 	}
 
 	void (*setFrameNotUsedFunc)(void*) = setFrameNotUsed;
@@ -407,10 +407,11 @@ Byte* readMemory(Int32U pid, Int32U address, Int16U size, Boolean* segFault) {
 	Byte* ptrRead = read;
 	Byte* readLocation;
 	Int16U readSize;
+
 	while (nextPage(&page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
 			if (page->swapped) {
-				//swapping(page);
+				swap(swapAlgorithm, processSegments, page);
 			} else {
 				ptrRead += FRAME_SIZE;
 				continue;
@@ -461,8 +462,7 @@ Boolean writeMemory(Int32U pid, Int32U address, Int16U size, Byte* content) {
 	while (nextPage(&page, pagesCount, segmentOffset, address, pid)) {
 		if (page->frame == NULL) {
 			if (page->swapped || list_all_satisfy(frames, fptrUsed)) {
-				// TODO SWAPPING 
-				// swapping(page);
+				swap(swapAlgorithm, processSegments, page);
 			} else {
 				Frame* frame = list_find(frames, fptrNotUsed);
 				page->frame = frame;	
@@ -670,11 +670,12 @@ bool notUsed(void* frame) {
 	return !ptr->used;
 }
 
-void setFrameNotUsed(void* page){
+void setFrameNotUsed(void* page) {
 	Page* ptr;
-	ptr = (Page*)page;
-	if (ptr->frame != NULL)
+	ptr = (Page*) page;
+	if (ptr->frame != NULL) {
 		ptr->frame->used = FALSE;
+	}
 }
 
 /**
@@ -745,6 +746,20 @@ void destroy(void* element) {
 	free(element);
 }
 
+Int32U getSwapSize() {
+	return swapLengthMB * 1024 * 1024;
+}
+
+Int32U getSwapCount() {
+	return swapCount;
+}
+void incrementSwapCount() {
+	swapCount++;
+}
+
+void decrementSwapCount() {
+	swapCount--;
+}
 /**
  * Carga las variables de configuracion externa
  */

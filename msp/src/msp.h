@@ -55,6 +55,14 @@ Boolean showPages(Int32U);
 void showFrames();
 void showSegments();
 
+bool swapped(void*);
+String intToStr(Int32U);
+
+
+Int32U getSwapSize();
+Int32U getSwapCount();
+void incrementSwapCount();
+void decrementSwapCount();
 
 //==========================================//
 //******************************************//
@@ -82,6 +90,8 @@ typedef struct page {
 	Int16U timestamp;
 	Boolean clock; 
 	Boolean swapped;
+	Int32U address;
+	Int32U pid;
 } Page;
 
 #endif /* MSP_H_ */
