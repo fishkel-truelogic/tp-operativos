@@ -43,6 +43,8 @@ t_dictionary* processSegments = NULL;
 t_list* frames = NULL;
 t_list* socketConnections = NULL;
 t_list* swappedPages = NULL;
+
+t_log* logger = NULL;
 //==========================================//
 //******************************************//
 // Prototypes								//	
@@ -117,6 +119,7 @@ void manageSocketConnections() {
 void* manageSocketConnection(void* param) {
 	Socket* socket = (Socket*) param;
 	Boolean connected = TRUE;
+	Boolean firstTime = TRUE;
 	while (connected) {
 		SocketBuffer* sb = socketReceive(socket);
 		if (sb != NULL) {
@@ -125,11 +128,19 @@ void* manageSocketConnection(void* param) {
 			StrCpuMsp* scm = NULL;
 			switch (id) {
 				case KERNEL_ID:
+					if (firstTime) {
+						log_info(getLogger(),"Nueva conexion de KERNEL"); 
+						firstTime = FALSE;
+					}
 					skm = unserializeKerMsp((Stream) sb->data);
 					connected = manageKernelRequest(socket, skm);
 					free(skm);
 					break;
 				case CPU_ID:
+					if (firstTime) {
+						log_info(getLogger(),"Nueva conexion de CPU"); 
+						firstTime = FALSE;
+					}
 					scm = unserializeCpuMsp((Stream) sb->data);
 					connected = manageCpuRequest(socket, scm);
 					free(scm);
@@ -142,6 +153,7 @@ void* manageSocketConnection(void* param) {
 		} else {
 			connected = FALSE;
 		}
+		
 	}
 	
 	return NULL;
@@ -155,15 +167,19 @@ Boolean manageCpuRequest(Socket* socket, StrCpuMsp* scm) {
 	Char action;
 	switch (scm->action) {
 		case MEM_READ:
+			log_info(getLogger(),string_from_format("Nuevo stream CPU-MSP de MEM_READ\nParams:\nPID: %d, Address: %d, Size: %d", scm->pid, scm->address, scm->dataLen)); 
 			data = readMemory(scm->pid, scm->address, scm->dataLen, &segFault);
 			break;
 		case MEM_WRITE:
+			log_info(getLogger(),"Nuevo stream CPU-MSP de MEM_WRITE\nParams:\nPID: %d, Address: %d, Size: %d, Data: %s", scm->pid, scm->address, scm->dataLen, scm->data));
 			segFault = writeMemory(scm->pid, scm->address, scm->dataLen, scm->data);
 			break;
 		case CREATE_SEG:
+			log_info(getLogger(),"Nuevo stream CPU-MSP de CREATE_SEG\nParams:\nPID: %d, Size: %d", scm->pid, scm->dataLen));
 			address = createSegment(scm->pid, scm->dataLen, &memFull);
 			break;
 		case DELETE_SEG:
+			log_info(getLogger(),"Nuevo stream CPU-MSP de DELETE_SEG\nParams:\nPID: %d, Address: %d", scm->pid, scm->address));
 			segFault = destroySegment(scm->pid, getSegment(scm->address));
 			break;
 		default:
@@ -193,12 +209,15 @@ Boolean manageKernelRequest(Socket* socket, StrKerMsp* skm) {
 	Char action;
 	switch (skm->action) {
 		case MEM_WRITE:
+			log_info(getLogger(), string_from_format("Nuevo stream KERNEL-MSP de MEM_WRITE \n Params\n pid: %d, size: %d, address: %d, data: %s", skm->pid, skm->size, skm->address, skm->data));
 			segFault = writeMemory(skm->pid, skm->address, skm->size, skm->data);
 			break;
 		case CREATE_SEG:
+			log_info(getLogger(),string_from_format("Nuevo stream KERNEL-MSP de CREATE_SEG \n Params\n pid: %d, size: %d", skm->pid, skm->size));
 			address = createSegment(skm->pid, skm->size, &memFull);
 			break;
 		case DELETE_SEG:
+			log_info(getLogger(), string_from_format("Nuevo stream KERNEL-MSP de DELETE_SEG\n Params\n pid: %d, address: %d", skm->pid, skm->address));
 			segFault = destroySegment(skm->pid, getSegment(skm->address));
 			break;
 		default:
@@ -298,6 +317,7 @@ void initMemory() {
  * Si el pid no tiene tabla de segmentos se crea
  */
 Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
+	log_info(getLogger(), "Creando nuevo segmento"); 
 	SegmentsTable* segments;
 	String pidStr = intToStr(pid);
 
@@ -309,6 +329,7 @@ Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 	if (framesBySize > freeFrames) {
 		if (getSwapCount() * FRAME_SIZE > getSwapSize() - FRAME_SIZE * framesBySize) {
 			*memFull = TRUE;
+			log_error(getLogger(), "Error de memoria llena al crear segmento");
 			return 0;
 		}		
 	}
@@ -332,6 +353,7 @@ Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 	dictionary_put(segments->table, segmentId, segment);
 	
 	free(pidStr);
+	log_info(getLogger(), string_from_format("Nuevo segmento creado en la direccion %d", segments->lastId - 1)); 
 	return getAddress(segments->lastId - 1, 0, 0);
 }
 
@@ -360,10 +382,11 @@ Segment reservePages(Int32U size, Int32U segmentId, Int32U pid) {
  * Libera la memoria del segmento y las paginas asociadas
  */
 Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
+	log_info(getLogger, string_from_format("destruyendo el segmento %d para el PID %d", segmentNumber, pid));
 	String pidStr = intToStr(pid);
 	
 	if (!dictionary_has_key(processSegments, pidStr)) {
-		printf("No existe ningun segmento para el proceso %s\n", pidStr);
+		log_error(getLogger(), string_from_format("No existe ningun segmento para el proceso %s\n", pidStr));
 		free(pidStr);
 		return FALSE;
 	}
@@ -371,7 +394,7 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	String segmentStr = intToStr(segmentNumber);
 	SegmentsTable* segments = dictionary_get(processSegments, pidStr);
 	if (!dictionary_has_key(segments->table, segmentStr)) {
-		printf("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", segmentNumber, pidStr);
+		log_error(getLogger(), string_from_format("No existe el segmento nro %d para el proceso %s\n -- Segmentation Fault\n", segmentNumber, pidStr));
 		free(segmentStr);
 		free(pidStr);
 		return FALSE;
@@ -394,6 +417,7 @@ Boolean destroySegment(Int32U pid, Int32U segmentNumber) {
 	dictionary_remove_and_destroy(segments->table, segmentStr, destroyFunc);
 	free(segmentStr);
 	free(pidStr);
+	log_info(getLogger, "Segmento destruido con exito");
 	return TRUE;
 }
 
@@ -786,6 +810,13 @@ t_list* getSwappedPages() {
 	}
 	return swappedPages;
 }
+
+t_log* getLogger() {
+	if (logger == NULL) {
+		logger = log_create(LOGGER_FILE_NAME, "msp", FALSE, LOG_LEVEL_INFO);
+	}
+	return logger;
+}
 /**
  * Carga las variables de configuracion externa
  */
@@ -837,10 +868,12 @@ Boolean loadConfig() {
 					mspPort, memLengthKB, swapLengthMB, swapAlgorithm);
 		}
 
+		log_info(getLogger(), string_from_format("Se inicializo la msp. Tamanio de memoria: %dKM y tamanio de intercambio: %dMB", memLengthKB, swapLengthMB)); 
+
 		return TRUE;
 	}
 	else{
 		printf("El archivo config.txt no tiene todos los campos.\n");
-		return TRUE;
+		return FALSE;
 	}
 }

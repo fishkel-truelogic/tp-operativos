@@ -18,6 +18,7 @@
 #include <src/fereTypes.h>
 #include <src/commons/config.h>
 #include <src/commons/temporal.h>
+#include <src/commons/log.h>
 #include <src/commons/collections/dictionary.h>
 #include <src/commons/collections/list.h>
 #include "mspconsole.h"
@@ -35,7 +36,7 @@
 #define SWAP_LENGTH "CANTIDAD_SWAP"		//Tamaño máximo en megabytes que pueden ocupar los archivos de swapping.
 #define SWAP_ALGORITHM "SUST_PAGS"		//Algoritmo de sustitucion de paginas
 #define FRAME_SIZE 256					//TAMAÑO DE LOS MARCOS DE PAGINA
-
+#define LOGGER_FILE_NAME "msp_log.txt"
 //==========================================//
 //******************************************//
 // Prototypes								//	
@@ -64,6 +65,8 @@ Int32U getSwapCount();
 t_list* getSwappedPages();
 void incrementSwapCount();
 void decrementSwapCount();
+
+t_log* getLogger();
 
 //==========================================//
 //******************************************//
