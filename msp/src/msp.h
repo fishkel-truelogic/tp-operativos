@@ -61,6 +61,7 @@ String intToStr(Int32U);
 
 Int32U getSwapSize();
 Int32U getSwapCount();
+t_list* getSwappedPages();
 void incrementSwapCount();
 void decrementSwapCount();
 

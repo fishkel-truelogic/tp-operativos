@@ -42,7 +42,7 @@ Byte* memory;
 t_dictionary* processSegments = NULL;
 t_list* frames = NULL;
 t_list* socketConnections = NULL;
-
+t_list* swappedPages = NULL;
 //==========================================//
 //******************************************//
 // Prototypes								//	
@@ -607,20 +607,27 @@ void showSegments() {
 
 void showFrames() {
 	list_iterate(frames, printFrame);
-	//TODO SWAPPING --> Aca hay que implementar ir a leer los marcos de memoria que esten swapeados
+	printf("\n\n Aqui esta el detalle de las paginas swappeadas:\n");
+	list_iterate(swappedPages, printSwappedFrame);
 }
 
 void printFrame(void* frame) {
 	Frame* f = (Frame*) frame;
-	Int32U pid = 9999999;
+	Int32U pid;
 	String usedStr = "No";
 	Byte* direccion = NULL;
 	if (f->used) {
 		pid = f->pid;
 		usedStr = "Si";
 		direccion = f->address;
+		printf("Nro de proceso: %d, usado: %s, Address: %p \n", pid, usedStr, direccion);
+	} else {
+		printf("Usado: %s, Address: %p \n", usedStr, direccion);
 	}
-	printf("Nro de proceso: %d, usado: %s, Address: %s \n", pid, usedStr, direccion);
+}
+
+void printSwappedFrame(void* fileName) {
+	printf("%s\n", (String) fileName);
 }
 
 /**
@@ -771,6 +778,13 @@ void incrementSwapCount() {
 
 void decrementSwapCount() {
 	swapCount--;
+}
+
+t_list* getSwappedPages() {
+	if (swappedPages == NULL) {
+		swappedPages = list_create();
+	}
+	return swappedPages;
 }
 /**
  * Carga las variables de configuracion externa

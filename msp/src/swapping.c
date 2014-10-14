@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <src/fereTypes.h>
+#include <src/commons/collections/list.h>
 #include "swapping.h"
 #include "msp.h"
 
@@ -100,6 +101,7 @@ Boolean saveFrame(Page* page) {
     
     fwrite (page->frame->address, FRAME_SIZE, 1, file);
     fclose (file);
+    list_add(getSwappedPages(), fileName);
     return TRUE;
 }
 
@@ -120,7 +122,17 @@ Boolean getFrame(Page* page, Frame* frame) {
 	if (remove(fileName) == -1) {
 		return FALSE;
 	}
-
+	Int32U i;
+	String name = NULL;
+	for (i = 0; i < getSwapCount(); i++) {
+		name = list_get(getSwappedPages(), i);
+		if (strcmp(name, fileName) == 0) {
+			list_remove(getSwappedPages(), i);
+			free(name);
+			free(fileName);
+			break;
+		}
+	}
 	return TRUE;
 }
 
