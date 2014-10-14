@@ -300,8 +300,20 @@ void initMemory() {
 Int32U createSegment(Int32U pid, Int32U size, Boolean* memFull) {
 	SegmentsTable* segments;
 	String pidStr = intToStr(pid);
-	//TODO validar el tamaño de la memoria libre tanto en memory como en swap y setear memFull y devolver 0
+
+	Int32U framesBySize = size / FRAME_SIZE;
+	framesBySize += (size % FRAME_SIZE == 0) ? 0 : 1;
+	bool (*fptrNotUsed)(void*) = notUsed;
+	Int32U freeFrames = list_count_satisfying(franes, fptrNotUsed);
+
+	if (framesBySize > freeFrames) {
+		if (getSwapCount() * FRAME_SIZE > getSwapSize() - FRAME_SIZE * framesBySize) {
+			*memFull = TRUE;
+			return 0;
+		}		
+	}
 	*memFull = FALSE;
+
 	//me fijo si en la processSegments tengo una entrada por ese PID
 	if (!dictionary_has_key(processSegments, pidStr)){
 		segments = malloc(sizeof(SegmentsTable));

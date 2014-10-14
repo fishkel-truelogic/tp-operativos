@@ -41,7 +41,7 @@ Boolean swap(String algorithm, t_dictionary* processSegments, Page* page) {
 	Boolean hasBeenSwapped = swapped(page);
 
 	if (!hasBeenSwapped) {
-		if (getSwapCount() * FRAME_SIZE >= getSwapSize() - FRAME_SIZE) {
+		if (getSwapCount() * FRAME_SIZE > getSwapSize() - FRAME_SIZE) {
 			printf("No hay espacio de swapping\n");
 			return FALSE;
 		}
